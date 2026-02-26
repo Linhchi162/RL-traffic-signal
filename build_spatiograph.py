@@ -49,35 +49,57 @@ def _is_internal_edge(edge_id: str) -> bool:
     return edge_id.startswith(":")
 
 
+def _is_internal_edge_obj(edge: Any) -> bool:
+    # Prefer the semantic flag when available.
+    try:
+        return edge.getFunction() == "internal"
+    except Exception:
+        return False
+
+
 def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any]:
     net = readNet(str(net_path))
 
-    # Control nodes: all traffic light IDs in the net.
-    # In grid nets, tls ids are usually like 'gneJ0' etc; in RiLSA example it's '0'.
-    tls_ids = sorted(tls.getID() for tls in net.getTrafficLights())
-    control_nodes = set(tls_ids)
+    # Step 1A: classify nodes (V)
+    control_nodes: list[str] = []
+    non_control_nodes: list[str] = []
+    for node in net.getNodes():
+        node_id = node.getID()
+        if node.getType() == "traffic_light":
+            control_nodes.append(node_id)
+        else:
+            non_control_nodes.append(node_id)
 
-    # Map junction (node) id -> whether it's controlled by a tls.
-    # sumolib exposes tls ids, and each tls controls a node with same id in typical nets.
-    # We'll still guard with existence in net nodes.
-    node_ids = {n.getID() for n in net.getNodes()}
-    control_nodes = {tls for tls in control_nodes if tls in node_ids or tls in tls_ids}
+    control_set = set(control_nodes)
 
     # Incoming lanes per control node (useful for Step 2).
-    incoming_lanes: dict[str, list[str]] = {nid: [] for nid in sorted(control_nodes)}
+    incoming_lanes: dict[str, list[str]] = {nid: [] for nid in sorted(control_set)}
 
     edges: list[DirectedRoad] = []
+    edges_data: list[dict[str, Any]] = []
 
     for edge in net.getEdges():
         edge_id = edge.getID()
-        if not include_internal and _is_internal_edge(edge_id):
+        if not include_internal and (_is_internal_edge(edge_id) or _is_internal_edge_obj(edge)):
             continue
 
         from_node = edge.getFromNode().getID()
         to_node = edge.getToNode().getID()
 
+        # Step 1B: directed edges (E)
+        edges_data.append(
+            {
+                "edge_id": edge_id,
+                "send_k": from_node,
+                "rec_k": to_node,
+                "c_k": int(edge.getLaneNumber()),
+                "length_m": float(edge.getLength()),
+                "speed_mps": float(edge.getSpeed()),
+            }
+        )
+
         # We only keep graph edges that connect two control nodes.
-        if from_node in control_nodes and to_node in control_nodes:
+        if from_node in control_set and to_node in control_set:
             edges.append(
                 DirectedRoad(
                     src=from_node,
@@ -90,7 +112,7 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
             )
 
         # For step 2, collect lanes that go INTO a control node.
-        if to_node in control_nodes:
+        if to_node in control_set:
             for lane in edge.getLanes():
                 incoming_lanes[to_node].append(lane.getID())
 
@@ -108,10 +130,14 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
     graph = {
         "net": str(net_path.as_posix()),
         "control_nodes": sorted(control_nodes),
-        "edges": [asdict(e) for e in edges],
+        "non_control_nodes": sorted(non_control_nodes),
+        "edges_data": edges_data,
+        "edges_between_control_nodes": [asdict(e) for e in edges],
         "incoming_lanes": incoming_lanes,
         "num_control_nodes": len(control_nodes),
-        "num_directed_edges": len(edges),
+        "num_non_control_nodes": len(non_control_nodes),
+        "num_directed_edges": len(edges_data),
+        "num_directed_edges_between_control_nodes": len(edges),
     }
     return graph
 
@@ -126,7 +152,12 @@ def main() -> int:
 
     print("Net:", graph["net"])
     print("Control nodes (TLS junctions):", graph["num_control_nodes"])
-    print("Directed edges (between TLS junctions):", graph["num_directed_edges"])
+    print("Non-control nodes:", graph["num_non_control_nodes"])
+    print("Directed edges (all, non-internal):", graph["num_directed_edges"])
+    print(
+        "Directed edges (between TLS junctions):",
+        graph["num_directed_edges_between_control_nodes"],
+    )
 
     # Show a small preview
     cn = graph["control_nodes"]
