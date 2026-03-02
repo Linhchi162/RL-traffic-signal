@@ -1,12 +1,14 @@
-Loading net-file from 'scenarios/grid_3x3_lanes3_dynamic_dense/grid_3x3_lanes3_dynamic_dense.net.xml' ... done (33ms).
-Loading route-files incrementally from 'scenarios/grid_3x3_lanes3_dynamic_dense/grid_3x3_lanes3_dynamic_dense.rou.xml'
+Loading net-file from 'grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.net.xml' ... done (56ms).
+Loading route-files incrementally from 'grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.rou.xml'
 Loading done.
-Simulation ended at time: 0.00.
+Simulation version 1.26.0 started with time: 0.00.
+Simulation ended at time: 3600.00.
+Reason: The final simulation step has been reached.
 Performance:
- Duration: 8.84s
- Real time factor: 0
- UPS: 0.000000
+ Duration: 4.53s
+ Real time factor: 794.702
+ UPS: 71105.298013
 Vehicles:
- Inserted: 0 (Loaded: 1)
- Running: 0
+ Inserted: 2961
+ Running: 60
  Waiting: 0

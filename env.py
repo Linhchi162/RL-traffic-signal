@@ -123,6 +123,22 @@ class STMARLEnv:
     @staticmethod
     def _infer_net_from_cfg(cfg_path: Path) -> Path:
         # Our generator uses <net-file value="..."/> in run.sumo.cfg
+        cfg_path = Path(cfg_path)
+        
+        # If the path doesn't exist, try to find it in scenarios/ subdirectories
+        if not cfg_path.exists():
+            scenarios_dir = Path("scenarios")
+            if scenarios_dir.exists():
+                for scenario_path in scenarios_dir.iterdir():
+                    if scenario_path.is_dir():
+                        candidate = scenario_path / cfg_path.name
+                        if candidate.exists():
+                            cfg_path = candidate
+                            break
+        
+        if not cfg_path.exists():
+            raise SystemExit(f"Config file not found: {cfg_path}")
+        
         text = cfg_path.read_text(encoding="utf-8", errors="ignore")
         marker = "<net-file value=\""
         idx = text.find(marker)

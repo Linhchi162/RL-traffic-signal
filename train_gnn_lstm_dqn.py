@@ -17,6 +17,7 @@ https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html
 from __future__ import annotations
 
 import argparse
+import os
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -80,6 +81,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--eps-end", type=float, default=0.05)
     p.add_argument("--eps-decay", type=int, default=5000)
     p.add_argument("--hidden", type=int, default=64)
+    p.add_argument("--seq-len", type=int, default=5, help="Sequence length for LSTM (Δt)")
     return p.parse_args()
 
 
@@ -98,19 +100,34 @@ def main() -> int:
     torch.manual_seed(args.seed)
 
     class GraphLSTMDQN(nn.Module):
-        def __init__(self, in_dim: int, hidden: int, out_dim: int = 2):
+        def __init__(self, in_dim: int, hidden: int, seq_len: int, out_dim: int = 2):
             super().__init__()
-            self.gcn1 = GCNConv(in_dim, hidden)
+            self.seq_len = seq_len
+            self.gcn1 = GCNConv(hidden, hidden)
             self.gcn2 = GCNConv(hidden, hidden)
-            self.lstm = nn.LSTMCell(hidden, hidden)
+            self.lstm = nn.LSTM(in_dim, hidden, batch_first=True)
             self.head = nn.Linear(hidden, out_dim)
 
-        def forward(self, x: torch.Tensor, edge_index: torch.Tensor, h: torch.Tensor, c: torch.Tensor):
-            z = F.relu(self.gcn1(x, edge_index))
+        def forward(self, x_seq: torch.Tensor, edge_index: torch.Tensor):
+            # x_seq: [batch_size=1, seq_len, n_nodes, in_dim]
+            batch_size, seq_len, n_nodes, in_dim = x_seq.shape
+            
+            # Reshape for LSTM: [n_nodes, seq_len, in_dim] - each node processes its own temporal sequence
+            x_seq_reshaped = x_seq.squeeze(0).permute(1, 0, 2)  # [n_nodes, seq_len, in_dim]
+            
+            # LSTM processes temporal dependencies for each node independently
+            lstm_out, _ = self.lstm(x_seq_reshaped)  # [n_nodes, seq_len, hidden]
+            
+            # Take last timestep output for each node: [n_nodes, hidden]
+            node_features = lstm_out[:, -1, :]
+            
+            # GCN processes spatial dependencies
+            z = F.relu(self.gcn1(node_features, edge_index))
             z = F.relu(self.gcn2(z, edge_index))
-            h2, c2 = self.lstm(z, (h, c))
-            q = self.head(h2)
-            return q, h2, c2
+            
+            # Q-values: [n_nodes, out_dim]
+            q = self.head(z)
+            return q
 
     # Create env (re-created each episode for clean SUMO runs)
     cfg_path = Path(args.cfg)
@@ -119,13 +136,22 @@ def main() -> int:
 
     # Init networks with inferred dims
     in_dim = 4
-    policy = GraphLSTMDQN(in_dim=in_dim, hidden=args.hidden)
-    target = GraphLSTMDQN(in_dim=in_dim, hidden=args.hidden)
+    policy = GraphLSTMDQN(in_dim=in_dim, hidden=args.hidden, seq_len=args.seq_len)
+    target = GraphLSTMDQN(in_dim=in_dim, hidden=args.hidden, seq_len=args.seq_len)
     target.load_state_dict(policy.state_dict())
     target.eval()
 
     optim = torch.optim.Adam(policy.parameters(), lr=args.lr)
     buffer = ReplayBuffer(args.buffer)
+
+    # Load pre-trained model if it exists
+    model_path = "stmarl_weights.pth"
+    if os.path.exists(model_path):
+        policy.load_state_dict(torch.load(model_path))
+        target.load_state_dict(policy.state_dict())
+        print(f"✅ Đã tải thành công não AI cũ từ {model_path}!")
+    else:
+        print(f"ℹ️  Chưa có file {model_path}, bắt đầu train từ đầu.")
 
     def epsilon(step: int) -> float:
         # Linear decay
@@ -149,15 +175,26 @@ def main() -> int:
             h = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
             c = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
 
+            # History buffer for sequences
+            history = []
+
             obs = env.observation()
             x = torch.tensor(env.node_features_from_observation(obs), dtype=torch.float32)
+            history.append(x)
 
             ep_return = 0.0
             for k in range(args.max_decisions):
                 eps = epsilon(global_step)
 
+                # Use sequence if available, otherwise use current x repeated
+                if len(history) >= args.seq_len:
+                    x_seq = torch.stack(history[-args.seq_len:], dim=0).unsqueeze(0)  # [1, seq_len, n_nodes, in_dim]
+                else:
+                    # Pad with current x
+                    x_seq = torch.stack([x] * args.seq_len, dim=0).unsqueeze(0)
+
                 with torch.no_grad():
-                    q, h2, c2 = policy(x, edge_index, h, c)
+                    q = policy(x_seq, edge_index)
 
                 # Epsilon-greedy actions per node
                 if random.random() < eps:
@@ -170,6 +207,7 @@ def main() -> int:
 
                 r = torch.tensor([float(rew_map[tls]) for tls in env.control_nodes], dtype=torch.float32)
                 next_x = torch.tensor(env.node_features_from_observation(next_obs), dtype=torch.float32)
+                history.append(next_x)
 
                 buffer.push(
                     Transition(
@@ -183,8 +221,6 @@ def main() -> int:
 
                 ep_return += float(r.mean().item())
 
-                # Move recurrent state forward (for action selection only)
-                h, c = h2.detach(), c2.detach()
                 x = next_x
 
                 # Train
@@ -193,15 +229,24 @@ def main() -> int:
                     loss_accum = 0.0
 
                     for tr in batch:
-                        # Fresh recurrent state for training (simple baseline; sequence replay is a later upgrade)
-                        h0 = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
-                        c0 = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
+                        # Create sequence for current state (pad if necessary)
+                        if len(history) >= args.seq_len:
+                            x_seq = torch.stack(history[-args.seq_len:], dim=0).unsqueeze(0)
+                        else:
+                            x_seq = torch.stack([tr.x] * args.seq_len, dim=0).unsqueeze(0)
 
-                        q_pred, _h, _c = policy(tr.x, edge_index, h0, c0)
+                        q_pred = policy(x_seq, edge_index)
                         q_a = q_pred.gather(1, tr.action.view(-1, 1)).squeeze(1)
 
                         with torch.no_grad():
-                            q_next, _hn, _cn = target(tr.next_x, edge_index, h0, c0)
+                            # Create sequence for next state
+                            next_history = history[-args.seq_len:] + [tr.next_x]
+                            if len(next_history) >= args.seq_len:
+                                next_x_seq = torch.stack(next_history[-args.seq_len:], dim=0).unsqueeze(0)
+                            else:
+                                next_x_seq = torch.stack([tr.next_x] * args.seq_len, dim=0).unsqueeze(0)
+                            
+                            q_next = target(next_x_seq, edge_index)
                             q_next_max = torch.max(q_next, dim=1).values
                             y = tr.reward + args.gamma * (1.0 - tr.done) * q_next_max
 
@@ -226,6 +271,11 @@ def main() -> int:
 
         finally:
             env.close()
+
+    # Save trained model
+    torch.save(policy.state_dict(), model_path)
+    print(f"\n✅ Đã lưu thành công trọng số AI vào file {model_path}!")
+    print(f"📊 Tổng {args.episodes} episodes, {global_step} steps global.")
 
     return 0
 
