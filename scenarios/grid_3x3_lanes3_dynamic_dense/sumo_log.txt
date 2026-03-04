@@ -1,14 +1,16 @@
-Loading net-file from 'grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.net.xml' ... done (56ms).
-Loading route-files incrementally from 'grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.rou.xml'
+***Starting server on port 60321 ***
+Loading net-file from 'scenarios\grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.net.xml' ... done (48ms).
+Loading route-files incrementally from 'scenarios\grid_3x3_lanes3_dynamic_dense\grid_3x3_lanes3_dynamic_dense.rou.xml'
 Loading done.
 Simulation version 1.26.0 started with time: 0.00.
-Simulation ended at time: 3600.00.
-Reason: The final simulation step has been reached.
+Simulation ended at time: 3781.00.
+Reason: TraCI requested termination.
 Performance:
- Duration: 4.53s
- Real time factor: 794.702
- UPS: 71105.298013
+ Duration: 656.64s
+ TraCI-Duration: 18.84s
+ Real time factor: 5.75814
+ UPS: 490.862517
 Vehicles:
  Inserted: 2961
- Running: 60
+ Running: 0
  Waiting: 0
