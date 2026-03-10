@@ -1,0 +1,6 @@
+run,seed,avg_travel_time,total_trips,arrived,tripinfo_file
+1,0,109.09895305639986,2961,2961,results_stmarl_eval_refresh\tripinfos_eval_run_01.xml
+2,1,109.09895305639986,2961,2961,results_stmarl_eval_refresh\tripinfos_eval_run_02.xml
+3,2,109.09895305639986,2961,2961,results_stmarl_eval_refresh\tripinfos_eval_run_03.xml
+4,3,109.09895305639986,2961,2961,results_stmarl_eval_refresh\tripinfos_eval_run_04.xml
+5,4,109.09895305639986,2961,2961,results_stmarl_eval_refresh\tripinfos_eval_run_05.xml
