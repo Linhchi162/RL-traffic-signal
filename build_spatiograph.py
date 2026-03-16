@@ -45,12 +45,10 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _is_internal_edge(edge_id: str) -> bool:
-    # SUMO internal edges usually start with ':'
     return edge_id.startswith(":")
 
 
 def _is_internal_edge_obj(edge: Any) -> bool:
-    # Prefer the semantic flag when available.
     try:
         return edge.getFunction() == "internal"
     except Exception:
@@ -72,7 +70,6 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
 
     control_set = set(control_nodes)
 
-    # Incoming lanes per control node (useful for Step 2).
     incoming_lanes: dict[str, list[str]] = {nid: [] for nid in sorted(control_set)}
 
     edges: list[DirectedRoad] = []
@@ -86,7 +83,6 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
         from_node = edge.getFromNode().getID()
         to_node = edge.getToNode().getID()
 
-        # Step 1B: directed edges (E)
         edges_data.append(
             {
                 "edge_id": edge_id,
@@ -98,7 +94,6 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
             }
         )
 
-        # We only keep graph edges that connect two control nodes.
         if from_node in control_set and to_node in control_set:
             edges.append(
                 DirectedRoad(
@@ -111,7 +106,6 @@ def build_graph(net_path: Path, include_internal: bool = False) -> dict[str, Any
                 )
             )
 
-        # For step 2, collect lanes that go INTO a control node.
         if to_node in control_set:
             for lane in edge.getLanes():
                 incoming_lanes[to_node].append(lane.getID())
@@ -159,12 +153,10 @@ def main() -> int:
         graph["num_directed_edges_between_control_nodes"],
     )
 
-    # Show a small preview
     cn = graph["control_nodes"]
     preview_nodes = cn[: min(5, len(cn))]
     print("Preview control nodes:", preview_nodes)
 
-    # Count incoming lanes stats
     incoming_counts = [len(graph["incoming_lanes"][nid]) for nid in cn]
     if incoming_counts:
         print(

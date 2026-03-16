@@ -1,0 +1,73 @@
+algo,reward,seed,flow,phase,queue_length
+fixed,-,-,high,EW Through + Left,1.407
+fixed,-,-,high,EW Right,1.034
+fixed,-,-,high,NS Through + Left,1.401
+fixed,-,-,high,NS Right,0.975
+webster,-,-,high,EW Through + Left,0.3268
+webster,-,-,high,EW Right,0.1452
+webster,-,-,high,NS Through + Left,0.3296
+webster,-,-,high,NS Right,0.1624
+fixed,-,-,medium,EW Through + Left,0.859
+fixed,-,-,medium,EW Right,0.545
+fixed,-,-,medium,NS Through + Left,0.966
+fixed,-,-,medium,NS Right,0.604
+webster,-,-,medium,EW Through + Left,0.1668
+webster,-,-,medium,EW Right,0.0634
+webster,-,-,medium,NS Through + Left,0.1754
+webster,-,-,medium,NS Right,0.0784
+fixed,-,-,low,EW Through + Left,0.419
+fixed,-,-,low,EW Right,0.344
+fixed,-,-,low,NS Through + Left,0.437
+fixed,-,-,low,NS Right,0.252
+webster,-,-,low,EW Through + Left,0.0736
+webster,-,-,low,EW Right,0.0368
+webster,-,-,low,NS Through + Left,0.0748
+webster,-,-,low,NS Right,0.0276
+dqn,wait-clip,s123,high,EW Through + Left,1.253294289897511
+dqn,wait-clip,s123,high,EW Right,0.7232796486090776
+dqn,wait-clip,s123,high,NS Through + Left,1.0658857979502196
+dqn,wait-clip,s123,high,NS Right,0.9150805270863837
+dqn,wait-clip,s123,medium,EW Through + Left,0.7338709677419355
+dqn,wait-clip,s123,medium,EW Right,0.38306451612903225
+dqn,wait-clip,s123,medium,NS Through + Left,0.760752688172043
+dqn,wait-clip,s123,medium,NS Right,0.543010752688172
+dqn,wait-clip,s123,low,EW Through + Left,0.3908754623921085
+dqn,wait-clip,s123,low,EW Right,0.24784217016029594
+dqn,wait-clip,s123,low,NS Through + Left,0.2996300863131936
+dqn,wait-clip,s123,low,NS Right,0.21701602959309493
+dqn,wait-clip,s42,high,EW Through + Left,1.2804698972099853
+dqn,wait-clip,s42,high,EW Right,0.7577092511013216
+dqn,wait-clip,s42,high,NS Through + Left,1.091042584434655
+dqn,wait-clip,s42,high,NS Right,0.9412628487518355
+dqn,wait-clip,s42,medium,EW Through + Left,0.7021276595744681
+dqn,wait-clip,s42,medium,EW Right,0.37367021276595747
+dqn,wait-clip,s42,medium,NS Through + Left,0.776595744680851
+dqn,wait-clip,s42,medium,NS Right,0.5638297872340425
+dqn,wait-clip,s42,low,EW Through + Left,0.37761377613776137
+dqn,wait-clip,s42,low,EW Right,0.24723247232472326
+dqn,wait-clip,s42,low,NS Through + Left,0.2902829028290283
+dqn,wait-clip,s42,low,NS Right,0.22263222632226323
+dqn,wait-clip,s777,high,EW Through + Left,1.30635838150289
+dqn,wait-clip,s777,high,EW Right,0.7630057803468208
+dqn,wait-clip,s777,high,NS Through + Left,1.0708092485549132
+dqn,wait-clip,s777,high,NS Right,0.8872832369942196
+dqn,wait-clip,s777,medium,EW Through + Left,0.7255936675461742
+dqn,wait-clip,s777,medium,EW Right,0.38522427440633245
+dqn,wait-clip,s777,medium,NS Through + Left,0.7546174142480211
+dqn,wait-clip,s777,medium,NS Right,0.5554089709762533
+dqn,wait-clip,s777,low,EW Through + Left,0.37576499388004897
+dqn,wait-clip,s777,low,EW Right,0.24112607099143207
+dqn,wait-clip,s777,low,NS Through + Left,0.29865361077111385
+dqn,wait-clip,s777,low,NS Right,0.2141982864137087
+ppo,average-speed,s123,high,EW Through + Left,1.267
+ppo,average-speed,s123,high,EW Right,0.977
+ppo,average-speed,s123,high,NS Through + Left,0.326
+ppo,average-speed,s123,high,NS Right,0.191
+ppo,average-speed,s123,medium,EW Through + Left,0.821
+ppo,average-speed,s123,medium,EW Right,0.382
+ppo,average-speed,s123,medium,NS Through + Left,0.227
+ppo,average-speed,s123,medium,NS Right,0.109
+ppo,average-speed,s123,low,EW Through + Left,0.376
+ppo,average-speed,s123,low,EW Right,0.256
+ppo,average-speed,s123,low,NS Through + Left,0.124
+ppo,average-speed,s123,low,NS Right,0.043

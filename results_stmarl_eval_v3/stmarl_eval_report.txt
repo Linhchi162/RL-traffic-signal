@@ -1,8 +1,0 @@
-runs=5
-mean_att=109.0990
-std_att=0.0000
-min_att=109.0990
-max_att=109.0990
-weights=D:\UniProject\RL-traffic-signal\stmarl_weights_v3.pth
-cfg=D:\UniProject\RL-traffic-signal\scenarios\grid_3x3_lanes3_dynamic_dense\run.sumo.cfg
-summary_csv=D:\UniProject\RL-traffic-signal\results_stmarl_eval_v3\stmarl_eval_summary.csv

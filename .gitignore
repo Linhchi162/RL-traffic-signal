@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+
+# Model artifacts
+*.pth
+*.pt
+
+# SUMO runtime outputs
+scenarios/**/tripinfos*.xml
+scenarios/**/sumo_log.txt
+scenarios/**/_tmp_density/
+
+# Experiment outputs
+*.png
+results_stmarl_eval/
+
+# Local notes / extracted documents
+paper_content.txt

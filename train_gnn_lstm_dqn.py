@@ -37,11 +37,11 @@ def _require_deps() -> None:
 
 @dataclass
 class Transition:
-    x: "torch.Tensor"  # [N, F]
-    action: "torch.Tensor"  # [N]
-    reward: "torch.Tensor"  # [N]
-    next_x: "torch.Tensor"  # [N, F]
-    done: "torch.Tensor"  # scalar 0/1
+    x_seq: "torch.Tensor"       # [seq_len, N, F] — snapshot lịch sử lúc thu thập
+    action: "torch.Tensor"      # [N]
+    reward: "torch.Tensor"      # [N]
+    next_x_seq: "torch.Tensor"  # [seq_len, N, F]
+    done: "torch.Tensor"        # scalar 0/1
 
 
 class ReplayBuffer:
@@ -111,20 +111,20 @@ def main() -> int:
         def forward(self, x_seq: torch.Tensor, edge_index: torch.Tensor):
             # x_seq: [batch_size=1, seq_len, n_nodes, in_dim]
             batch_size, seq_len, n_nodes, in_dim = x_seq.shape
-            
+
             # Reshape for LSTM: [n_nodes, seq_len, in_dim] - each node processes its own temporal sequence
             x_seq_reshaped = x_seq.squeeze(0).permute(1, 0, 2)  # [n_nodes, seq_len, in_dim]
-            
+
             # LSTM processes temporal dependencies for each node independently
             lstm_out, _ = self.lstm(x_seq_reshaped)  # [n_nodes, seq_len, hidden]
-            
+
             # Take last timestep output for each node: [n_nodes, hidden]
             node_features = lstm_out[:, -1, :]
-            
+
             # GCN processes spatial dependencies
             z = F.relu(self.gcn1(node_features, edge_index))
             z = F.relu(self.gcn2(z, edge_index))
-            
+
             # Q-values: [n_nodes, out_dim]
             q = self.head(z)
             return q
@@ -149,12 +149,11 @@ def main() -> int:
     if os.path.exists(model_path):
         policy.load_state_dict(torch.load(model_path))
         target.load_state_dict(policy.state_dict())
-        print(f"✅ Đã tải thành công não AI cũ từ {model_path}!")
+        print(f"Loaded existing weights from {model_path}")
     else:
-        print(f"ℹ️  Chưa có file {model_path}, bắt đầu train từ đầu.")
+        print(f"No existing weights at {model_path}, starting from scratch.")
 
     def epsilon(step: int) -> float:
-        # Linear decay
         frac = min(1.0, step / max(1, args.eps_decay))
         return args.eps_start + frac * (args.eps_end - args.eps_start)
 
@@ -171,12 +170,8 @@ def main() -> int:
             else:
                 edge_index = torch.tensor(edge_index_list, dtype=torch.long)
 
-            # Recurrent state per node
-            h = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
-            c = torch.zeros((n_nodes, args.hidden), dtype=torch.float32)
-
             # History buffer for sequences
-            history = []
+            history: list = []
 
             obs = env.observation()
             x = torch.tensor(env.node_features_from_observation(obs), dtype=torch.float32)
@@ -186,12 +181,12 @@ def main() -> int:
             for k in range(args.max_decisions):
                 eps = epsilon(global_step)
 
-                # Use sequence if available, otherwise use current x repeated
+                # Build x_seq from history (pad with first obs if not enough)
                 if len(history) >= args.seq_len:
-                    x_seq = torch.stack(history[-args.seq_len:], dim=0).unsqueeze(0)  # [1, seq_len, n_nodes, in_dim]
+                    x_seq = torch.stack(history[-args.seq_len:], dim=0).unsqueeze(0)  # [1, seq_len, N, F]
                 else:
-                    # Pad with current x
-                    x_seq = torch.stack([x] * args.seq_len, dim=0).unsqueeze(0)
+                    pad = [history[0]] * (args.seq_len - len(history))
+                    x_seq = torch.stack(pad + history, dim=0).unsqueeze(0)
 
                 with torch.no_grad():
                     q = policy(x_seq, edge_index)
@@ -207,58 +202,61 @@ def main() -> int:
 
                 r = torch.tensor([float(rew_map[tls]) for tls in env.control_nodes], dtype=torch.float32)
                 next_x = torch.tensor(env.node_features_from_observation(next_obs), dtype=torch.float32)
-                history.append(next_x)
+
+                # Snapshot sequence at this point before history changes
+                if len(history) >= args.seq_len:
+                    cur_seq = history[-args.seq_len:]
+                else:
+                    cur_seq = [history[0]] * (args.seq_len - len(history)) + history
+                x_seq_snap = torch.stack(cur_seq, dim=0)  # [seq_len, N, F]
+
+                next_hist_tmp = history + [next_x]
+                if len(next_hist_tmp) >= args.seq_len:
+                    nxt_seq = next_hist_tmp[-args.seq_len:]
+                else:
+                    nxt_seq = [history[0]] * (args.seq_len - len(next_hist_tmp)) + next_hist_tmp
+                next_x_seq_snap = torch.stack(nxt_seq, dim=0)  # [seq_len, N, F]
 
                 buffer.push(
                     Transition(
-                        x=x.detach(),
+                        x_seq=x_seq_snap.detach(),
                         action=a.detach(),
                         reward=r.detach(),
-                        next_x=next_x.detach(),
+                        next_x_seq=next_x_seq_snap.detach(),
                         done=torch.tensor(float(done), dtype=torch.float32),
                     )
                 )
 
+                history.append(next_x)
                 ep_return += float(r.mean().item())
-
                 x = next_x
 
-                # Train
+                # Single backward pass for the entire batch
                 if global_step % args.train_every == 0 and len(buffer) >= args.batch:
                     batch = buffer.sample(args.batch)
-                    loss_accum = 0.0
 
+                    q_a_list = []
+                    y_list = []
                     for tr in batch:
-                        # Create sequence for current state (pad if necessary)
-                        if len(history) >= args.seq_len:
-                            x_seq = torch.stack(history[-args.seq_len:], dim=0).unsqueeze(0)
-                        else:
-                            x_seq = torch.stack([tr.x] * args.seq_len, dim=0).unsqueeze(0)
-
-                        q_pred = policy(x_seq, edge_index)
-                        q_a = q_pred.gather(1, tr.action.view(-1, 1)).squeeze(1)
+                        q_pred = policy(tr.x_seq.unsqueeze(0), edge_index)  # [N, 2]
+                        q_a_list.append(q_pred.gather(1, tr.action.view(-1, 1)).squeeze(1))  # [N]
 
                         with torch.no_grad():
-                            # Create sequence for next state
-                            next_history = history[-args.seq_len:] + [tr.next_x]
-                            if len(next_history) >= args.seq_len:
-                                next_x_seq = torch.stack(next_history[-args.seq_len:], dim=0).unsqueeze(0)
-                            else:
-                                next_x_seq = torch.stack([tr.next_x] * args.seq_len, dim=0).unsqueeze(0)
-                            
-                            q_next = target(next_x_seq, edge_index)
+                            q_next = target(tr.next_x_seq.unsqueeze(0), edge_index)
                             q_next_max = torch.max(q_next, dim=1).values
-                            y = tr.reward + args.gamma * (1.0 - tr.done) * q_next_max
+                            y_list.append(tr.reward + args.gamma * (1.0 - tr.done) * q_next_max)
 
-                        loss = F.smooth_l1_loss(q_a, y)
-                        optim.zero_grad()
-                        loss.backward()
-                        torch.nn.utils.clip_grad_norm_(policy.parameters(), 10.0)
-                        optim.step()
-                        loss_accum += float(loss.item())
+                    loss = F.smooth_l1_loss(
+                        torch.stack(q_a_list, dim=0),  # [B, N]
+                        torch.stack(y_list, dim=0),    # [B, N]
+                    )
+                    optim.zero_grad()
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(policy.parameters(), 10.0)
+                    optim.step()
 
                     if global_step % 50 == 0:
-                        print(f"ep={ep} step={global_step} eps={eps:.3f} loss={loss_accum/len(batch):.4f} return={ep_return:.2f}")
+                        print(f"ep={ep} step={global_step} eps={eps:.3f} loss={loss.item():.4f} return={ep_return:.2f}")
 
                 if global_step % args.target_every == 0 and global_step > 0:
                     target.load_state_dict(policy.state_dict())
@@ -274,8 +272,8 @@ def main() -> int:
 
     # Save trained model
     torch.save(policy.state_dict(), model_path)
-    print(f"\n✅ Đã lưu thành công trọng số AI vào file {model_path}!")
-    print(f"📊 Tổng {args.episodes} episodes, {global_step} steps global.")
+    print(f"\nSaved weights to {model_path}")
+    print(f"Total: {args.episodes} episodes, {global_step} global steps.")
 
     return 0
 

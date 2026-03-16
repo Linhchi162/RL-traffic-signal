@@ -54,6 +54,7 @@ class STMARLEnv:
 
         # Keep phase counts for each TLS for safe modulo.
         self._phase_counts: dict[str, int] = {}
+        self._pending_phase: dict[str, int] = {}  # tls_id -> target phase index sau yellow
 
         self._load_graph()
         self.start()
@@ -122,10 +123,8 @@ class STMARLEnv:
 
     @staticmethod
     def _infer_net_from_cfg(cfg_path: Path) -> Path:
-        # Our generator uses <net-file value="..."/> in run.sumo.cfg
         cfg_path = Path(cfg_path)
-        
-        # If the path doesn't exist, try to find it in scenarios/ subdirectories
+
         if not cfg_path.exists():
             scenarios_dir = Path("scenarios")
             if scenarios_dir.exists():
@@ -135,10 +134,10 @@ class STMARLEnv:
                         if candidate.exists():
                             cfg_path = candidate
                             break
-        
+
         if not cfg_path.exists():
             raise SystemExit(f"Config file not found: {cfg_path}")
-        
+
         text = cfg_path.read_text(encoding="utf-8", errors="ignore")
         marker = "<net-file value=\""
         idx = text.find(marker)
@@ -182,7 +181,6 @@ class STMARLEnv:
             self._started = False
 
     def observation(self) -> dict[str, Any]:
-        # Edge-level metrics
         edge_metrics: dict[str, dict[str, float]] = {}
         for e in self.edges_data:
             edge_id = e["edge_id"]
@@ -191,11 +189,9 @@ class STMARLEnv:
                 n = float(traci.edge.getLastStepVehicleNumber(edge_id))
                 speed = float(traci.edge.getLastStepMeanSpeed(edge_id))
             except Exception:
-                # Edge might not exist in the running sim for some reason; keep zeros.
                 q, n, speed = 0.0, 0.0, 0.0
             edge_metrics[edge_id] = {"q": q, "n": n, "speed": speed}
 
-        # Per-TLS phase
         phases: dict[str, int] = {}
         for tls_id in self.control_nodes:
             try:
@@ -223,8 +219,6 @@ class STMARLEnv:
 
     @staticmethod
     def _to_yellow_state(state: str) -> str:
-        # Replace any green with yellow, keep red as-is.
-        # This is a generic approximation that matches the "insert yellow" requirement.
         return "".join("y" if c in ("g", "G") else c for c in state)
 
     def _get_phase_states(self, tls_id: str) -> list[str]:
@@ -237,7 +231,7 @@ class STMARLEnv:
         except Exception:
             return []
 
-    def _switch_phase_with_yellow(self, tls_id: str) -> None:
+    def _prepare_yellow_phase(self, tls_id: str) -> None:
         phase_count = self._phase_counts.get(tls_id, 0)
         if phase_count <= 1:
             return
@@ -245,7 +239,6 @@ class STMARLEnv:
         current_phase = int(traci.trafficlight.getPhase(tls_id))
         target_phase = (current_phase + 1) % phase_count
 
-        # Try to find an explicit "yellow" phase in the existing program.
         phase_states = self._get_phase_states(tls_id)
         yellow_state = None
         try:
@@ -260,18 +253,25 @@ class STMARLEnv:
             except ValueError:
                 yellow_phase_index = None
 
-        # 1) go to yellow (either explicit yellow phase, or immediate next phase)
         intermediate_phase = yellow_phase_index if yellow_phase_index is not None else target_phase
         traci.trafficlight.setPhase(tls_id, intermediate_phase)
         traci.trafficlight.setPhaseDuration(tls_id, float(self.cfg.yellow_s))
-        for _ in range(int(self.cfg.yellow_s)):
-            traci.simulationStep()
 
-        # 2) then go to target green phase (if intermediate already equals target, advance one more)
         final_phase = target_phase
         if intermediate_phase == target_phase:
             final_phase = (target_phase + 1) % phase_count
-        traci.trafficlight.setPhase(tls_id, final_phase)
+        self._pending_phase[tls_id] = final_phase
+
+    def _complete_phase_switch(self, tls_id: str) -> None:
+        final_phase = self._pending_phase.pop(tls_id, None)
+        if final_phase is not None:
+            traci.trafficlight.setPhase(tls_id, final_phase)
+
+    def _switch_phase_with_yellow(self, tls_id: str) -> None:
+        self._prepare_yellow_phase(tls_id)
+        for _ in range(int(self.cfg.yellow_s)):
+            traci.simulationStep()
+        self._complete_phase_switch(tls_id)
 
     def step(self, actions: dict[str, int] | int) -> tuple[dict[str, Any], dict[str, float], bool, dict[str, Any]]:
         """Advance the simulation by one decision.
@@ -287,13 +287,21 @@ class STMARLEnv:
         else:
             act_map = {tls: int(actions.get(tls, 0)) for tls in self.control_nodes}
 
-        # Apply actions
-        for tls_id, act in act_map.items():
-            if act == 1:
-                self._switch_phase_with_yellow(tls_id)
+        # Set yellow for all switching TLS simultaneously (no sim steps yet)
+        switching = [tls_id for tls_id, act in act_map.items() if act == 1]
+        for tls_id in switching:
+            self._prepare_yellow_phase(tls_id)
 
-        # Hold action for at least decision_interval_s seconds.
-        for _ in range(int(self.cfg.decision_interval_s)):
+        # Run yellow duration once (uniform for all TLS)
+        if switching:
+            for _ in range(int(self.cfg.yellow_s)):
+                traci.simulationStep()
+            for tls_id in switching:
+                self._complete_phase_switch(tls_id)
+
+        # Run remaining decision interval (total always = decision_interval_s)
+        yellow_used = int(self.cfg.yellow_s) if switching else 0
+        for _ in range(max(0, int(self.cfg.decision_interval_s) - yellow_used)):
             traci.simulationStep()
 
         obs = self.observation()
@@ -323,7 +331,6 @@ def _resolve_cfg_path(cfg_arg: str) -> Path:
     if cfg_path.exists():
         return cfg_path
 
-    # If user passed only a filename (common: run.sumo.cfg), try to locate it under scenarios/.
     if cfg_path.parent == Path("."):
         repo_root = Path(__file__).resolve().parent
         scenarios_dir = repo_root / "scenarios"
@@ -366,13 +373,10 @@ def main() -> int:
     try:
         print("TLS agents:", len(env.control_nodes), env.control_nodes[:5])
         for k in range(args.decisions):
-            # Random hard-coded actions (0/1)
             actions = {tls: random.randint(0, 1) for tls in env.control_nodes}
             obs, rew, done, info = env.step(actions)
 
-            # Print a compact snapshot
             t = obs["t"]
-            # show first tls
             tls0 = env.control_nodes[0] if env.control_nodes else "<none>"
             phase0 = obs["phaseID"].get(tls0, -1)
             r0 = rew.get(tls0, 0.0)
