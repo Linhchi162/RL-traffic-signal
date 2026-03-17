@@ -543,8 +543,13 @@ def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, 
                 results.append((algo, reward, seed, str(ppo_path), obs_mode, train_scope))
         elif dqn_path.exists():
             parts = name.split("_")
-            seed = parts[-1]
-            results.append(("dqn", "wait-clip", seed, str(dqn_path), "resco", train_scope))
+            algo = parts[0]  # "dqn" hoac "ddqn"
+            seed = parts[-1]  # "s42"
+            # Suy luan reward tu cac phan giua (bo scope keywords)
+            middle = parts[1:-1]
+            middle = [p for p in middle if p not in ("single", "multi", "resco")]
+            reward = "-".join(middle) if middle else "wait-clip"
+            results.append((algo, reward, seed, str(dqn_path), "resco", train_scope))
 
     return results
 

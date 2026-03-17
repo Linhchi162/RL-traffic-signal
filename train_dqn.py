@@ -1,15 +1,14 @@
 """
-train_dqn.py — Huan luyen RESCO-DQN dieu khien den tin hieu
+train_dqn.py — Huan luyen DQN / DDQN dieu khien den tin hieu
 
-Trien khai DQN theo dac ta cua RESCO benchmark trong bai bao RLTSCQ:
-  - State space: vector phang cua cac dac trung tung lan:
-      [active_phase, vehicle_count, total_wait, queue_length, speed_sum]
-  - Reward: clip(-total_wait / alpha, Rmin, Rmax)  (Eq. 19)
-  - Moi nut giao: 1 DQN doc lap (khong parameter sharing)
-  - Action: chon pha xanh tiep theo (khac voi PPO chon thoi gian xanh)
+  - State space: RESCO per-lane features (active_phase, veh_count, total_wait, queue, speed_sum)
+  - Reward: wait-clip | queue | pressure
+  - Algo: dqn (vanilla) | ddqn (Double DQN)
+  - Moi nut giao: 1 agent doc lap (khong parameter sharing)
+  - Action: chon pha xanh tiep theo
 
 Su dung:
-    python train_dqn.py --save_dir ./out_dqn_s42 --mode multi --seed 42 --total_steps 200000
+    python train_dqn.py --save_dir ./out --algo ddqn --reward_type wait-clip --mode multi --seed 42
 """
 
 import argparse
@@ -25,6 +24,8 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 import numpy as np
+import torch as th
+import torch.nn.functional as F
 import gymnasium as gym
 from gymnasium import spaces
 from stable_baselines3 import DQN
@@ -50,6 +51,46 @@ REWARD_MIN   = -5.0    # Rmin
 REWARD_MAX   = 0.0     # Rmax
 
 USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
+
+QUEUE_NORM = 30.0   # xe toi da gia dinh moi nut giao de chuan hoa queue reward
+
+
+# ---------------------------------------------------------------------------
+# Double DQN
+# ---------------------------------------------------------------------------
+
+class DoubleDQN(DQN):
+    """Double DQN: dung online network de CHON action, target network de DANH GIA."""
+
+    def train(self, gradient_steps: int, batch_size: int = 100) -> None:
+        self.policy.set_training_mode(True)
+        self._update_learning_rate(self.policy.optimizer)
+
+        losses = []
+        for _ in range(gradient_steps):
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            discounts = replay_data.discounts if replay_data.discounts is not None else self.gamma
+
+            with th.no_grad():
+                # Double DQN: online net chon action, target net danh gia
+                best_actions = self.q_net(replay_data.next_observations).argmax(dim=1, keepdim=True)
+                next_q_values = self.q_net_target(replay_data.next_observations).gather(1, best_actions)
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * discounts * next_q_values
+
+            current_q_values = self.q_net(replay_data.observations)
+            current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
+
+            loss = F.smooth_l1_loss(current_q_values, target_q_values)
+            losses.append(loss.item())
+
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            self.policy.optimizer.step()
+
+        self._n_updates += gradient_steps
+        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        self.logger.record("train/loss", np.mean(losses))
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +216,42 @@ def resco_reward(ts_id: str, sumo_conn) -> float:
     return float(max(REWARD_MIN, min(REWARD_MAX, raw)))
 
 
+def queue_reward(ts_id: str, sumo_conn) -> float:
+    """Phan thuong dua tren tong xe dung (hang cho), clip [-5, 0]."""
+    try:
+        lanes = list(dict.fromkeys(sumo_conn.trafficlight.getControlledLanes(ts_id)))
+        total_halting = sum(sumo_conn.lane.getLastStepHaltingNumber(l) for l in lanes)
+    except Exception:
+        total_halting = 0
+    return float(max(REWARD_MIN, min(REWARD_MAX, -total_halting / QUEUE_NORM)))
+
+
+def pressure_reward(ts_id: str, sumo_conn) -> float:
+    """Phan thuong ap luc: clip(incoming_halting - outgoing_halting, -5, 5)."""
+    try:
+        links = sumo_conn.trafficlight.getControlledLinks(ts_id)
+        incoming, outgoing = set(), set()
+        for link in links:
+            if isinstance(link, (list, tuple)) and len(link) >= 1:
+                inner = link[0]
+                if isinstance(inner, (list, tuple)) and len(inner) >= 2:
+                    incoming.add(inner[0])
+                    outgoing.add(inner[1])
+        in_q  = sum(sumo_conn.lane.getLastStepHaltingNumber(l) for l in incoming)
+        out_q = sum(sumo_conn.lane.getLastStepHaltingNumber(l) for l in outgoing)
+        pressure = (in_q - out_q) / max(QUEUE_NORM, 1.0)
+    except Exception:
+        pressure = 0.0
+    return float(max(-5.0, min(5.0, -pressure)))
+
+
+REWARD_FN_MAP = {
+    "wait-clip": resco_reward,
+    "queue":     queue_reward,
+    "pressure":  pressure_reward,
+}
+
+
 # ---------------------------------------------------------------------------
 # RESCO DQN Environment (Single Intersection)
 # ---------------------------------------------------------------------------
@@ -201,6 +278,7 @@ class RescoDQNEnv(gym.Env):
         amber_sec: int = 5,
         sumo_seed: int = 42,
         use_gui: bool = False,
+        reward_type: str = "wait-clip",
     ):
         super().__init__()
         self._net = net_file
@@ -211,6 +289,7 @@ class RescoDQNEnv(gym.Env):
         self._amber_sec = amber_sec
         self._sumo_seed = sumo_seed
         self._use_gui = use_gui
+        self._reward_fn = REWARD_FN_MAP.get(reward_type, resco_reward)
         self._label = f"dqn_{RescoDQNEnv._conn_counter}"
         RescoDQNEnv._conn_counter += 1
         self.sumo = None
@@ -311,7 +390,7 @@ class RescoDQNEnv(gym.Env):
             self._sim_time += 1
 
         obs = self._obs_builder()
-        reward = resco_reward(self._ts_id, self.sumo)
+        reward = self._reward_fn(self._ts_id, self.sumo)
         truncated = self._sim_time >= self._sim_duration
         return obs, reward, False, truncated, {}
 
@@ -400,10 +479,15 @@ class MultiDQNWrapper(gym.Env):
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Huan luyen RESCO-DQN dieu khien den tin hieu",
+        description="Huan luyen DQN/DDQN dieu khien den tin hieu",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument("--save_dir", required=True)
+    p.add_argument("--algo", default="dqn", choices=["dqn", "ddqn"],
+                   help="Thuat toan: dqn (vanilla) | ddqn (Double DQN)")
+    p.add_argument("--reward_type", default="wait-clip",
+                   choices=["wait-clip", "queue", "pressure"],
+                   help="Ham phan thuong: wait-clip | queue | pressure")
     p.add_argument("--mode", default="multi", choices=["single", "multi"])
     p.add_argument("--total_steps", type=int, default=200_000)
     p.add_argument("--seed", type=int, default=42)
@@ -424,36 +508,30 @@ def main():
     net_file   = str(MULTI_NET   if is_multi else SINGLE_NET)
     route_file = str(MULTI_ROUTE if is_multi else SINGLE_ROUTE)
 
+    AlgoClass = DoubleDQN if args.algo == "ddqn" else DQN
+    algo_label = args.algo.upper()
+
     print("=" * 55)
-    print(f"  Huan luyen RESCO-DQN | {'4 nut' if is_multi else '1 nut'}")
-    print(f"  Steps : {args.total_steps:,} | Seed: {args.seed}")
-    print(f"  Net   : {Path(net_file).name}")
+    print(f"  Huan luyen {algo_label} | {'4 nut' if is_multi else '1 nut'}")
+    print(f"  Reward  : {args.reward_type}")
+    print(f"  Steps   : {args.total_steps:,} | Seed: {args.seed}")
+    print(f"  Net     : {Path(net_file).name}")
     print("=" * 55)
 
     # Khoi tao moi truong
+    env_kwargs = dict(
+        net_file=net_file,
+        route_file=route_file,
+        sim_duration=args.total_steps + 5_000,
+        sumo_seed=args.seed,
+        use_gui=args.gui,
+        reward_type=args.reward_type,
+    )
     if is_multi:
-        # 4 DQN rieng le cho 4 nut giao
-        envs = [
-            RescoDQNEnv(
-                net_file=net_file,
-                route_file=route_file,
-                ts_index=i,
-                sim_duration=args.total_steps + 5_000,
-                sumo_seed=args.seed,
-                use_gui=args.gui,
-            )
-            for i in range(4)
-        ]
+        envs = [RescoDQNEnv(ts_index=i, **env_kwargs) for i in range(4)]
         train_env = MultiDQNWrapper(envs)
     else:
-        train_env = RescoDQNEnv(
-            net_file=net_file,
-            route_file=route_file,
-            ts_index=0,
-            sim_duration=args.total_steps + 5_000,
-            sumo_seed=args.seed,
-            use_gui=args.gui,
-        )
+        train_env = RescoDQNEnv(ts_index=0, **env_kwargs)
 
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
     checkpoint_cb = CheckpointCallback(
@@ -462,7 +540,7 @@ def main():
         name_prefix="dqn_ckpt",
     )
 
-    agent = DQN(
+    agent = AlgoClass(
         policy="MlpPolicy",
         env=train_env,
         learning_rate=1e-4,

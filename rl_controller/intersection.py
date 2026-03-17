@@ -408,6 +408,17 @@ class SignalController:
         """Phần thưởng áp lực (xe ra - xe vào)."""
         return self.get_intersection_pressure()
 
+    def _wait_clip_reward(self) -> float:
+        """RESCO wait-clip: clip(-total_wait/100, -5, 0)."""
+        lanes = list(dict.fromkeys(
+            self.sumo.trafficlight.getControlledLanes(self.node_id)
+        ))
+        total_wait = 0.0
+        for lane in lanes:
+            for v in self.sumo.lane.getLastStepVehicleIDs(lane):
+                total_wait += self.sumo.vehicle.getWaitingTime(v)
+        return float(max(-5.0, min(0.0, -total_wait / 100.0)))
+
     # ------------------------------------------------------------------
     # Truy vấn dữ liệu TraCI
     # ------------------------------------------------------------------
@@ -504,4 +515,5 @@ class SignalController:
         "diff-waiting-time": _diff_wait_reward,
         "average-speed": _speed_reward,
         "pressure": _pressure_reward,
+        "wait-clip": _wait_clip_reward,
     }

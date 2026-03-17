@@ -301,8 +301,8 @@ def parse_args():
     p.add_argument("--mode", default="single", choices=["single", "multi"],
                    help="single=1 nút giao (RLTSCQ) | multi=4 nút giao (2x2 grid)")
     p.add_argument("--reward_type", default="queue",
-                   choices=["queue", "diff-waiting-time", "average-speed", "pressure"],
-                   help="Ham phan thuong: queue | diff-waiting-time | pressure | average-speed")
+                   choices=["queue", "diff-waiting-time", "average-speed", "pressure", "wait-clip"],
+                   help="Ham phan thuong: queue | diff-waiting-time | pressure | average-speed | wait-clip")
     p.add_argument("--total_steps", type=int, default=100_000,
                    help="Tổng số bước huấn luyện")
     p.add_argument("--save_freq", type=int, default=10_000,
@@ -413,25 +413,49 @@ def main():
     )
 
     lr = args.lr if args.lr is not None else (3e-4 if args.mode == "single" else 3e-6)
-    agent = PPO(
-        policy="MlpPolicy",
-        env=train_env,
-        learning_rate=lr,
-        n_steps=200,
-        batch_size=64,        # khớp paper Table II; SB3 xử lý phần dư nhỏ tự động
-        n_epochs=10,
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_range=0.2,
-        verbose=1,
-        seed=args.seed,
-    )
 
-    print(f"\nBắt đầu huấn luyện {args.total_steps:,} bước...")
+    # Resume từ checkpoint mới nhất nếu có
+    ckpt_files = sorted(Path(checkpoint_dir).glob("ppo_ckpt_*_steps.zip")) if Path(checkpoint_dir).exists() else []
+    steps_done = 0
+    if ckpt_files:
+        latest_ckpt = ckpt_files[-1]
+        try:
+            steps_done = int(latest_ckpt.stem.split("_steps")[0].split("_")[-1])
+        except ValueError:
+            steps_done = 0
+    remaining = args.total_steps - steps_done
+
+    if ckpt_files and steps_done > 0 and remaining > 0:
+        print(f"\nResume tu checkpoint: {latest_ckpt.name} (da chay {steps_done:,} buoc, con {remaining:,} buoc)")
+        agent = PPO.load(str(latest_ckpt), env=train_env, learning_rate=lr, seed=args.seed)
+    else:
+        if steps_done >= args.total_steps:
+            print(f"\nDa du {args.total_steps:,} buoc, luu model va thoat.")
+            agent = PPO.load(str(ckpt_files[-1]), env=train_env, learning_rate=lr, seed=args.seed)
+            agent.save(final_model)
+            train_env.close()
+            print("Hoan tat.")
+            return
+        agent = PPO(
+            policy="MlpPolicy",
+            env=train_env,
+            learning_rate=lr,
+            n_steps=200,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            verbose=1,
+            seed=args.seed,
+        )
+
+    print(f"\nBat dau huan luyen {remaining:,} buoc (tong {args.total_steps:,})...")
     agent.learn(
-        total_timesteps=args.total_steps,
+        total_timesteps=remaining,
         callback=[metrics_cb, checkpoint_cb],
         log_interval=1,
+        reset_num_timesteps=(steps_done == 0),
     )
 
     print(f"\nHuấn luyện xong. Lưu model: {final_model}")
