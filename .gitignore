@@ -21,3 +21,23 @@ results_stmarl_eval/
 
 # Local notes / extracted documents
 paper_content.txt
+project_context.txt
+
+# Trained model artifacts (too large for git)
+experiments/
+experiments_cloud/
+
+# Runtime temp / timing dirs
+tmp_timing_*/
+
+# Log and result output dirs
+logs_parallel/
+logs_vast/
+results_single/
+results_multi_cloud/
+
+# Windows crash dump
+bash.exe.stackdump
+
+# Claude Code internal
+.claude/

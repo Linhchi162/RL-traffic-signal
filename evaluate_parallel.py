@@ -5,7 +5,7 @@ Moi process chay 1 subset models, ket qua ghi vao thu muc tam,
 sau do merge thanh 1 CSV duy nhat.
 
 Su dung:
-    python evaluate_parallel.py --jobs 4 --scope multi --save_dir ./results_multi
+    python evaluate_parallel.py --jobs 4 --save_dir ./results
 """
 
 import argparse
@@ -24,8 +24,7 @@ import numpy as np
 def _rebuild_summary(all_rows: list, save_dir: Path):
     grouped = defaultdict(list)
     for row in all_rows:
-        key = (row["algo"], row["reward"], row.get("obs_mode", "-"),
-               row.get("scope", "multi"), row["flow"])
+        key = (row["algo"], row["reward"], row.get("obs_mode", "-"))
         grouped[key].append(row)
 
     def _f(rows, col, default=0.0):
@@ -38,7 +37,7 @@ def _rebuild_summary(all_rows: list, save_dir: Path):
         return vals
 
     summary_rows = []
-    for (algo, reward, obs_mode, scope, flow), rows in sorted(grouped.items()):
+    for (algo, reward, obs_mode), rows in sorted(grouped.items()):
         queues = _f(rows, "mean_queue")
         waits  = _f(rows, "mean_wait")
         wpv    = _f(rows, "mean_wait_per_veh")
@@ -49,7 +48,9 @@ def _rebuild_summary(all_rows: list, save_dir: Path):
         def _stat(vals, dp):
             if not vals:
                 return 0, 0, 0
-            return round(float(np.mean(vals)), dp), round(float(np.std(vals)), dp), round(float(np.median(vals)), dp)
+            return (round(float(np.mean(vals)), dp),
+                    round(float(np.std(vals)),  dp),
+                    round(float(np.median(vals)), dp))
 
         mq, sq, medq = _stat(queues, 3)
         mw, sw, _    = _stat(waits,  2)
@@ -60,7 +61,7 @@ def _rebuild_summary(all_rows: list, save_dir: Path):
 
         summary_rows.append({
             "algo": algo, "reward": reward, "obs_mode": obs_mode,
-            "scope": scope, "flow": flow, "n_runs": len(rows),
+            "n_runs": len(rows),
             "mean_queue": mq, "std_queue": sq, "median_queue": medq,
             "mean_wait": mw, "std_wait": sw,
             "mean_wait_per_veh": mwpv,
@@ -70,7 +71,7 @@ def _rebuild_summary(all_rows: list, save_dir: Path):
         })
 
     sum_fields = [
-        "algo", "reward", "obs_mode", "scope", "flow", "n_runs",
+        "algo", "reward", "obs_mode", "n_runs",
         "mean_queue", "std_queue", "median_queue",
         "mean_wait", "std_wait", "mean_wait_per_veh",
         "mean_speed", "std_speed",
@@ -88,22 +89,19 @@ def main():
     ap = argparse.ArgumentParser(
         description="Parallel evaluate — chay nhieu process cung luc"
     )
-    ap.add_argument("--jobs",       type=int, default=4,
+    ap.add_argument("--jobs",        type=int, default=4,
                     help="So process song song (khuyen nghi: so vCPU / 2)")
-    ap.add_argument("--scope",      default="multi", choices=["single", "multi"])
-    ap.add_argument("--save_dir",   default="./results_multi")
-    ap.add_argument("--models_dir", default="./experiments")
-    ap.add_argument("--flows",      nargs="+", default=["high", "medium", "low"])
-    ap.add_argument("--eval_duration", type=int, default=3000,
-                    help="Do dai mo phong (giay) — mac dinh 3000 de nhanh hon")
-    ap.add_argument("--skip_ae",    action="store_true", default=True)
+    ap.add_argument("--save_dir",    default="./results")
+    ap.add_argument("--models_dir",  default="./experiments")
+    ap.add_argument("--eval_duration", type=int, default=7_200,
+                    help="Do dai mo phong (giay)")
+    ap.add_argument("--skip_ae",     action="store_true", default=True)
     args = ap.parse_args()
 
     save_dir   = Path(args.save_dir)
     models_dir = Path(args.models_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    # Lay danh sach models tu evaluate_all.py
     sys.path.insert(0, str(Path(__file__).parent))
     from evaluate_all import discover_models
     models = discover_models(models_dir, skip_ae=args.skip_ae)
@@ -114,17 +112,14 @@ def main():
     model_names = [Path(m[3]).parent.name for m in models]
     n_jobs = min(args.jobs, len(model_names))
 
-    # Chia models thanh n_jobs nhom
     chunks = [model_names[i::n_jobs] for i in range(n_jobs)]
 
     print(f"Eval {len(model_names)} models | {n_jobs} jobs | eval_duration={args.eval_duration}s")
-    print(f"Scope: {args.scope} | Flows: {args.flows}")
     print("=" * 55)
 
     temp_dirs = [Path(tempfile.mkdtemp(prefix="eval_tmp_")) for _ in range(n_jobs)]
-    procs = []
-
-    python = sys.executable
+    procs     = []
+    python    = sys.executable
 
     for i, (chunk, tmp_dir) in enumerate(zip(chunks, temp_dirs)):
         if not chunk:
@@ -132,20 +127,14 @@ def main():
 
         cmd = [
             python, "evaluate_all.py",
-            "--scope",      args.scope,
             "--save_dir",   str(tmp_dir),
             "--models_dir", str(models_dir),
             "--only",       ",".join(chunk),
             "--skip_ae",
         ]
-        # Chi job 0 chay baselines (fixed + webster)
         if i > 0:
             cmd += ["--skip_fixed", "--skip_webster"]
 
-        if args.flows != ["high", "medium", "low"]:
-            cmd += ["--flows"] + args.flows
-
-        # Ghi de EVAL_DURATION qua env var
         env = os.environ.copy()
         env["EVAL_DURATION_OVERRIDE"] = str(args.eval_duration)
 
@@ -158,7 +147,6 @@ def main():
 
     print("\nDang chay... (theo doi: tail -f eval_job0.log)")
 
-    # Cho tat ca process hoan thanh
     for proc, log_file, tmp_dir, idx, n_m in procs:
         proc.wait()
         log_file.close()
@@ -167,7 +155,6 @@ def main():
 
     print("\nMerge ket qua...")
 
-    # Merge all_results.csv
     all_rows = []
     ts_rows  = []
     seen_baselines = set()
@@ -179,9 +166,8 @@ def main():
         if all_csv.exists():
             with open(all_csv, newline="", encoding="utf-8") as f:
                 for row in csv.DictReader(f):
-                    # Tranh trung baseline (fixed/webster) tu nhieu job
                     if row["algo"] in ("fixed", "webster"):
-                        bkey = (row["algo"], row.get("flow",""), row.get("scope",""))
+                        bkey = (row["algo"],)
                         if bkey in seen_baselines:
                             continue
                         seen_baselines.add(bkey)
@@ -191,7 +177,6 @@ def main():
             with open(ts_csv, newline="", encoding="utf-8") as f:
                 ts_rows.extend(list(csv.DictReader(f)))
 
-    # Ghi merged CSVs
     if all_rows:
         fields = list(all_rows[0].keys())
         with open(save_dir / "all_results.csv", "w", newline="", encoding="utf-8") as f:
@@ -208,11 +193,9 @@ def main():
             w.writerows(ts_rows)
         print(f"  timeseries_results.csv: {len(ts_rows)} rows")
 
-    # Rebuild summary
     if all_rows:
         _rebuild_summary(all_rows, save_dir)
 
-    # Xoa thu muc tam
     for _, _, tmp_dir, _, _ in procs:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -220,7 +203,7 @@ def main():
     print(f"  HOAN TAT — {len(all_rows)} records trong {save_dir}")
     print(f"{'='*55}")
     print(f"\nBuoc tiep theo:")
-    print(f"  python plot_multi_figures.py --results_dir {save_dir} --scope {args.scope} --all")
+    print(f"  python plot_results.py --results_dir {save_dir}")
 
 
 if __name__ == "__main__":

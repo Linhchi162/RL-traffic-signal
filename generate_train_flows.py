@@ -117,23 +117,21 @@ SCENARIO_DEMAND = {
 }
 
 # Ti le re theo khao sat giao thong thuc te Viet Nam (TCCS 24:2018)
-# straight + right lay truoc, left = phan con lai (tranh am so)
+# Sample doc lap theo tung loai, sau do normalize de tong = 1.
 TURN_RATIOS = {
-    "straight": (0.80, 0.90),   # Di thang: 80-90%
+    "straight": (0.80, 0.90),   # Di thang: 80-90% (khop khao sat thuc te)
     "right":    (0.05, 0.12),   # Re phai:  5-12%
-    # left = 1 - straight - right, dam bao >= LEFT_MIN
+    "left":     (0.05, 0.08),   # Re trai:  5-8%  (dong gay ket xe chinh)
 }
-LEFT_MIN = 0.03   # toi thieu 3% re trai
 
 
 def sample_approach_demands(rng: random.Random, total_approach: float):
     """Tra ve (straight, right, left) PCU/h tu tong luu luong 1 approach."""
-    s_ratio = rng.uniform(*TURN_RATIOS["straight"])
-    # Clamp right sao cho left >= LEFT_MIN
-    r_max = min(TURN_RATIOS["right"][1], 1.0 - s_ratio - LEFT_MIN)
-    r_min = min(TURN_RATIOS["right"][0], r_max)
-    r_ratio = rng.uniform(r_min, r_max)
-    l_ratio = 1.0 - s_ratio - r_ratio          # luon >= LEFT_MIN
+    s = rng.uniform(*TURN_RATIOS["straight"])
+    r = rng.uniform(*TURN_RATIOS["right"])
+    l = rng.uniform(*TURN_RATIOS["left"])
+    total = s + r + l
+    s_ratio, r_ratio, l_ratio = s / total, r / total, l / total
 
     noise = lambda x: max(0.0, x * rng.uniform(0.92, 1.08))
     return (noise(total_approach * s_ratio),

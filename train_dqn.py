@@ -1,21 +1,19 @@
 """
-train_dqn.py — Huan luyen DQN / DDQN dieu khien den tin hieu
+train_dqn.py — Huan luyen DQN / DDQN dieu khien den tin hieu (1 nut giao)
 
   - State space: RESCO per-lane features (active_phase, veh_count, total_wait, queue, speed_sum)
   - Reward: wait-clip | queue | pressure
   - Algo: dqn (vanilla) | ddqn (Double DQN)
-  - Moi nut giao: 1 agent doc lap (khong parameter sharing)
-  - Action: chon pha xanh tiep theo
 
 Su dung:
-    python train_dqn.py --save_dir ./out --algo ddqn --reward_type wait-clip --mode multi --seed 42
+    python train_dqn.py --save_dir ./out --algo ddqn --reward_type wait-clip --seed 42
 """
 
 import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 # Fix encoding Windows
 if sys.platform == "win32":
@@ -44,23 +42,20 @@ _RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
 SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
 SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"   # fallback neu chua co generated
 
-# Generated flows (TCCS 24:2018, da dang NS/WE): chon theo seed
 _GENERATED_FLOWS = {
     42:  _HERE / "generated_flows" / "train_s0.xml",
     123: _HERE / "generated_flows" / "train_s1.xml",
     777: _HERE / "generated_flows" / "train_s2.xml",
 }
-MULTI_NET    = _HERE / "sumo_nets" / "grid2x2.net.xml"
-MULTI_ROUTE  = _HERE / "sumo_nets" / "grid2x2_train.rou.xml"
 
 # RESCO reward clipping parameters (Eq. 19)
-REWARD_ALPHA = 100.0   # normalization factor
-REWARD_MIN   = -5.0    # Rmin
-REWARD_MAX   = 0.0     # Rmax
+REWARD_ALPHA = 300.0
+REWARD_MIN   = -5.0
+REWARD_MAX   = 0.0
 
 USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
-QUEUE_NORM = 30.0   # xe toi da gia dinh moi nut giao de chuan hoa queue reward
+QUEUE_NORM = 30.0
 
 
 # ---------------------------------------------------------------------------
@@ -80,9 +75,8 @@ class DoubleDQN(DQN):
             discounts = replay_data.discounts if replay_data.discounts is not None else self.gamma
 
             with th.no_grad():
-                # Double DQN: online net chon action, target net danh gia
-                best_actions = self.q_net(replay_data.next_observations).argmax(dim=1, keepdim=True)
-                next_q_values = self.q_net_target(replay_data.next_observations).gather(1, best_actions)
+                best_actions   = self.q_net(replay_data.next_observations).argmax(dim=1, keepdim=True)
+                next_q_values  = self.q_net_target(replay_data.next_observations).gather(1, best_actions)
                 target_q_values = replay_data.rewards + (1 - replay_data.dones) * discounts * next_q_values
 
             current_q_values = self.q_net(replay_data.observations)
@@ -107,22 +101,15 @@ class DoubleDQN(DQN):
 
 class RescoObservation:
     """
-    Xay dung vector quan sat theo dac ta RESCO:
+    Vector quan sat theo dac ta RESCO:
     Voi moi lane: [active_phase, vehicle_count, total_wait, queue_length, speed_sum]
-    Ket qua flatten thanh 1 vector phang.
-
-    Theo bai bao: "state space defined as a matrix of per-lane features
-    including an active phase indicator, approaching vehicle count,
-    total wait time, queue length, and the sum of vehicle speeds."
     """
 
-    N_FEATURES_PER_LANE = 5  # active_phase, veh_count, total_wait, queue, speed_sum
+    N_FEATURES_PER_LANE = 5
 
     def __init__(self, ts_id: str, sumo_conn, n_lanes: Optional[int] = None):
         self.ts_id = ts_id
-        self.sumo = sumo_conn
-
-        # Lay danh sach lanes
+        self.sumo  = sumo_conn
         self.lanes = list(dict.fromkeys(
             self.sumo.trafficlight.getControlledLanes(self.ts_id)
         ))
@@ -133,24 +120,15 @@ class RescoObservation:
         return self.n_lanes * self.N_FEATURES_PER_LANE
 
     def observation_space(self) -> spaces.Box:
-        return spaces.Box(
-            low=-np.inf,
-            high=np.inf,
-            shape=(self.obs_dim,),
-            dtype=np.float32,
-        )
+        return spaces.Box(low=-np.inf, high=np.inf,
+                          shape=(self.obs_dim,), dtype=np.float32)
 
     def __call__(self) -> np.ndarray:
-        """Tinh toan va tra ve vector quan sat hien tai."""
         try:
             cur_phase = self.sumo.trafficlight.getPhase(self.ts_id)
             logics = self.sumo.trafficlight.getAllProgramLogics(self.ts_id)
-            if logics:
-                state_str = logics[0].phases[cur_phase].state if cur_phase < len(logics[0].phases) else ""
-            else:
-                state_str = ""
+            state_str = logics[0].phases[cur_phase].state if logics and cur_phase < len(logics[0].phases) else ""
 
-            # Phat hien lane duoc phuc vu trong pha hien tai
             active_lanes = set()
             links = self.sumo.trafficlight.getControlledLinks(self.ts_id)
             for link in links:
@@ -159,8 +137,7 @@ class RescoObservation:
                 inner = link[0]
                 if not (isinstance(inner, (list, tuple)) and len(inner) >= 1):
                     continue
-                in_lane = inner[0]
-                link_pos = link[1]
+                in_lane, link_pos = inner[0], link[1]
                 if link_pos < len(state_str) and state_str[link_pos].upper() == "G":
                     active_lanes.add(in_lane)
         except Exception:
@@ -169,23 +146,16 @@ class RescoObservation:
         feats = []
         for lane in self.lanes:
             try:
-                vehs = self.sumo.lane.getLastStepVehicleIDs(lane)
-                veh_count = len(vehs)
-                queue = self.sumo.lane.getLastStepHaltingNumber(lane)
-                total_wait = sum(
-                    self.sumo.vehicle.getWaitingTime(v) for v in vehs
-                )
-                speed_sum = sum(
-                    self.sumo.vehicle.getSpeed(v) for v in vehs
-                )
-                active = 1.0 if lane in active_lanes else 0.0
+                vehs       = self.sumo.lane.getLastStepVehicleIDs(lane)
+                veh_count  = len(vehs)
+                queue      = self.sumo.lane.getLastStepHaltingNumber(lane)
+                total_wait = sum(self.sumo.vehicle.getWaitingTime(v) for v in vehs)
+                speed_sum  = sum(self.sumo.vehicle.getSpeed(v) for v in vehs)
+                active     = 1.0 if lane in active_lanes else 0.0
             except Exception:
-                veh_count = 0
-                queue = 0
-                total_wait = 0.0
-                speed_sum = 0.0
+                veh_count = queue = 0
+                total_wait = speed_sum = 0.0
                 active = 0.0
-
             feats.extend([active, float(veh_count), total_wait / 100.0,
                           float(queue), speed_sum / 10.0])
 
@@ -193,39 +163,23 @@ class RescoObservation:
 
 
 # ---------------------------------------------------------------------------
-# RESCO Reward Function
+# Reward Functions
 # ---------------------------------------------------------------------------
 
 def resco_reward(ts_id: str, sumo_conn) -> float:
-    """
-    Tinh phan thuong RESCO theo Eq. 19:
-        Rt = clip(-sum(wait_l) / alpha, Rmin, Rmax)
-
-    Args:
-        ts_id:     ID den tin hieu.
-        sumo_conn: Ket noi TraCI.
-
-    Returns:
-        Phan thuong da clip.
-    """
     try:
-        lanes = list(dict.fromkeys(
-            sumo_conn.trafficlight.getControlledLanes(ts_id)
-        ))
-        total_wait = 0.0
-        for lane in lanes:
-            vehs = sumo_conn.lane.getLastStepVehicleIDs(lane)
-            for v in vehs:
-                total_wait += sumo_conn.vehicle.getWaitingTime(v)
+        lanes = list(dict.fromkeys(sumo_conn.trafficlight.getControlledLanes(ts_id)))
+        total_wait = sum(
+            sumo_conn.vehicle.getWaitingTime(v)
+            for lane in lanes
+            for v in sumo_conn.lane.getLastStepVehicleIDs(lane)
+        )
     except Exception:
         total_wait = 0.0
-
-    raw = -total_wait / REWARD_ALPHA
-    return float(max(REWARD_MIN, min(REWARD_MAX, raw)))
+    return float(max(REWARD_MIN, min(REWARD_MAX, -total_wait / REWARD_ALPHA)))
 
 
 def queue_reward(ts_id: str, sumo_conn) -> float:
-    """Phan thuong dua tren tong xe dung (hang cho), clip [-5, 0]."""
     try:
         lanes = list(dict.fromkeys(sumo_conn.trafficlight.getControlledLanes(ts_id)))
         total_halting = sum(sumo_conn.lane.getLastStepHaltingNumber(l) for l in lanes)
@@ -235,7 +189,6 @@ def queue_reward(ts_id: str, sumo_conn) -> float:
 
 
 def pressure_reward(ts_id: str, sumo_conn) -> float:
-    """Phan thuong ap luc: clip(incoming_halting - outgoing_halting, -5, 5)."""
     try:
         links = sumo_conn.trafficlight.getControlledLinks(ts_id)
         incoming, outgoing = set(), set()
@@ -251,6 +204,13 @@ def pressure_reward(ts_id: str, sumo_conn) -> float:
     except Exception:
         pressure = 0.0
     return float(max(-5.0, min(5.0, -pressure)))
+
+
+REWARD_FN_MAP = {
+    "wait-clip": resco_reward,
+    "queue":     queue_reward,
+    "pressure":  pressure_reward,
+}
 
 
 class ProgressCallback(BaseCallback):
@@ -270,22 +230,17 @@ class ProgressCallback(BaseCallback):
             pct       = self.num_timesteps / self.total_steps * 100
             rate      = self.num_timesteps / elapsed if elapsed > 0 else 1
             remaining = (self.total_steps - self.num_timesteps) / rate
-            print(
+            msg = (
                 f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
                 f"{pct:5.1f}% | "
                 f"{elapsed/60:.1f}min elapsed | "
-                f"~{remaining/60:.1f}min left",
-                flush=True,
+                f"~{remaining/60:.1f}min left"
             )
+            print(msg, flush=True)
+            sys.stderr.write(msg + "\n")
+            sys.stderr.flush()
             self._next_log += self.log_every
         return True
-
-
-REWARD_FN_MAP = {
-    "wait-clip": resco_reward,
-    "queue":     queue_reward,
-    "pressure":  pressure_reward,
-}
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +263,6 @@ class RescoDQNEnv(gym.Env):
         self,
         net_file: str,
         route_file: str,
-        ts_index: int = 0,
         sim_duration: int = 20_000,
         step_interval: int = 5,
         amber_sec: int = 5,
@@ -317,34 +271,29 @@ class RescoDQNEnv(gym.Env):
         reward_type: str = "wait-clip",
     ):
         super().__init__()
-        self._net = net_file
-        self._route = route_file
-        self._ts_index = ts_index
-        self._sim_duration = sim_duration
+        self._net           = net_file
+        self._route         = route_file
+        self._sim_duration  = sim_duration
         self._step_interval = step_interval
-        self._amber_sec = amber_sec
-        self._sumo_seed = sumo_seed
-        self._use_gui = use_gui
-        self._reward_fn = REWARD_FN_MAP.get(reward_type, resco_reward)
-        self._label = f"dqn_{RescoDQNEnv._conn_counter}"
+        self._amber_sec     = amber_sec
+        self._sumo_seed     = sumo_seed
+        self._use_gui       = use_gui
+        self._reward_fn     = REWARD_FN_MAP.get(reward_type, resco_reward)
+        self._label         = f"dqn_{RescoDQNEnv._conn_counter}"
         RescoDQNEnv._conn_counter += 1
         self.sumo = None
 
-        # Lay thong tin tu ket noi tam
         if USE_LIBSUMO:
             traci.start([sumolib.checkBinary("sumo"), "-n", self._net])
             tmp = traci
         else:
-            traci.start(
-                [sumolib.checkBinary("sumo"), "-n", self._net],
-                label=f"init_{self._label}",
-            )
+            traci.start([sumolib.checkBinary("sumo"), "-n", self._net],
+                        label=f"init_{self._label}")
             tmp = traci.getConnection(f"init_{self._label}")
 
         signal_ids = list(tmp.trafficlight.getIDList())
-        self._ts_id = signal_ids[ts_index % len(signal_ids)]
+        self._ts_id = signal_ids[0]
 
-        # Phat hien pha xanh
         self._green_phases = []
         logics = tmp.trafficlight.getAllProgramLogics(self._ts_id)
         if logics:
@@ -354,7 +303,6 @@ class RescoDQNEnv(gym.Env):
         if not self._green_phases:
             self._green_phases = [0, 2, 4, 6][:len(logics[0].phases) // 2]
 
-        # Khoi tao obs builder tam de lay spaces
         self.sumo = tmp
         self._obs_builder = RescoObservation(self._ts_id, tmp)
         _tmp_obs_space = self._obs_builder.observation_space()
@@ -392,25 +340,12 @@ class RescoDQNEnv(gym.Env):
 
         self._obs_builder = RescoObservation(self._ts_id, self.sumo)
         self._sim_time = 0.0
-        self._current_green_phase_idx = 0
-        self._phase_timer = 0
-
-        obs = self._obs_builder()
-        return obs, {}
+        return self._obs_builder(), {}
 
     def step(self, action: int):
-        """
-        Ap dung pha xanh duoc chon va tien mo phong step_interval giay.
-
-        Args:
-            action: Chi so trong green_phases.
-        """
         target_phase = self._green_phases[action % len(self._green_phases)]
-
-        # Neu can chuyen pha, qua pha vang truoc
         current = self.sumo.trafficlight.getPhase(self._ts_id)
         if current != target_phase:
-            # Pha vang la pha le sau pha xanh le truoc
             amber_phase = current + 1 if (current + 1) < len(
                 self.sumo.trafficlight.getAllProgramLogics(self._ts_id)[0].phases
             ) else 1
@@ -420,13 +355,12 @@ class RescoDQNEnv(gym.Env):
                 self._sim_time += 1
             self.sumo.trafficlight.setPhase(self._ts_id, target_phase)
 
-        # Tien mo phong step_interval giay
         for _ in range(self._step_interval):
             self.sumo.simulationStep()
             self._sim_time += 1
 
-        obs = self._obs_builder()
-        reward = self._reward_fn(self._ts_id, self.sumo)
+        obs      = self._obs_builder()
+        reward   = self._reward_fn(self._ts_id, self.sumo)
         truncated = self._sim_time >= self._sim_duration
         return obs, reward, False, truncated, {}
 
@@ -449,119 +383,46 @@ class RescoDQNEnv(gym.Env):
 
 
 # ---------------------------------------------------------------------------
-# Multi-intersection Round-Robin DQN Wrapper
-# ---------------------------------------------------------------------------
-
-class MultiDQNWrapper(gym.Env):
-    """
-    Boc nhieu RescoDQNEnv thanh 1 gym.Env de dung voi SB3 DQN.
-    Dung round-robin: moi step = 1 quyet dinh cua 1 nut giao.
-    """
-
-    metadata = {"render_modes": []}
-
-    def __init__(self, envs: List[RescoDQNEnv]):
-        super().__init__()
-        self._envs = envs
-        self._n = len(envs)
-        self._ptr = 0
-        self._obs_cache: List[Optional[np.ndarray]] = [None] * self._n
-        self._done = False
-
-        # Tat ca envs dung chung obs/action space
-        self.observation_space = envs[0].observation_space
-        self.action_space = envs[0].action_space
-
-    @property
-    def unwrapped(self):
-        return self._envs[0]
-
-    def reset(self, seed=None, **kwargs):
-        obs_list = []
-        for env in self._envs:
-            obs, _ = env.reset()
-            obs_list.append(obs)
-        self._obs_cache = obs_list
-        self._ptr = 0
-        self._done = False
-        return self._obs_cache[self._ptr], {}
-
-    def step(self, action: int):
-        env = self._envs[self._ptr]
-        obs, reward, _, truncated, info = env.step(action)
-        self._obs_cache[self._ptr] = obs
-
-        if truncated:
-            self._done = True
-
-        self._ptr = (self._ptr + 1) % self._n
-        next_obs = self._obs_cache[self._ptr]
-        if next_obs is None:
-            next_obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-
-        return next_obs, reward, False, self._done, info
-
-    def close(self):
-        for env in self._envs:
-            env.close()
-
-    def render(self):
-        pass
-
-
-# ---------------------------------------------------------------------------
-# Parse args
+# Parse args + Main
 # ---------------------------------------------------------------------------
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Huan luyen DQN/DDQN dieu khien den tin hieu",
+        description="Huan luyen DQN/DDQN dieu khien den tin hieu (1 nut giao)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--save_dir", required=True)
-    p.add_argument("--algo", default="dqn", choices=["dqn", "ddqn"],
-                   help="Thuat toan: dqn (vanilla) | ddqn (Double DQN)")
+    p.add_argument("--save_dir",    required=True)
+    p.add_argument("--algo",        default="dqn", choices=["dqn", "ddqn"])
     p.add_argument("--reward_type", default="wait-clip",
-                   choices=["wait-clip", "queue", "pressure"],
-                   help="Ham phan thuong: wait-clip | queue | pressure")
-    p.add_argument("--mode", default="multi", choices=["single", "multi"])
+                   choices=["wait-clip", "queue", "pressure"])
     p.add_argument("--total_steps", type=int, default=200_000)
-    p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--save_freq", type=int, default=10_000)
-    p.add_argument("--log_every", type=int, default=10_000,
-                   help="In progress moi N steps (default: 10000)")
-    p.add_argument("--gui", action="store_true", default=False)
+    p.add_argument("--seed",        type=int, default=42)
+    p.add_argument("--save_freq",   type=int, default=10_000)
+    p.add_argument("--log_every",   type=int, default=10_000)
+    p.add_argument("--gui",         action="store_true", default=False)
     return p.parse_args()
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
 def main():
     args = parse_args()
-    is_multi = (args.mode == "multi")
     os.makedirs(args.save_dir, exist_ok=True)
 
-    net_file = str(MULTI_NET if is_multi else SINGLE_NET)
-    if is_multi:
-        route_file = str(MULTI_ROUTE)
-    else:
-        generated = _GENERATED_FLOWS.get(args.seed)
-        route_file = str(generated if generated and generated.exists() else SINGLE_ROUTE)
+    net_file  = str(SINGLE_NET)
+    generated = _GENERATED_FLOWS.get(args.seed)
+    route_file = str(generated if generated and generated.exists() else SINGLE_ROUTE)
 
     AlgoClass = DoubleDQN if args.algo == "ddqn" else DQN
     algo_label = args.algo.upper()
 
     print("=" * 55)
-    print(f"  Huan luyen {algo_label} | {'4 nut' if is_multi else '1 nut'}")
+    print(f"  Huan luyen {algo_label} — 1 nut giao")
     print(f"  Reward  : {args.reward_type}")
     print(f"  Steps   : {args.total_steps:,} | Seed: {args.seed}")
     print(f"  Net     : {Path(net_file).name}")
+    print(f"  Route   : {Path(route_file).name}")
     print("=" * 55)
 
-    # Khoi tao moi truong
-    env_kwargs = dict(
+    train_env = RescoDQNEnv(
         net_file=net_file,
         route_file=route_file,
         sim_duration=args.total_steps + 5_000,
@@ -569,37 +430,31 @@ def main():
         use_gui=args.gui,
         reward_type=args.reward_type,
     )
-    if is_multi:
-        envs = [RescoDQNEnv(ts_index=i, **env_kwargs) for i in range(4)]
-        train_env = MultiDQNWrapper(envs)
-    else:
-        train_env = RescoDQNEnv(ts_index=0, **env_kwargs)
 
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
-    checkpoint_cb = CheckpointCallback(
+    checkpoint_cb  = CheckpointCallback(
         save_freq=args.save_freq,
         save_path=checkpoint_dir,
         name_prefix="dqn_ckpt",
     )
+    progress_cb = ProgressCallback(total_steps=args.total_steps, log_every=args.log_every)
 
     agent = AlgoClass(
         policy="MlpPolicy",
         env=train_env,
-        learning_rate=1e-4,
-        buffer_size=50_000,
-        learning_starts=1_000,
-        batch_size=32,
+        learning_rate=1e-3,
+        buffer_size=100_000,
+        learning_starts=5_000,
+        batch_size=64,
         tau=1.0,
-        gamma=0.99,
+        gamma=0.95,
         train_freq=4,
         target_update_interval=1_000,
-        exploration_fraction=0.1,
-        exploration_final_eps=0.05,
+        exploration_fraction=0.3,
+        exploration_final_eps=0.01,
         verbose=1,
         seed=args.seed,
     )
-
-    progress_cb = ProgressCallback(total_steps=args.total_steps, log_every=args.log_every)
 
     print(f"\nBat dau huan luyen {args.total_steps:,} buoc...")
     agent.learn(

@@ -1,16 +1,16 @@
 """
-evaluate_all.py — Danh gia toan bo model tren 3 muc luu luong
+evaluate_all.py — Danh gia toan bo model tren 1 nut giao (single intersection)
 
-Chay moi model trong thu muc experiments/ tren 3 kich ban luu luong,
+Chay moi model trong thu muc experiments/ tren tap test da sinh san,
 tong hop ket qua voi mean +- std, xuat CSV san sang cho plotting.
 
 Su dung:
     python evaluate_all.py --models_dir ./experiments --save_dir ./results
 
 Output:
-    results/all_results.csv      -- Tat ca ket qua (moi dong = 1 model x 1 flow)
-    results/summary.csv          -- Tong hop mean +- std theo (algorithm, flow)
-    results/cycle_data/          -- Du lieu Queue vs Cycle cho Fig 5a
+    results/all_results.csv      -- Tat ca ket qua (moi dong = 1 model)
+    results/summary.csv          -- Tong hop mean +- std theo (algorithm, reward)
+    results/timeseries_results.csv
 """
 
 import argparse
@@ -19,7 +19,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 # Fix encoding Windows
 if sys.platform == "win32":
@@ -39,18 +39,13 @@ import gymnasium as gym
 _HERE = Path(__file__).parent
 _RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
 
-# --- Paper RLTSCQ setup (single intersection) ---
 SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
-SINGLE_ROUTE = _RLTSCQ_NETS / "test_flows.xml"   # paper test_flows
+# Generated test flows (seed=999, never seen during training).
+# Falls back to paper test_flows.xml if generated file is missing.
+_GENERATED_TEST = _HERE / "generated_flows" / "test_s999.xml"
+SINGLE_ROUTE = _GENERATED_TEST if _GENERATED_TEST.exists() else _RLTSCQ_NETS / "test_flows.xml"
 
-# --- Multi-intersection (grid 2x2) ---
-MULTI_NET  = _HERE / "sumo_nets" / "grid2x2.net.xml"
-MULTI_FLOW_FILES = {
-    "high":   _HERE / "sumo_nets" / "grid2x2_test_high.rou.xml",
-    "medium": _HERE / "sumo_nets" / "grid2x2_test_medium.rou.xml",
-    "low":    _HERE / "sumo_nets" / "grid2x2_test_low.rou.xml",
-}
-EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 5_000))  # giay
+EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 7_200))  # giay (~2h sim)
 
 from rl_controller.traffic_env import TrafficControlEnv
 from rl_controller.state_builder import IntersectionStateExtractor
@@ -60,69 +55,15 @@ USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
 
 # ---------------------------------------------------------------------------
-# Wrapper multi-agent (tai su dung)
-# ---------------------------------------------------------------------------
-
-class _MultiWrapper(gym.Env):
-    metadata = {"render_modes": []}
-
-    def __init__(self, env):
-        super().__init__()
-        self._env = env
-        self.observation_space = env.observation_space
-        self.action_space = env.action_space
-        self._obs_queue = []
-        self._reward_accum = {}
-        self._done = False
-
-    @property
-    def unwrapped(self):
-        return self._env
-
-    def reset(self, seed=None, **kwargs):
-        obs_dict, info = self._env.reset()
-        self._obs_queue = list(obs_dict.items())
-        self._done = False
-        self._reward_accum = {s: 0.0 for s in self._env.signal_ids}
-        if self._obs_queue:
-            _, obs = self._obs_queue.pop(0)
-            return obs, info
-        return np.zeros(self.observation_space.shape, dtype=np.float32), info
-
-    def step(self, action):
-        if self._obs_queue:
-            _, next_obs = self._obs_queue.pop(0)
-            r = float(np.mean(list(self._reward_accum.values()))) if self._reward_accum else 0.0
-            return next_obs, r, False, self._done, {}
-        actions = {
-            sid: action for sid in self._env.signal_ids
-            if self._env.controllers[sid].time_to_act
-        }
-        obs_dict, reward_dict, done_dict, info = self._env.step(actions)
-        self._reward_accum = {k: float(v) for k, v in reward_dict.items()}
-        self._done = done_dict.get("__all__", False)
-        if obs_dict:
-            self._obs_queue = list(obs_dict.items())
-            _, obs = self._obs_queue.pop(0)
-        else:
-            obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-        mean_r = float(np.mean(list(self._reward_accum.values()))) if self._reward_accum else 0.0
-        return obs, mean_r, False, self._done, {}
-
-    def close(self):
-        self._env.close()
-
-
-# ---------------------------------------------------------------------------
-# Cac ham danh gia
+# Helpers
 # ---------------------------------------------------------------------------
 
 class _TravelTracker:
     """Track throughput and mean travel time across one evaluation episode."""
     def __init__(self):
         self._dep: dict = {}
-        self._tt: list = []
-        self._arrived = 0
+        self._tt: list  = []
+        self._arrived   = 0
         self._prev_vehs: set = set()
 
     def update(self, sumo_conn):
@@ -135,11 +76,10 @@ class _TravelTracker:
                 if vid in self._dep:
                     self._tt.append(t - self._dep.pop(vid))
         except AttributeError:
-            # Fallback: so sanh tap vehicle IDs giua cac buoc
             current = set(sumo_conn.vehicle.getIDList())
-            for vid in (current - self._prev_vehs):   # xe moi xuat hien
+            for vid in (current - self._prev_vehs):
                 self._dep[vid] = t
-            for vid in (self._prev_vehs - current):   # xe bien mat = da den
+            for vid in (self._prev_vehs - current):
                 self._arrived += 1
                 if vid in self._dep:
                     self._tt.append(t - self._dep.pop(vid))
@@ -155,10 +95,9 @@ class _TravelTracker:
 
 
 def collect_step_metrics(sumo_conn, signal_ids: list) -> dict:
-    """Thu thap metric tai 1 buoc mo phong."""
     all_vehs = sumo_conn.vehicle.getIDList()
-    speeds = [sumo_conn.vehicle.getSpeed(v) for v in all_vehs] if all_vehs else []
-    waits  = [sumo_conn.vehicle.getWaitingTime(v) for v in all_vehs] if all_vehs else []
+    speeds   = [sumo_conn.vehicle.getSpeed(v) for v in all_vehs] if all_vehs else []
+    waits    = [sumo_conn.vehicle.getWaitingTime(v) for v in all_vehs] if all_vehs else []
 
     total_q = 0
     for sid in signal_ids:
@@ -171,27 +110,26 @@ def collect_step_metrics(sumo_conn, signal_ids: list) -> dict:
 
     n_vehs = max(1, len(all_vehs))
     return {
-        "total_queue": total_q,
-        "vehicles_running": len(all_vehs),
-        "vehicles_stopped": sum(1 for s in speeds if s < 0.1),
-        "total_wait": sum(waits),
+        "total_queue":       total_q,
+        "vehicles_running":  len(all_vehs),
+        "vehicles_stopped":  sum(1 for s in speeds if s < 0.1),
+        "total_wait":        sum(waits),
         "mean_wait_per_veh": sum(waits) / n_vehs,
-        "mean_speed": float(np.mean(speeds)) if speeds else 0.0,
+        "mean_speed":        float(np.mean(speeds)) if speeds else 0.0,
     }
 
 
-def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
-                 scope: str = "single", _step_out: list = None) -> dict:
-    """
-    Chay 1 episode voi PPO model, tra ve metrics tong hop.
+def _empty_result():
+    return {"mean_queue": 0, "mean_wait": 0, "mean_wait_per_veh": 0,
+            "mean_speed": 0, "throughput": 0, "mean_travel_time": 0, "total_reward": 0}
 
-    Args:
-        scope: "single" (caliberated_net + test_flows.xml — paper RLTSCQ)
-               "multi"  (grid2x2 + flow_key=high/medium/low)
 
-    Returns:
-        dict voi mean_queue, mean_wait, mean_speed, total_reward
-    """
+# ---------------------------------------------------------------------------
+# Eval functions
+# ---------------------------------------------------------------------------
+
+def run_ppo_eval(model_path: str, obs_mode: str = "raw",
+                 _step_out: list = None) -> dict:
     from stable_baselines3 import PPO
     from rl_controller.state_builder import IntersectionStateExtractor, BaselineObservation
     from rl_controller.encoder_obs import (
@@ -210,51 +148,35 @@ def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
         "compressed":     CompressedState_16D,
     }.get(obs_mode, IntersectionStateExtractor)
 
-    is_single = (scope == "single")
-    if is_single:
-        net_file = str(SINGLE_NET)
-        route_file = str(SINGLE_ROUTE)
-    else:
-        net_file = str(MULTI_NET)
-        route_file = str(MULTI_FLOW_FILES[flow_key])
-
-    agent = PPO.load(model_path, env=None)
+    agent   = PPO.load(model_path, env=None)
     tracker = _TravelTracker()
 
-    base_env = TrafficControlEnv(
-        net_file=net_file,
-        route_file=route_file,
+    env = TrafficControlEnv(
+        net_file=str(SINGLE_NET),
+        route_file=str(SINGLE_ROUTE),
         sim_duration=EVAL_DURATION + 500,
-        single_agent=is_single,
+        single_agent=True,
         reward_fn="queue",
         obs_class=obs_cls,
         show_warnings=False,
     )
 
-    if is_single:
-        obs, _ = base_env.reset()
-    else:
-        env = _MultiWrapper(base_env)
-        obs, _ = env.reset()
-
+    obs, _ = env.reset()
     metrics_list = []
-    total_reward = 0.0
-    _step_idx = 0
+    total_reward  = 0.0
+    _step_idx     = 0
 
     for _ in range(EVAL_DURATION // 5 * 4 + 200):
-        sumo_conn = base_env.sumo
+        sumo_conn = env.sumo
         if sumo_conn is None:
             break
         t = sumo_conn.simulation.getTime()
         if t >= EVAL_DURATION:
             break
         tracker.update(sumo_conn)
-        m = collect_step_metrics(sumo_conn, base_env.signal_ids)
+        m = collect_step_metrics(sumo_conn, env.signal_ids)
         action, _ = agent.predict(obs, deterministic=True)
-        if is_single:
-            obs, reward, _, done, _ = base_env.step(int(action))
-        else:
-            obs, reward, _, done, _ = env.step(action)
+        obs, reward, _, done, _ = env.step(int(action))
         total_reward += float(reward)
         metrics_list.append(m)
         if _step_out is not None:
@@ -266,100 +188,57 @@ def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
             break
 
     try:
-        if is_single:
-            base_env.close()
-        else:
-            env.close()
+        env.close()
     except Exception:
         pass
 
     if not metrics_list:
-        return {"mean_queue": 0, "mean_wait": 0, "mean_speed": 0, "total_reward": 0}
+        return _empty_result()
 
-    n_signals = max(1, len(base_env.signal_ids))
     return {
-        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
-        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "throughput":       tracker.throughput,
-        "mean_travel_time": tracker.mean_travel_time,
-        "total_reward":     total_reward,
+        "mean_queue":        float(np.mean([m["total_queue"] for m in metrics_list])),
+        "mean_wait":         float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh": float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":        float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      total_reward,
     }
 
 
-def run_dqn_eval(model_path: str, flow_key: str, scope: str = "single",
-                 _step_out: list = None) -> dict:
-    """Chay 1 episode voi DQN model.
-
-    Args:
-        scope: "single" (caliberated_net) | "multi" (grid2x2 4 nut)
-    """
+def run_dqn_eval(model_path: str, _step_out: list = None) -> dict:
     from stable_baselines3 import DQN
-    from train_dqn import RescoDQNEnv, MultiDQNWrapper, resco_reward
+    from train_dqn import RescoDQNEnv, resco_reward
 
-    is_single = (scope == "single")
-    if is_single:
-        net_file = str(SINGLE_NET)
-        route_file = str(SINGLE_ROUTE)
-    else:
-        net_file = str(MULTI_NET)
-        route_file = str(MULTI_FLOW_FILES[flow_key])
-
-    agent = DQN.load(model_path, env=None)
+    agent   = DQN.load(model_path, env=None)
     tracker = _TravelTracker()
 
-    if is_single:
-        single_env = RescoDQNEnv(
-            net_file=net_file,
-            route_file=route_file,
-            ts_index=0,
-            sim_duration=EVAL_DURATION + 500,
-        )
-        envs = [single_env]
-        env = single_env
-    else:
-        envs = [
-            RescoDQNEnv(
-                net_file=net_file,
-                route_file=route_file,
-                ts_index=i,
-                sim_duration=EVAL_DURATION + 500,
-            )
-            for i in range(4)
-        ]
-        env = MultiDQNWrapper(envs)
+    env = RescoDQNEnv(
+        net_file=str(SINGLE_NET),
+        route_file=str(SINGLE_ROUTE),
+        sim_duration=EVAL_DURATION + 500,
+    )
     obs, _ = env.reset()
-    total_reward = 0.0
-    queue_list = []
-    wait_list = []
-    speed_list = []
 
+    total_reward = 0.0
+    queue_list, wait_list, speed_list = [], [], []
     _step_idx = 0
+
     for _ in range(EVAL_DURATION // 5 * 4 + 200):
         action, _ = agent.predict(obs, deterministic=True)
         obs, reward, _, done, _ = env.step(action)
         total_reward += float(reward)
-        # Lay metric tu tat ca envs (moi env quan ly 1 nut giao)
         try:
-            q_vals, w_vals, s_vals = [], [], []
-            if envs[0].sumo:
-                tracker.update(envs[0].sumo)
-            for e in envs:
-                if e.sumo:
-                    m = collect_step_metrics(e.sumo, [e._ts_id])
-                    q_vals.append(m["total_queue"])
-                    w_vals.append(m["total_wait"])
-                    s_vals.append(m["mean_speed"])
-            if q_vals:
-                mq = float(np.mean(q_vals))
-                ms = float(np.mean(s_vals))
-                queue_list.append(mq)
-                wait_list.append(float(np.mean(w_vals)))
-                speed_list.append(ms)
+            if env.sumo:
+                tracker.update(env.sumo)
+                m = collect_step_metrics(env.sumo, [env._ts_id])
+                queue_list.append(m["total_queue"])
+                wait_list.append(m["total_wait"])
+                speed_list.append(m["mean_speed"])
                 if _step_out is not None:
                     _step_out.append({"step": _step_idx,
-                                      "total_queue": mq, "mean_speed": ms})
+                                      "total_queue": m["total_queue"],
+                                      "mean_speed":  m["mean_speed"]})
         except Exception:
             pass
         _step_idx += 1
@@ -372,31 +251,22 @@ def run_dqn_eval(model_path: str, flow_key: str, scope: str = "single",
         pass
 
     return {
-        "mean_queue":       float(np.mean(queue_list)) if queue_list else 0,
-        "mean_wait":        float(np.mean(wait_list)) if wait_list else 0,
-        "mean_wait_per_veh":float(np.mean([w / max(1, q) for w, q in zip(wait_list, queue_list)])) if wait_list else 0,
-        "mean_speed":       float(np.mean(speed_list)) if speed_list else 0,
-        "throughput":       tracker.throughput,
-        "mean_travel_time": tracker.mean_travel_time,
-        "total_reward":     total_reward,
+        "mean_queue":        float(np.mean(queue_list)) if queue_list else 0,
+        "mean_wait":         float(np.mean(wait_list))  if wait_list else 0,
+        "mean_wait_per_veh": float(np.mean([w / max(1, q) for w, q in zip(wait_list, queue_list)])) if wait_list else 0,
+        "mean_speed":        float(np.mean(speed_list)) if speed_list else 0,
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      total_reward,
     }
 
 
-def run_webster_eval(flow_key: str, scope: str = "single",
-                     _step_out: list = None) -> dict:
-    """Chay Webster dynamic baseline."""
-    if scope == "single":
-        net_file = str(SINGLE_NET)
-        route_file = str(SINGLE_ROUTE)
-    else:
-        net_file = str(MULTI_NET)
-        route_file = str(MULTI_FLOW_FILES[flow_key])
-
+def run_webster_eval(_step_out: list = None) -> dict:
     label = f"wsb_{int(time.time()*1000) % 100000}"
     cmd = [
         sumolib.checkBinary("sumo"),
-        "-n", net_file,
-        "-r", route_file,
+        "-n", str(SINGLE_NET),
+        "-r", str(SINGLE_ROUTE),
         "--time-to-teleport", "-1",
         "--no-warnings",
     ]
@@ -410,7 +280,6 @@ def run_webster_eval(flow_key: str, scope: str = "single",
     signal_ids = list(sumo.trafficlight.getIDList())
     tracker = _TravelTracker()
 
-    # Phat hien pha xanh cho tung nut
     def get_green_phases(ts):
         logics = sumo.trafficlight.getAllProgramLogics(ts)
         if not logics:
@@ -450,64 +319,45 @@ def run_webster_eval(flow_key: str, scope: str = "single",
             pass
 
     if not metrics_list:
-        return {"mean_queue": 0, "mean_wait": 0, "mean_speed": 0, "total_reward": 0}
+        return _empty_result()
 
-    n_signals = max(1, len(signal_ids))
     return {
-        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
-        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "throughput":       tracker.throughput,
-        "mean_travel_time": tracker.mean_travel_time,
-        "total_reward":     float(np.mean([-m["total_queue"] for m in metrics_list])),
+        "mean_queue":        float(np.mean([m["total_queue"] for m in metrics_list])),
+        "mean_wait":         float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh": float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":        float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      float(np.mean([-m["total_queue"] for m in metrics_list])),
     }
 
 
-def run_fixed_eval(flow_key: str, scope: str = "single",
-                   _step_out: list = None) -> dict:
-    """Chay fixed-time baseline (SUMO default timing)."""
-    is_single = (scope == "single")
-    if is_single:
-        net_file = str(SINGLE_NET)
-        route_file = str(SINGLE_ROUTE)
-    else:
-        net_file = str(MULTI_NET)
-        route_file = str(MULTI_FLOW_FILES[flow_key])
-
-    base_env = TrafficControlEnv(
-        net_file=net_file,
-        route_file=route_file,
+def run_fixed_eval(_step_out: list = None) -> dict:
+    env = TrafficControlEnv(
+        net_file=str(SINGLE_NET),
+        route_file=str(SINGLE_ROUTE),
         sim_duration=EVAL_DURATION + 500,
-        single_agent=is_single,
+        single_agent=True,
         reward_fn="queue",
         obs_class=IntersectionStateExtractor,
         fixed_signal=True,
         show_warnings=False,
     )
 
-    if is_single:
-        obs, _ = base_env.reset()
-    else:
-        env = _MultiWrapper(base_env)
-        obs, _ = env.reset()
-
+    obs, _ = env.reset()
     tracker = _TravelTracker()
     metrics_list = []
     _step_idx = 0
 
     for _ in range(EVAL_DURATION // 5 * 4 + 200):
-        sumo_conn = base_env.sumo
+        sumo_conn = env.sumo
         if sumo_conn is None:
             break
         if sumo_conn.simulation.getTime() >= EVAL_DURATION:
             break
         tracker.update(sumo_conn)
-        m = collect_step_metrics(sumo_conn, base_env.signal_ids)
-        if is_single:
-            obs, _, _, done, _ = base_env.step(0)
-        else:
-            obs, _, _, done, _ = env.step(0)
+        m = collect_step_metrics(sumo_conn, env.signal_ids)
+        obs, _, _, done, _ = env.step(0)
         metrics_list.append(m)
         if _step_out is not None:
             _step_out.append({"step": _step_idx,
@@ -518,36 +368,30 @@ def run_fixed_eval(flow_key: str, scope: str = "single",
             break
 
     try:
-        if is_single:
-            base_env.close()
-        else:
-            env.close()
+        env.close()
     except Exception:
         pass
 
     if not metrics_list:
-        return {"mean_queue": 0, "mean_wait": 0, "mean_speed": 0, "total_reward": 0}
+        return _empty_result()
 
-    n_signals = max(1, len(base_env.signal_ids))
     return {
-        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
-        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "throughput":       tracker.throughput,
-        "mean_travel_time": tracker.mean_travel_time,
-        "total_reward":     float(np.mean([-m["total_queue"] for m in metrics_list])),
+        "mean_queue":        float(np.mean([m["total_queue"] for m in metrics_list])),
+        "mean_wait":         float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh": float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":        float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      float(np.mean([-m["total_queue"] for m in metrics_list])),
     }
 
 
 # ---------------------------------------------------------------------------
-# Discovery models
+# Model discovery
 # ---------------------------------------------------------------------------
 
 def _infer_obs_mode(name: str) -> str:
-    """Suy lu\u1eadn obs_mode t\u1eeb t\u00ean th\u01b0 m\u1ee5c model."""
     n = name.lower()
-    # ppo_queue-AE-16d_s42 / ppo_queue-AE-4d_s42 ...
     for d in (4, 8, 16, 19, 32):
         if f"ae-{d}d" in n or f"ae_{d}d" in n or f"compressed_{d}d" in n:
             return f"compressed_{d}d"
@@ -558,13 +402,13 @@ def _infer_obs_mode(name: str) -> str:
 
 _AE_KEYWORDS = ("ae-", "ae_", "compressed_")
 
-def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, str, str, str, str, str]]:
+
+def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, str, str, str, str]]:
     """
     Quet thu muc experiments/ de tim tat ca model da train.
 
     Returns:
-        List of (algo, reward, seed, model_path, obs_mode, train_scope)
-        train_scope: "single" neu ten thu muc chua "single", nguoc lai "multi"
+        List of (algo, reward, seed, model_path, obs_mode)
     """
     results = []
     if not models_dir.exists():
@@ -573,42 +417,34 @@ def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, 
     for subdir in sorted(models_dir.iterdir()):
         if not subdir.is_dir():
             continue
-        name = subdir.name  # e.g. "ppo_queue_s42", "dqn_s123"
+        name = subdir.name
 
-        # Bo qua thu muc backup (ket thuc bang _failed, _bak, _old)
         if any(name.endswith(sfx) for sfx in ("_failed", "_bak", "_old", "_backup")):
             continue
-
         if skip_ae and any(k in name.lower() for k in _AE_KEYWORDS):
             continue
 
         ppo_path = subdir / "ppo_final_model.zip"
         dqn_path = subdir / "dqn_final_model.zip"
 
-        train_scope = "single" if "single" in name.lower() else "multi"
-
         if ppo_path.exists():
             parts = name.split("_")
             if len(parts) >= 3:
-                algo = parts[0]
-                seed = parts[-1]          # s42
+                algo     = parts[0]
+                seed     = parts[-1]
                 obs_mode = _infer_obs_mode(name)
+                middle   = [p for p in parts[1:-1]
+                            if p not in ("raw", "baseline", "single")]
+                reward   = "_".join(middle) if middle else "queue"
+                results.append((algo, reward, seed, str(ppo_path), obs_mode))
 
-                # Loc bo cac suffix obs khoi phan reward: "raw", "baseline", "single", "multi"
-                middle = parts[1:-1]
-                middle = [p for p in middle if p not in ("raw", "baseline", "single", "multi")]
-                reward = "_".join(middle) if middle else "queue"
-
-                results.append((algo, reward, seed, str(ppo_path), obs_mode, train_scope))
         elif dqn_path.exists():
-            parts = name.split("_")
-            algo = parts[0]  # "dqn" hoac "ddqn"
-            seed = parts[-1]  # "s42"
-            # Suy luan reward tu cac phan giua (bo scope keywords)
-            middle = parts[1:-1]
-            middle = [p for p in middle if p not in ("single", "multi", "resco")]
+            parts  = name.split("_")
+            algo   = parts[0]
+            seed   = parts[-1]
+            middle = [p for p in parts[1:-1] if p not in ("single", "resco")]
             reward = "-".join(middle) if middle else "wait-clip"
-            results.append((algo, reward, seed, str(dqn_path), "resco", train_scope))
+            results.append((algo, reward, seed, str(dqn_path), "resco"))
 
     return results
 
@@ -619,171 +455,109 @@ def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, 
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Danh gia toan bo model tren 3 muc luu luong",
+        description="Danh gia toan bo model — 1 nut giao",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--models_dir", default="./experiments",
-                   help="Thu muc chua ket qua train")
-    p.add_argument("--save_dir", default="./results",
-                   help="Thu muc luu ket qua danh gia")
-    p.add_argument("--skip_fixed", action="store_true",
-                   help="Bo qua fixed-time baseline")
-    p.add_argument("--skip_webster", action="store_true",
-                   help="Bo qua Webster baseline")
-    p.add_argument("--flows", nargs="+", default=["high", "medium", "low"],
-                   choices=["high", "medium", "low"],
-                   help="(Chi cho scope=multi) Cac muc luu luong can test")
-    p.add_argument("--scope", default="multi",
-                   choices=["single", "multi", "both"],
-                   help="single = paper RLTSCQ (caliberated_net + test_flows.xml); "
-                        "multi = grid 2x2; both = chay ca hai")
-    p.add_argument("--skip_ae", action="store_true",
-                   help="Bo qua cac model autoencoder (AE) khi danh gia")
+    p.add_argument("--models_dir", default="./experiments")
+    p.add_argument("--save_dir",   default="./results")
+    p.add_argument("--skip_fixed",   action="store_true")
+    p.add_argument("--skip_webster", action="store_true")
+    p.add_argument("--skip_ae",      action="store_true")
     p.add_argument("--only", type=str, default=None,
                    help="Chi eval cac model co ten khop (phan cach bang dau phay). "
-                        "VD: ppo_queue_s42,ppo_pressure_s777. "
                         "Ket qua se duoc merge vao CSV hien co.")
     return p.parse_args()
-
-
-def _scope_flow_keys(scope: str, multi_flows: list) -> list:
-    """Tra ve danh sach (scope, flow_key) can chay."""
-    if scope == "single":
-        # Single intersection — chi 1 flow file (test_flows.xml)
-        return [("single", "paper")]
-    if scope == "multi":
-        return [("multi", f) for f in multi_flows]
-    # both
-    return [("single", "paper")] + [("multi", f) for f in multi_flows]
 
 
 def main():
     args = parse_args()
     models_dir = Path(args.models_dir)
-    save_dir = Path(args.save_dir)
+    save_dir   = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    # Kiem tra file SUMO theo scope
-    if args.scope in ("single", "both"):
-        if not SINGLE_NET.exists() or not SINGLE_ROUTE.exists():
-            print(f"[WARN] Thieu file paper: {SINGLE_NET} / {SINGLE_ROUTE}")
-    if args.scope in ("multi", "both"):
-        for flow_key in args.flows:
-            rf = MULTI_FLOW_FILES[flow_key]
-            if not rf.exists():
-                print(f"[WARN] Chua co {rf.name} — chay: python sumo_nets/generate_test_flows.py")
+    if not SINGLE_NET.exists():
+        print(f"[WARN] Thieu file mang: {SINGLE_NET}")
+    if not SINGLE_ROUTE.exists():
+        print(f"[WARN] Thieu file flow: {SINGLE_ROUTE}")
 
-    # Tim tat ca models
     models = discover_models(models_dir, skip_ae=args.skip_ae)
 
-    # Loc neu co --only
     only_filter = None
     if args.only:
         only_filter = [x.strip() for x in args.only.split(",") if x.strip()]
-        models = [m for m in models
-                  if Path(m[3]).parts[-2] in only_filter]
+        models = [m for m in models if Path(m[3]).parts[-2] in only_filter]
         print(f"\n[--only] Loc con {len(models)} model(s): {only_filter}")
 
     print(f"\nTim thay {len(models)} model(s) trong {models_dir}")
-    print(f"Scope eval : {args.scope}\n")
+    print(f"Test flow : {SINGLE_ROUTE.name}")
+    print(f"Eval time : {EVAL_DURATION}s\n")
 
-    # Danh sach (scope, flow_key) can chay
-    scope_flows = _scope_flow_keys(args.scope, args.flows)
-
-    # CSV output
     all_csv = save_dir / "all_results.csv"
-    fields = ["algo", "reward", "obs_mode", "seed", "scope", "flow",
+    fields = ["algo", "reward", "obs_mode", "seed",
               "mean_queue", "mean_wait", "mean_wait_per_veh", "mean_speed",
               "throughput", "mean_travel_time", "total_reward"]
     all_rows = []
-    ts_rows  = []   # timeseries: 1 row per simulation step
+    ts_rows  = []
 
-    n_sf = len(scope_flows)
-    total_jobs = len(models) * n_sf
+    total_jobs = len(models)
     if not args.skip_fixed:
-        total_jobs += n_sf
+        total_jobs += 1
     if not args.skip_webster:
-        total_jobs += n_sf
-
+        total_jobs += 1
     job_idx = 0
     t0 = time.time()
 
-    # -------------------------------------------------------
-    # Baseline: Fixed-time
-    # -------------------------------------------------------
+    # Fixed-time baseline
     if not args.skip_fixed:
-        for sc, flow_key in scope_flows:
-            job_idx += 1
-            print(f"[{job_idx}/{total_jobs}] Fixed-time | scope={sc} | flow={flow_key}")
-            try:
-                _sl = []
-                m = run_fixed_eval(flow_key, scope=sc, _step_out=_sl)
-                row = {"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-",
-                       "scope": sc, "flow": flow_key, **m}
-                all_rows.append(row)
-                for s in _sl:
-                    ts_rows.append({"algo": "fixed", "reward": "-", "obs_mode": "-",
-                                    "seed": "-", "flow": flow_key, **s})
-                print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-            except Exception as exc:
-                import traceback; traceback.print_exc()
-                print(f"  [ERR] {exc}")
+        job_idx += 1
+        print(f"[{job_idx}/{total_jobs}] Fixed-time baseline")
+        try:
+            _sl = []
+            m   = run_fixed_eval(_step_out=_sl)
+            all_rows.append({"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-", **m})
+            for s in _sl:
+                ts_rows.append({"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-", **s})
+            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+        except Exception as exc:
+            import traceback; traceback.print_exc()
+            print(f"  [ERR] {exc}")
 
-    # -------------------------------------------------------
-    # Baseline: Webster
-    # -------------------------------------------------------
+    # Webster baseline
     if not args.skip_webster:
-        for sc, flow_key in scope_flows:
-            job_idx += 1
-            print(f"[{job_idx}/{total_jobs}] Webster | scope={sc} | flow={flow_key}")
-            try:
-                _sl = []
-                m = run_webster_eval(flow_key, scope=sc, _step_out=_sl)
-                row = {"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-",
-                       "scope": sc, "flow": flow_key, **m}
-                all_rows.append(row)
-                for s in _sl:
-                    ts_rows.append({"algo": "webster", "reward": "-", "obs_mode": "-",
-                                    "seed": "-", "flow": flow_key, **s})
-                print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-            except Exception as exc:
-                import traceback; traceback.print_exc()
-                print(f"  [ERR] {exc}")
+        job_idx += 1
+        print(f"[{job_idx}/{total_jobs}] Webster baseline")
+        try:
+            _sl = []
+            m   = run_webster_eval(_step_out=_sl)
+            all_rows.append({"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-", **m})
+            for s in _sl:
+                ts_rows.append({"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-", **s})
+            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+        except Exception as exc:
+            import traceback; traceback.print_exc()
+            print(f"  [ERR] {exc}")
 
-    # -------------------------------------------------------
-    # Tat ca trained models
-    # -------------------------------------------------------
-    for algo, reward, seed, model_path, obs_mode, train_scope in models:
-        # Model single chi eval tren single; model multi chi eval tren multi
-        model_sf = [(sc, fk) for sc, fk in scope_flows if sc == train_scope]
-        if not model_sf:
-            model_sf = scope_flows  # fallback neu khong co scope phu hop
-        for sc, flow_key in model_sf:
-            job_idx += 1
-            print(f"[{job_idx}/{total_jobs}] {algo.upper()} | reward={reward} | obs={obs_mode} | seed={seed} | scope={sc} | flow={flow_key}")
-            try:
-                _sl = []
-                if algo in ("dqn", "ddqn"):
-                    m = run_dqn_eval(model_path, flow_key, scope=sc, _step_out=_sl)
-                else:
-                    m = run_ppo_eval(model_path, flow_key, obs_mode=obs_mode, scope=sc, _step_out=_sl)
-                row = {"algo": algo, "reward": reward, "obs_mode": obs_mode,
-                       "seed": seed, "scope": sc, "flow": flow_key, **m}
-                all_rows.append(row)
-                for s in _sl:
-                    ts_rows.append({"algo": algo, "reward": reward, "obs_mode": obs_mode,
-                                    "seed": seed, "flow": flow_key, **s})
-                print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-            except Exception as exc:
-                import traceback
-                print(f"  [ERR] {exc}")
-                traceback.print_exc()
+    # Trained models
+    for algo, reward, seed, model_path, obs_mode in models:
+        job_idx += 1
+        print(f"[{job_idx}/{total_jobs}] {algo.upper()} | reward={reward} | obs={obs_mode} | seed={seed}")
+        try:
+            _sl = []
+            if algo in ("dqn", "ddqn"):
+                m = run_dqn_eval(model_path, _step_out=_sl)
+            else:
+                m = run_ppo_eval(model_path, obs_mode=obs_mode, _step_out=_sl)
+            all_rows.append({"algo": algo, "reward": reward, "obs_mode": obs_mode, "seed": seed, **m})
+            for s in _sl:
+                ts_rows.append({"algo": algo, "reward": reward, "obs_mode": obs_mode, "seed": seed, **s})
+            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+        except Exception as exc:
+            import traceback
+            print(f"  [ERR] {exc}")
+            traceback.print_exc()
 
-    # -------------------------------------------------------
-    # Ghi CSV (merge neu dung --only)
-    # -------------------------------------------------------
+    # Merge với CSV cũ nếu dùng --only
     if only_filter and all_csv.exists():
-        # Doc rows cu, bo rows cua cac model vua eval lai, them rows moi
         existing = []
         with open(all_csv, newline="") as f:
             for row in csv.DictReader(f):
@@ -797,27 +571,24 @@ def main():
         w.writeheader()
         w.writerows(all_rows)
 
-    # -------------------------------------------------------
-    # Tong hop mean +- std
-    # -------------------------------------------------------
+    # Summary
     summary_csv = save_dir / "summary.csv"
     from collections import defaultdict
     grouped = defaultdict(list)
     for row in all_rows:
-        key = (row["algo"], row["reward"], row.get("obs_mode", "-"), row["scope"], row["flow"])
+        key = (row["algo"], row["reward"], row.get("obs_mode", "-"))
         grouped[key].append(row)
 
     summary_rows = []
-    for (algo, reward, obs_mode, scope, flow), rows in sorted(grouped.items()):
-        queues  = [float(r["mean_queue"]) for r in rows]
-        waits   = [float(r["mean_wait"])  for r in rows]
-        wpv     = [float(r.get("mean_wait_per_veh", 0)) for r in rows]
-        speeds  = [float(r["mean_speed"]) for r in rows]
-        thru    = [float(r.get("throughput", 0)) for r in rows]
-        ttime   = [float(r.get("mean_travel_time", 0)) for r in rows]
+    for (algo, reward, obs_mode), rows in sorted(grouped.items()):
+        queues = [float(r["mean_queue"]) for r in rows]
+        waits  = [float(r["mean_wait"])  for r in rows]
+        wpv    = [float(r.get("mean_wait_per_veh", 0)) for r in rows]
+        speeds = [float(r["mean_speed"]) for r in rows]
+        thru   = [float(r.get("throughput", 0)) for r in rows]
+        ttime  = [float(r.get("mean_travel_time", 0)) for r in rows]
         summary_rows.append({
             "algo": algo, "reward": reward, "obs_mode": obs_mode,
-            "scope": scope, "flow": flow,
             "n_runs": len(rows),
             "mean_queue":        round(np.mean(queues),  3),
             "std_queue":         round(np.std(queues),   3),
@@ -833,24 +604,20 @@ def main():
             "std_travel_time":   round(np.std(ttime),    2),
         })
 
-    sum_fields = ["algo","reward","obs_mode","scope","flow","n_runs",
-                  "mean_queue","std_queue","median_queue",
-                  "mean_wait","std_wait","mean_wait_per_veh",
-                  "mean_speed","std_speed",
-                  "mean_throughput","std_throughput",
-                  "mean_travel_time","std_travel_time"]
+    sum_fields = ["algo", "reward", "obs_mode", "n_runs",
+                  "mean_queue", "std_queue", "median_queue",
+                  "mean_wait", "std_wait", "mean_wait_per_veh",
+                  "mean_speed", "std_speed",
+                  "mean_throughput", "std_throughput",
+                  "mean_travel_time", "std_travel_time"]
     with open(summary_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=sum_fields)
         w.writeheader()
         w.writerows(summary_rows)
 
-    # -------------------------------------------------------
-    # Timeseries CSV (de ve line chart)
-    # -------------------------------------------------------
     if ts_rows:
-        ts_csv = save_dir / "timeseries_results.csv"
-        ts_fields = ["algo", "reward", "obs_mode", "seed", "flow",
-                     "step", "total_queue", "mean_speed"]
+        ts_csv    = save_dir / "timeseries_results.csv"
+        ts_fields = ["algo", "reward", "obs_mode", "seed", "step", "total_queue", "mean_speed"]
         with open(ts_csv, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=ts_fields, extrasaction="ignore")
             w.writeheader()
@@ -863,8 +630,8 @@ def main():
     print(f"  Chi tiet : {all_csv}")
     print(f"  Tom tat  : {summary_csv}")
     print(f"{'='*55}")
-    print("\nBuoc tiep theo:")
-    print(f"  python plot_multi_figures.py --results_dir {save_dir}")
+    print(f"\nBuoc tiep theo:")
+    print(f"  python plot_results.py --results_dir {save_dir}")
 
 
 if __name__ == "__main__":
