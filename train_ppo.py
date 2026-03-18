@@ -58,14 +58,14 @@ from rl_controller.encoder_obs import CompressedState_16D
 # Factory môi trường — định nghĩa ở module-level để picklable trên Windows
 # ---------------------------------------------------------------------------
 
-def _make_env(net_file, route_file, obs_cls, reward_type, total_steps, seed, use_gui):
+def _make_env(net_file, route_file, obs_cls, reward_type, sim_duration, seed, use_gui):
     """Tạo một TrafficControlEnv (được gọi trong subprocess với SubprocVecEnv)."""
     return TrafficControlEnv(
         net_file=net_file,
         route_file=route_file,
         csv_output="",
         use_gui=use_gui,
-        sim_duration=total_steps + 5_000,
+        sim_duration=sim_duration,
         single_agent=True,
         reward_fn=reward_type,
         obs_class=obs_cls,
@@ -181,6 +181,8 @@ def parse_args():
                             "compressed_19d", "compressed_32d", "baseline"])
     p.add_argument("--n_envs", type=int, default=1,
                    help="Số môi trường song song. Lưu ý: không dùng với --gui")
+    p.add_argument("--sim_duration", type=int, default=None,
+                   help="Độ dài mỗi episode (giây SUMO). Mặc định: total_steps + 5000")
     p.add_argument("--gui",      action="store_true", default=False)
     p.add_argument("--log_every", type=int, default=10_000)
     p.add_argument("--lr",        type=float, default=3e-4)
@@ -215,6 +217,7 @@ def main():
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
     final_model    = os.path.join(args.save_dir, "ppo_final_model.zip")
 
+    sim_dur = args.sim_duration if args.sim_duration else args.total_steps + 5_000
     n_envs = max(1, args.n_envs)
     if args.gui and n_envs > 1:
         print("[train_ppo] Cảnh báo: --gui không hỗ trợ n_envs>1, đặt lại n_envs=1")
@@ -226,6 +229,7 @@ def main():
     print(f"  Obs mode : {args.obs_mode}")
     print(f"  Steps    : {args.total_steps:,}")
     print(f"  n_envs   : {n_envs}")
+    print(f"  Sim dur  : {sim_dur:,}")
     print(f"  Net file : {Path(net_file).name}")
     print(f"  Route    : {Path(route_file).name}")
     print(f"  Save dir : {args.save_dir}")
@@ -235,7 +239,7 @@ def main():
         functools.partial(
             _make_env,
             net_file, route_file, obs_cls, args.reward_type,
-            args.total_steps, args.seed + i, args.gui,
+            sim_dur, args.seed + i, args.gui,
         )
         for i in range(n_envs)
     ]

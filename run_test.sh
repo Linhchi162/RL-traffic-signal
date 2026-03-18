@@ -58,7 +58,7 @@ done
 for reward in "${PPO_REWARDS[@]}"; do
     _launch "ppo_${reward}_s${SEED}" \
         python train_ppo.py --reward_type "$reward" --obs_mode raw --seed $SEED \
-        --total_steps $STEPS --lr 3e-4 --n_envs 2 --log_every 5000 \
+        --total_steps $STEPS --sim_duration 5000 --lr 3e-4 --n_envs 2 --log_every 5000 \
         --save_dir "$EXP_DIR/ppo_${reward}_s${SEED}"
 done
 
