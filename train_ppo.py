@@ -442,8 +442,7 @@ def main():
     else:
         train_env = DummyVecEnv(env_fns)
 
-    metrics_cb  = TrainingMetricsCallback(log_path=metrics_log)
-    progress_cb = ProgressCallback(total_steps=remaining, log_every=args.log_every)
+    metrics_cb = TrainingMetricsCallback(log_path=metrics_log)
     # save_freq đơn vị là "timesteps per env" với VecEnv
     checkpoint_cb = CheckpointCallback(
         save_freq=max(1, args.save_freq // n_envs),
@@ -464,7 +463,8 @@ def main():
             steps_done = int(latest_ckpt.stem.split("_steps")[0].split("_")[-1])
         except ValueError:
             steps_done = 0
-    remaining = args.total_steps - steps_done
+    remaining   = args.total_steps - steps_done
+    progress_cb = ProgressCallback(total_steps=remaining, log_every=args.log_every)
 
     if ckpt_files and steps_done > 0 and remaining > 0:
         print(f"\nResume tu checkpoint: {latest_ckpt.name} (da chay {steps_done:,} buoc, con {remaining:,} buoc)")
