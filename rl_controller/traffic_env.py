@@ -169,7 +169,7 @@ class TrafficControlEnv(gym.Env):
         from gymnasium import spaces as gym_spaces
         import math
 
-        action_space = gym_spaces.Discrete(self.max_green)
+        action_space = gym_spaces.Discrete(self.max_green - self.min_green + 1)
 
         if not self.signal_ids:
             fallback = gym_spaces.Box(
@@ -337,11 +337,13 @@ class TrafficControlEnv(gym.Env):
         if self.single_agent:
             sid = self.signal_ids[0]
             if self.controllers[sid].time_to_act:
-                self.controllers[sid].apply_green_duration(int(actions))
+                duration = int(actions) + self.min_green
+                self.controllers[sid].apply_green_duration(duration)
         else:
-            for sid, duration in actions.items():
+            for sid, raw_action in actions.items():
                 if self.controllers[sid].time_to_act:
-                    self.controllers[sid].apply_green_duration(int(duration))
+                    duration = int(raw_action) + self.min_green
+                    self.controllers[sid].apply_green_duration(duration)
 
     # ------------------------------------------------------------------
     # Tính toán obs / reward / done / info
