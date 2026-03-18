@@ -135,8 +135,8 @@ class SignalController:
         self.obs_fn = self.env.obs_class(self)
 
         self.observation_space = self.obs_fn.observation_space()
-        # Action: chọn thời gian xanh trong [0, max_green_sec)
-        self.action_space = spaces.Discrete(self.max_green_sec)
+        # Action: chọn pha xanh tiếp theo (RESCO-style phase selection)
+        self.action_space = spaces.Discrete(self.num_phases)
 
     # ------------------------------------------------------------------
     # Khởi tạo nội bộ
@@ -319,6 +319,47 @@ class SignalController:
             return
 
         self.active_phase = current_sumo_idx
+        self.next_decision_time = self.env.sim_step + self.step_interval
+
+    def apply_phase_selection(self, action_idx: int):
+        """
+        RESCO-style phase selection: agent chọn pha xanh tiếp theo.
+
+        Thay vì điều chỉnh thời lượng, agent chọn PHASE nào được xanh.
+        Nếu action chọn pha khác hiện tại → setPhase trực tiếp (amber_sec=0)
+        hoặc qua pha vàng (amber_sec>0).
+
+        Args:
+            action_idx: chỉ số trong [0, num_phases) — ánh xạ tới green_phase_idx.
+        """
+        target_sumo_idx = self.green_phase_idx[action_idx % self.num_phases]
+        current_sumo_idx = self.sumo.trafficlight.getPhase(self.node_id)
+
+        # Bỏ qua nếu đang trong pha vàng
+        if current_sumo_idx not in self.green_phase_idx:
+            self.next_decision_time = self.env.sim_step + self.step_interval
+            return
+
+        try:
+            if current_sumo_idx != target_sumo_idx and self.amber_duration > 0:
+                amber_idx = current_sumo_idx + 1
+                if amber_idx >= len(self.all_phase_defs):
+                    amber_idx = 1
+                self.sumo.trafficlight.setPhase(self.node_id, amber_idx)
+                self.sumo.trafficlight.setPhaseDuration(
+                    self.node_id, float(self.amber_duration)
+                )
+
+            self.sumo.trafficlight.setPhase(self.node_id, target_sumo_idx)
+            # +1 để SUMO không tự chuyển pha trong khoảng quyết định
+            self.sumo.trafficlight.setPhaseDuration(
+                self.node_id, float(self.step_interval + 1)
+            )
+        except traci.TraCIException as exc:
+            print(f"[SignalController] Lỗi apply_phase_selection ({self.node_id}): {exc}")
+            return
+
+        self.active_phase = target_sumo_idx
         self.next_decision_time = self.env.sim_step + self.step_interval
 
     # ------------------------------------------------------------------

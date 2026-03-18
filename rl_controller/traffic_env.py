@@ -163,36 +163,30 @@ class TrafficControlEnv(gym.Env):
         """
         Đọc observation space và action space từ kết nối TraCI tạm.
 
-        Tạo một SignalController đuợc rút gọn (chỉ lấy spaces),
-        không thực hiện simulation.
+        Action space: Discrete(num_green_phases) — phase selection (RESCO-style).
         """
         from gymnasium import spaces as gym_spaces
-        import math
-
-        action_space = gym_spaces.Discrete(self.max_green - self.min_green + 1)
 
         if not self.signal_ids:
             fallback = gym_spaces.Box(
                 low=-np.inf, high=np.inf, shape=(19,), dtype=np.float32
             )
-            return action_space, fallback
+            return gym_spaces.Discrete(4), fallback
 
-        # Tạo temporary SignalController để lấy observation space
+        num_phases = 4
+        obs_space = gym_spaces.Box(low=-np.inf, high=np.inf, shape=(19,), dtype=np.float32)
         try:
-            # Thiết lập env tạm để SignalController có thể tham chiếu
             self.sumo = conn
             self._build_controllers(conn)
-            obs_space = self.controllers[self.signal_ids[0]].observation_space
-            # Reset lại — controllers sẽ được xây lại khi reset()
+            ctrl = self.controllers[self.signal_ids[0]]
+            obs_space  = ctrl.observation_space
+            num_phases = ctrl.num_phases
             self.controllers = {}
             self.sumo = None
         except Exception as exc:
             print(f"[TrafficControlEnv] Cảnh báo: không đọc được obs space từ SUMO: {exc}")
-            obs_space = gym_spaces.Box(
-                low=-np.inf, high=np.inf, shape=(19,), dtype=np.float32
-            )
 
-        return action_space, obs_space
+        return gym_spaces.Discrete(num_phases), obs_space
 
     # ------------------------------------------------------------------
     # Khởi động / kết thúc SUMO
@@ -333,17 +327,15 @@ class TrafficControlEnv(gym.Env):
         self._teleported += self.sumo.simulation.getEndingTeleportNumber()
 
     def _dispatch_actions(self, actions):
-        """Gửi action tới controller phù hợp."""
+        """Gửi action tới controller phù hợp (phase selection)."""
         if self.single_agent:
             sid = self.signal_ids[0]
             if self.controllers[sid].time_to_act:
-                duration = int(actions) + self.min_green
-                self.controllers[sid].apply_green_duration(duration)
+                self.controllers[sid].apply_phase_selection(int(actions))
         else:
             for sid, raw_action in actions.items():
                 if self.controllers[sid].time_to_act:
-                    duration = int(raw_action) + self.min_green
-                    self.controllers[sid].apply_green_duration(duration)
+                    self.controllers[sid].apply_phase_selection(int(raw_action))
 
     # ------------------------------------------------------------------
     # Tính toán obs / reward / done / info
