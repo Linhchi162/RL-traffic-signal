@@ -274,7 +274,7 @@ class RescoDQNEnv(gym.Env):
         route_file: str,
         sim_duration: int = 20_000,
         step_interval: int = 5,
-        amber_sec: int = 5,
+        amber_sec: int = 0,
         sumo_seed: int = 42,
         use_gui: bool = False,
         reward_type: str = "wait-clip",
@@ -412,6 +412,8 @@ def parse_args():
                    help="Do dai moi episode (giay SUMO). Mac dinh: total_steps + 5000")
     p.add_argument("--n_envs",       type=int, default=1,
                    help="So env song song (SubprocVecEnv tren Linux, DummyVecEnv tren Windows)")
+    p.add_argument("--amber_sec",    type=int, default=0,
+                   help="So giay den vang khi doi pha. 0 = doi pha tuc thi (khuyen nghi de tranh bias)")
     p.add_argument("--gui",          action="store_true", default=False)
     return p.parse_args()
 
@@ -446,6 +448,7 @@ def main():
             sumo_seed=args.seed + seed_offset,
             use_gui=args.gui,
             reward_type=args.reward_type,
+            amber_sec=args.amber_sec,
         ))
 
     if n_envs > 1:
@@ -461,6 +464,7 @@ def main():
             sumo_seed=args.seed,
             use_gui=args.gui,
             reward_type=args.reward_type,
+            amber_sec=args.amber_sec,
         ))
 
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
