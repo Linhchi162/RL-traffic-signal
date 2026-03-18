@@ -17,7 +17,7 @@ export MKL_NUM_THREADS="1"
 
 source .venv/bin/activate
 
-JOBS=8
+JOBS=9   # 27 models / 9 = 3 batch; tang len neu may co nhieu vCPU hon
 STEPS=200000
 EXP_DIR="./experiments"
 LOG_DIR="./logs_single"
