@@ -123,15 +123,27 @@ class _TravelTracker:
         self._dep: dict = {}
         self._tt: list = []
         self._arrived = 0
+        self._prev_vehs: set = set()
 
     def update(self, sumo_conn):
         t = sumo_conn.simulation.getTime()
-        for vid in sumo_conn.simulation.getDepartedVehiclesIDs():
-            self._dep[vid] = t
-        for vid in sumo_conn.simulation.getArrivedVehiclesIDs():
-            self._arrived += 1
-            if vid in self._dep:
-                self._tt.append(t - self._dep.pop(vid))
+        try:
+            for vid in sumo_conn.simulation.getDepartedVehiclesIDs():
+                self._dep[vid] = t
+            for vid in sumo_conn.simulation.getArrivedVehiclesIDs():
+                self._arrived += 1
+                if vid in self._dep:
+                    self._tt.append(t - self._dep.pop(vid))
+        except AttributeError:
+            # Fallback: so sanh tap vehicle IDs giua cac buoc
+            current = set(sumo_conn.vehicle.getIDList())
+            for vid in (current - self._prev_vehs):   # xe moi xuat hien
+                self._dep[vid] = t
+            for vid in (self._prev_vehs - current):   # xe bien mat = da den
+                self._arrived += 1
+                if vid in self._dep:
+                    self._tt.append(t - self._dep.pop(vid))
+            self._prev_vehs = current
 
     @property
     def throughput(self):
