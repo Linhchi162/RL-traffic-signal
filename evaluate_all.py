@@ -99,24 +99,46 @@ def collect_step_metrics(sumo_conn, signal_ids: list) -> dict:
     speeds   = [sumo_conn.vehicle.getSpeed(v) for v in all_vehs] if all_vehs else []
     waits    = [sumo_conn.vehicle.getWaitingTime(v) for v in all_vehs] if all_vehs else []
 
-    total_q = 0
+    total_q    = 0
+    lane_queues = {}  # lane_id -> halting count
     for sid in signal_ids:
         lanes = list(dict.fromkeys(sumo_conn.trafficlight.getControlledLanes(sid)))
         for lane in lanes:
             try:
-                total_q += sumo_conn.lane.getLastStepHaltingNumber(lane)
+                q = sumo_conn.lane.getLastStepHaltingNumber(lane)
+                total_q += q
+                lane_queues[lane] = lane_queues.get(lane, 0) + q
             except Exception:
                 pass
 
     n_vehs = max(1, len(all_vehs))
     return {
         "total_queue":       total_q,
+        "lane_queues":       lane_queues,
         "vehicles_running":  len(all_vehs),
         "vehicles_stopped":  sum(1 for s in speeds if s < 0.1),
         "total_wait":        sum(waits),
         "mean_wait_per_veh": sum(waits) / n_vehs,
         "mean_speed":        float(np.mean(speeds)) if speeds else 0.0,
     }
+
+
+def _print_action_distribution(action_counts: dict, label: str):
+    total = sum(action_counts.values()) or 1
+    print(f"\n  [{label}] Phan phoi action (tong {total} buoc):")
+    for act in sorted(action_counts):
+        pct = action_counts[act] / total * 100
+        bar = "█" * int(pct / 2)
+        print(f"    Pha {act}: {pct:5.1f}%  {bar}")
+
+
+def _print_lane_wait(lane_wait_accum: dict, label: str, top_n: int = 6):
+    if not lane_wait_accum:
+        return
+    sorted_lanes = sorted(lane_wait_accum.items(), key=lambda x: -x[1])
+    print(f"\n  [{label}] Top {top_n} lanes co hang cho cao nhat (trung binh xe dung/buoc):")
+    for lane, total in sorted_lanes[:top_n]:
+        print(f"    {lane}: {total:.1f} xe dung trung binh")
 
 
 def _empty_result():
@@ -162,9 +184,11 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
     )
 
     obs, _ = env.reset()
-    metrics_list = []
+    metrics_list  = []
     total_reward  = 0.0
     _step_idx     = 0
+    action_counts = {}
+    lane_wait_acc = {}
 
     for _ in range(EVAL_DURATION // 5 * 4 + 200):
         sumo_conn = env.sumo
@@ -176,11 +200,16 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
         tracker.update(sumo_conn)
         m = collect_step_metrics(sumo_conn, env.signal_ids)
         action, _ = agent.predict(obs, deterministic=True)
-        obs, reward, _, done, _ = env.step(int(action))
+        act_int = int(action)
+        action_counts[act_int] = action_counts.get(act_int, 0) + 1
+        obs, reward, _, done, _ = env.step(act_int)
         total_reward += float(reward)
         metrics_list.append(m)
+        for lane, q in m["lane_queues"].items():
+            lane_wait_acc[lane] = lane_wait_acc.get(lane, 0.0) + q
         if _step_out is not None:
             _step_out.append({"step": _step_idx, "t": int(t),
+                              "action":      act_int,
                               "total_queue": m["total_queue"],
                               "mean_speed":  m["mean_speed"]})
         _step_idx += 1
@@ -194,6 +223,12 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
 
     if not metrics_list:
         return _empty_result()
+
+    # Normalize lane acc to per-step average
+    lane_wait_avg = {l: v / max(1, _step_idx) for l, v in lane_wait_acc.items()}
+    label = Path(model_path).parent.name
+    _print_action_distribution(action_counts, label)
+    _print_lane_wait(lane_wait_avg, label)
 
     return {
         "mean_queue":        float(np.mean([m["total_queue"] for m in metrics_list])),
@@ -220,13 +255,17 @@ def run_dqn_eval(model_path: str, _step_out: list = None) -> dict:
     )
     obs, _ = env.reset()
 
-    total_reward = 0.0
+    total_reward  = 0.0
     queue_list, wait_list, speed_list = [], [], []
-    _step_idx = 0
+    _step_idx     = 0
+    action_counts = {}
+    lane_wait_acc = {}
 
     for _ in range(EVAL_DURATION // 5 * 4 + 200):
         action, _ = agent.predict(obs, deterministic=True)
-        obs, reward, _, done, _ = env.step(action)
+        act_int = int(action)
+        action_counts[act_int] = action_counts.get(act_int, 0) + 1
+        obs, reward, _, done, _ = env.step(act_int)
         total_reward += float(reward)
         try:
             if env.sumo:
@@ -235,8 +274,11 @@ def run_dqn_eval(model_path: str, _step_out: list = None) -> dict:
                 queue_list.append(m["total_queue"])
                 wait_list.append(m["total_wait"])
                 speed_list.append(m["mean_speed"])
+                for lane, q in m["lane_queues"].items():
+                    lane_wait_acc[lane] = lane_wait_acc.get(lane, 0.0) + q
                 if _step_out is not None:
                     _step_out.append({"step": _step_idx,
+                                      "action":      act_int,
                                       "total_queue": m["total_queue"],
                                       "mean_speed":  m["mean_speed"]})
         except Exception:
@@ -249,6 +291,11 @@ def run_dqn_eval(model_path: str, _step_out: list = None) -> dict:
         env.close()
     except Exception:
         pass
+
+    lane_wait_avg = {l: v / max(1, _step_idx) for l, v in lane_wait_acc.items()}
+    label = Path(model_path).parent.name
+    _print_action_distribution(action_counts, label)
+    _print_lane_wait(lane_wait_avg, label)
 
     return {
         "mean_queue":        float(np.mean(queue_list)) if queue_list else 0,
@@ -617,7 +664,7 @@ def main():
 
     if ts_rows:
         ts_csv    = save_dir / "timeseries_results.csv"
-        ts_fields = ["algo", "reward", "obs_mode", "seed", "step", "total_queue", "mean_speed"]
+        ts_fields = ["algo", "reward", "obs_mode", "seed", "step", "action", "total_queue", "mean_speed"]
         with open(ts_csv, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=ts_fields, extrasaction="ignore")
             w.writeheader()
