@@ -117,13 +117,15 @@ class ProgressCallback(BaseCallback):
             pct       = self.num_timesteps / self.total_steps * 100
             rate      = self.num_timesteps / elapsed if elapsed > 0 else 1
             remaining = (self.total_steps - self.num_timesteps) / rate
-            print(
+            msg = (
                 f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
                 f"{pct:5.1f}% | "
                 f"{elapsed/60:.1f}min elapsed | "
-                f"~{remaining/60:.1f}min left",
-                flush=True,
+                f"~{remaining/60:.1f}min left"
             )
+            print(msg, flush=True)
+            sys.stderr.write(msg + "\n")
+            sys.stderr.flush()
             self._next_log += self.log_every
         return True
 
