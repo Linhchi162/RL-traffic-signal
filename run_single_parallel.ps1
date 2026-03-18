@@ -65,7 +65,7 @@ function Wait-OneJob {
                 Write-Host "$status ppo_$($item.Reward)_single_s$($item.Seed)" -ForegroundColor $color
                 if ($out) { $out | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray } }
                 Remove-Job $item.Job -Force
-                $script:ActiveJobs = $script:ActiveJobs | Where-Object { $_.Job.Id -ne $item.Job.Id }
+                $script:ActiveJobs = @($script:ActiveJobs | Where-Object { $_.Job.Id -ne $item.Job.Id })
                 $script:DoneCount++
             }
             return
@@ -89,8 +89,10 @@ foreach ($run in $AllRuns) {
     $seed    = $run.Seed
     $saveDir = $run.SaveDir
 
+    $workDir = (Resolve-Path ".").Path
     $job = Start-Job -ScriptBlock {
-        param($py, $sd, $rw, $s, $ts, $log)
+        param($py, $sd, $rw, $s, $ts, $log, $wd)
+        Set-Location $wd
         & $py train_ppo.py `
             --save_dir $sd `
             --mode single `
@@ -100,8 +102,7 @@ foreach ($run in $AllRuns) {
             --obs_mode raw `
             --lr 3e-4 *> $log
         $LASTEXITCODE
-    } -ArgumentList $Python, $saveDir, $reward, $seed, $TotalSteps, $logFile `
-      -WorkingDirectory (Resolve-Path ".").Path
+    } -ArgumentList $Python, $saveDir, $reward, $seed, $TotalSteps, $logFile, $workDir
 
     $ActiveJobs += [PSCustomObject]@{
         Job    = $job

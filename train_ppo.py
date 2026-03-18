@@ -54,7 +54,14 @@ _HERE = Path(__file__).parent
 # Single: dùng mạng RLTSCQ gốc (1 nút giao đã calibrate)
 _RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
 SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
-SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"
+SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"   # fallback neu chua co generated
+
+# Generated flows (TCCS 24:2018, da dang NS/WE): chon theo seed
+_GENERATED_FLOWS = {
+    42:  _HERE / "generated_flows" / "train_s0.xml",
+    123: _HERE / "generated_flows" / "train_s1.xml",
+    777: _HERE / "generated_flows" / "train_s2.xml",
+}
 
 # Multi: mạng 2x2 tự tạo (chạy sumo_nets/generate_net.py trước)
 MULTI_NET   = _HERE / "sumo_nets" / "grid2x2.net.xml"
@@ -335,7 +342,9 @@ def main():
             )
         net_file, route_file = str(MULTI_NET), str(MULTI_ROUTE)
     else:
-        net_file, route_file = str(SINGLE_NET), str(SINGLE_ROUTE)
+        net_file = str(SINGLE_NET)
+        generated = _GENERATED_FLOWS.get(args.seed)
+        route_file = str(generated if generated and generated.exists() else SINGLE_ROUTE)
 
     # Chọn observation class
     if args.obs_mode == "compressed_4d":

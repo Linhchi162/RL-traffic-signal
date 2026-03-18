@@ -41,7 +41,14 @@ _HERE = Path(__file__).parent
 _RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
 
 SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
-SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"
+SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"   # fallback neu chua co generated
+
+# Generated flows (TCCS 24:2018, da dang NS/WE): chon theo seed
+_GENERATED_FLOWS = {
+    42:  _HERE / "generated_flows" / "train_s0.xml",
+    123: _HERE / "generated_flows" / "train_s1.xml",
+    777: _HERE / "generated_flows" / "train_s2.xml",
+}
 MULTI_NET    = _HERE / "sumo_nets" / "grid2x2.net.xml"
 MULTI_ROUTE  = _HERE / "sumo_nets" / "grid2x2_train.rou.xml"
 
@@ -505,8 +512,12 @@ def main():
     is_multi = (args.mode == "multi")
     os.makedirs(args.save_dir, exist_ok=True)
 
-    net_file   = str(MULTI_NET   if is_multi else SINGLE_NET)
-    route_file = str(MULTI_ROUTE if is_multi else SINGLE_ROUTE)
+    net_file = str(MULTI_NET if is_multi else SINGLE_NET)
+    if is_multi:
+        route_file = str(MULTI_ROUTE)
+    else:
+        generated = _GENERATED_FLOWS.get(args.seed)
+        route_file = str(generated if generated and generated.exists() else SINGLE_ROUTE)
 
     AlgoClass = DoubleDQN if args.algo == "ddqn" else DQN
     algo_label = args.algo.upper()
