@@ -112,8 +112,6 @@ class ProgressCallback(BaseCallback):
                 f"rew={rew:+.3f} | expl_var={expl_var:.3f} | kl={approx_kl:.4f} | ep_len={ep_len:.0f}"
             )
             print(msg, flush=True)
-            sys.stderr.write(msg + "\n")
-            sys.stderr.flush()
             self._next_log += self.log_every
         return True
 
