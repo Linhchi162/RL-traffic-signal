@@ -234,7 +234,8 @@ class ProgressCallback(BaseCallback):
             remaining = (self.total_steps - self.num_timesteps) / rate
 
             vals    = self.model.logger.name_to_value
-            rew     = vals.get("rollout/ep_rew_mean", float("nan"))
+            ep_buf  = getattr(self.model, "ep_info_buffer", [])
+            rew     = float(np.mean([ep["r"] for ep in ep_buf])) if ep_buf else float("nan")
             loss    = vals.get("train/loss", float("nan"))
             epsilon = vals.get("rollout/exploration_rate", vals.get("train/epsilon", float("nan")))
 
@@ -491,7 +492,7 @@ def main():
     agent.learn(
         total_timesteps=args.total_steps,
         callback=[checkpoint_cb, progress_cb],
-        log_interval=10_000,
+        log_interval=4,
     )
 
     final_model = os.path.join(args.save_dir, "dqn_final_model.zip")
