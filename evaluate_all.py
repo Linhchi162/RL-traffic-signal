@@ -50,7 +50,7 @@ MULTI_FLOW_FILES = {
     "medium": _HERE / "sumo_nets" / "grid2x2_test_medium.rou.xml",
     "low":    _HERE / "sumo_nets" / "grid2x2_test_low.rou.xml",
 }
-EVAL_DURATION = 5_000   # giay (khop ppo_test.py paper)
+EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 5_000))  # giay
 
 from rl_controller.traffic_env import TrafficControlEnv
 from rl_controller.state_builder import IntersectionStateExtractor
@@ -117,6 +117,31 @@ class _MultiWrapper(gym.Env):
 # Cac ham danh gia
 # ---------------------------------------------------------------------------
 
+class _TravelTracker:
+    """Track throughput and mean travel time across one evaluation episode."""
+    def __init__(self):
+        self._dep: dict = {}
+        self._tt: list = []
+        self._arrived = 0
+
+    def update(self, sumo_conn):
+        t = sumo_conn.simulation.getTime()
+        for vid in sumo_conn.simulation.getDepartedVehiclesIDs():
+            self._dep[vid] = t
+        for vid in sumo_conn.simulation.getArrivedVehiclesIDs():
+            self._arrived += 1
+            if vid in self._dep:
+                self._tt.append(t - self._dep.pop(vid))
+
+    @property
+    def throughput(self):
+        return self._arrived
+
+    @property
+    def mean_travel_time(self):
+        return float(np.mean(self._tt)) if self._tt else 0.0
+
+
 def collect_step_metrics(sumo_conn, signal_ids: list) -> dict:
     """Thu thap metric tai 1 buoc mo phong."""
     all_vehs = sumo_conn.vehicle.getIDList()
@@ -132,11 +157,13 @@ def collect_step_metrics(sumo_conn, signal_ids: list) -> dict:
             except Exception:
                 pass
 
+    n_vehs = max(1, len(all_vehs))
     return {
         "total_queue": total_q,
         "vehicles_running": len(all_vehs),
         "vehicles_stopped": sum(1 for s in speeds if s < 0.1),
         "total_wait": sum(waits),
+        "mean_wait_per_veh": sum(waits) / n_vehs,
         "mean_speed": float(np.mean(speeds)) if speeds else 0.0,
     }
 
@@ -180,6 +207,7 @@ def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
         route_file = str(MULTI_FLOW_FILES[flow_key])
 
     agent = PPO.load(model_path, env=None)
+    tracker = _TravelTracker()
 
     base_env = TrafficControlEnv(
         net_file=net_file,
@@ -208,6 +236,7 @@ def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
         t = sumo_conn.simulation.getTime()
         if t >= EVAL_DURATION:
             break
+        tracker.update(sumo_conn)
         m = collect_step_metrics(sumo_conn, base_env.signal_ids)
         action, _ = agent.predict(obs, deterministic=True)
         if is_single:
@@ -237,11 +266,13 @@ def run_ppo_eval(model_path: str, flow_key: str, obs_mode: str = "raw",
 
     n_signals = max(1, len(base_env.signal_ids))
     return {
-        # Normalize ve queue per intersection de so sanh cong bang voi DQN
-        "mean_queue": float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":  float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_speed": float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "total_reward": total_reward,
+        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
+        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":       tracker.throughput,
+        "mean_travel_time": tracker.mean_travel_time,
+        "total_reward":     total_reward,
     }
 
 
@@ -264,6 +295,7 @@ def run_dqn_eval(model_path: str, flow_key: str, scope: str = "single",
         route_file = str(MULTI_FLOW_FILES[flow_key])
 
     agent = DQN.load(model_path, env=None)
+    tracker = _TravelTracker()
 
     if is_single:
         single_env = RescoDQNEnv(
@@ -299,6 +331,8 @@ def run_dqn_eval(model_path: str, flow_key: str, scope: str = "single",
         # Lay metric tu tat ca envs (moi env quan ly 1 nut giao)
         try:
             q_vals, w_vals, s_vals = [], [], []
+            if envs[0].sumo:
+                tracker.update(envs[0].sumo)
             for e in envs:
                 if e.sumo:
                     m = collect_step_metrics(e.sumo, [e._ts_id])
@@ -326,10 +360,13 @@ def run_dqn_eval(model_path: str, flow_key: str, scope: str = "single",
         pass
 
     return {
-        "mean_queue": float(np.mean(queue_list)) if queue_list else 0,
-        "mean_wait":  float(np.mean(wait_list)) if wait_list else 0,
-        "mean_speed": float(np.mean(speed_list)) if speed_list else 0,
-        "total_reward": total_reward,
+        "mean_queue":       float(np.mean(queue_list)) if queue_list else 0,
+        "mean_wait":        float(np.mean(wait_list)) if wait_list else 0,
+        "mean_wait_per_veh":float(np.mean([w / max(1, q) for w, q in zip(wait_list, queue_list)])) if wait_list else 0,
+        "mean_speed":       float(np.mean(speed_list)) if speed_list else 0,
+        "throughput":       tracker.throughput,
+        "mean_travel_time": tracker.mean_travel_time,
+        "total_reward":     total_reward,
     }
 
 
@@ -359,6 +396,7 @@ def run_webster_eval(flow_key: str, scope: str = "single",
         sumo = traci.getConnection(label)
 
     signal_ids = list(sumo.trafficlight.getIDList())
+    tracker = _TravelTracker()
 
     # Phat hien pha xanh cho tung nut
     def get_green_phases(ts):
@@ -379,6 +417,7 @@ def run_webster_eval(flow_key: str, scope: str = "single",
         while sumo.simulation.getTime() < EVAL_DURATION:
             sumo.simulationStep()
             t = sumo.simulation.getTime()
+            tracker.update(sumo)
             for ctrl in controllers.values():
                 ctrl.step(t)
             m = collect_step_metrics(sumo, signal_ids)
@@ -403,10 +442,13 @@ def run_webster_eval(flow_key: str, scope: str = "single",
 
     n_signals = max(1, len(signal_ids))
     return {
-        "mean_queue": float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":  float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_speed": float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "total_reward": float(np.mean([-m["total_queue"] for m in metrics_list])),
+        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
+        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":       tracker.throughput,
+        "mean_travel_time": tracker.mean_travel_time,
+        "total_reward":     float(np.mean([-m["total_queue"] for m in metrics_list])),
     }
 
 
@@ -438,6 +480,7 @@ def run_fixed_eval(flow_key: str, scope: str = "single",
         env = _MultiWrapper(base_env)
         obs, _ = env.reset()
 
+    tracker = _TravelTracker()
     metrics_list = []
     _step_idx = 0
 
@@ -447,6 +490,7 @@ def run_fixed_eval(flow_key: str, scope: str = "single",
             break
         if sumo_conn.simulation.getTime() >= EVAL_DURATION:
             break
+        tracker.update(sumo_conn)
         m = collect_step_metrics(sumo_conn, base_env.signal_ids)
         if is_single:
             obs, _, _, done, _ = base_env.step(0)
@@ -474,10 +518,13 @@ def run_fixed_eval(flow_key: str, scope: str = "single",
 
     n_signals = max(1, len(base_env.signal_ids))
     return {
-        "mean_queue": float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
-        "mean_wait":  float(np.mean([m["total_wait"] for m in metrics_list])),
-        "mean_speed": float(np.mean([m["mean_speed"] for m in metrics_list])),
-        "total_reward": float(np.mean([-m["total_queue"] for m in metrics_list])),
+        "mean_queue":       float(np.mean([m["total_queue"] for m in metrics_list])) / n_signals,
+        "mean_wait":        float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh":float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":       float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":       tracker.throughput,
+        "mean_travel_time": tracker.mean_travel_time,
+        "total_reward":     float(np.mean([-m["total_queue"] for m in metrics_list])),
     }
 
 
@@ -634,7 +681,8 @@ def main():
     # CSV output
     all_csv = save_dir / "all_results.csv"
     fields = ["algo", "reward", "obs_mode", "seed", "scope", "flow",
-              "mean_queue", "mean_wait", "mean_speed", "total_reward"]
+              "mean_queue", "mean_wait", "mean_wait_per_veh", "mean_speed",
+              "throughput", "mean_travel_time", "total_reward"]
     all_rows = []
     ts_rows  = []   # timeseries: 1 row per simulation step
 
@@ -703,7 +751,7 @@ def main():
             print(f"[{job_idx}/{total_jobs}] {algo.upper()} | reward={reward} | obs={obs_mode} | seed={seed} | scope={sc} | flow={flow_key}")
             try:
                 _sl = []
-                if algo == "dqn":
+                if algo in ("dqn", "ddqn"):
                     m = run_dqn_eval(model_path, flow_key, scope=sc, _step_out=_sl)
                 else:
                     m = run_ppo_eval(model_path, flow_key, obs_mode=obs_mode, scope=sc, _step_out=_sl)
@@ -749,28 +797,36 @@ def main():
 
     summary_rows = []
     for (algo, reward, obs_mode, scope, flow), rows in sorted(grouped.items()):
-        queues = [float(r["mean_queue"]) for r in rows]
-        waits  = [float(r["mean_wait"])  for r in rows]
-        speeds = [float(r["mean_speed"]) for r in rows]
+        queues  = [float(r["mean_queue"]) for r in rows]
+        waits   = [float(r["mean_wait"])  for r in rows]
+        wpv     = [float(r.get("mean_wait_per_veh", 0)) for r in rows]
+        speeds  = [float(r["mean_speed"]) for r in rows]
+        thru    = [float(r.get("throughput", 0)) for r in rows]
+        ttime   = [float(r.get("mean_travel_time", 0)) for r in rows]
         summary_rows.append({
             "algo": algo, "reward": reward, "obs_mode": obs_mode,
             "scope": scope, "flow": flow,
             "n_runs": len(rows),
-            "mean_queue":   round(np.mean(queues),   3),
-            "std_queue":    round(np.std(queues),    3),
-            "median_queue": round(np.median(queues), 3),
-            "mean_wait":    round(np.mean(waits),    2),
-            "std_wait":     round(np.std(waits),     2),
-            "median_wait":  round(np.median(waits),  2),
-            "mean_speed":   round(np.mean(speeds),   4),
-            "std_speed":    round(np.std(speeds),    4),
-            "median_speed": round(np.median(speeds), 4),
+            "mean_queue":        round(np.mean(queues),  3),
+            "std_queue":         round(np.std(queues),   3),
+            "median_queue":      round(np.median(queues),3),
+            "mean_wait":         round(np.mean(waits),   2),
+            "std_wait":          round(np.std(waits),    2),
+            "mean_wait_per_veh": round(np.mean(wpv),     2),
+            "mean_speed":        round(np.mean(speeds),  4),
+            "std_speed":         round(np.std(speeds),   4),
+            "mean_throughput":   round(np.mean(thru),    1),
+            "std_throughput":    round(np.std(thru),     1),
+            "mean_travel_time":  round(np.mean(ttime),   2),
+            "std_travel_time":   round(np.std(ttime),    2),
         })
 
     sum_fields = ["algo","reward","obs_mode","scope","flow","n_runs",
                   "mean_queue","std_queue","median_queue",
-                  "mean_wait","std_wait","median_wait",
-                  "mean_speed","std_speed","median_speed"]
+                  "mean_wait","std_wait","mean_wait_per_veh",
+                  "mean_speed","std_speed",
+                  "mean_throughput","std_throughput",
+                  "mean_travel_time","std_travel_time"]
     with open(summary_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=sum_fields)
         w.writeheader()
