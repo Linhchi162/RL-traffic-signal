@@ -1,11 +1,11 @@
 #!/bin/bash
-# run_vast.sh — Train 36 models tren Vast.ai (64 CPU)
+# run_vast.sh — Train 32 models tren Vast.ai (64 CPU)
 #
-# 36 jobs chay DONG THOI:
+# 32 jobs chay DONG THOI:
 #   DQN  : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
 #   DDQN : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
-#   PPO  : 3 rewards x 4 seeds = 12 jobs  (~2 CPU/job, SubprocVecEnv spawn)
-#   Tong CPU su dung: ~12 + 12 + 24 = ~48 CPU (con du 16 CPU cho OS + overhead)
+#   PPO  : 2 rewards x 4 seeds =  8 jobs  (~2 CPU/job, SubprocVecEnv spawn)
+#   Tong CPU su dung: ~12 + 12 + 16 = ~40 CPU (con du 24 CPU cho OS + overhead)
 #
 # Usage:
 #   bash run_vast.sh
@@ -30,7 +30,7 @@ EXP_DIR="./experiments"
 LOG_DIR="./logs_vast"
 
 DQN_REWARDS=("queue" "pressure" "wait-clip")
-PPO_REWARDS=("queue" "pressure" "average-speed")
+PPO_REWARDS=("queue" "pressure")
 SEEDS=(42 123 777 999)
 
 # ===========================================================
@@ -56,10 +56,10 @@ python generate_train_flows.py --seed 999 --out generated_flows/test_s999.xml --
 echo "    Done."
 
 # ===========================================================
-# 3. Launch 30 jobs dong thoi
+# 3. Launch 32 jobs dong thoi
 # ===========================================================
 echo ""
-echo ">>> [3/3] Launch 36 jobs dong thoi..."
+echo ">>> [3/3] Launch 32 jobs dong thoi..."
 printf "    %-48s  %s\n" "JOB" "PID"
 printf "    %-48s  %s\n" "---" "---"
 

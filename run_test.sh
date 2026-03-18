@@ -17,7 +17,7 @@ EXP_DIR="./experiments_test"
 LOG_DIR="./logs_test"
 
 DQN_REWARDS=("queue" "pressure" "wait-clip")
-PPO_REWARDS=("queue" "pressure" "average-speed")
+PPO_REWARDS=("queue" "pressure")
 
 rm -rf "$EXP_DIR" "$LOG_DIR"
 mkdir -p "$LOG_DIR"
