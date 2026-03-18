@@ -1,5 +1,6 @@
 sumolib
 traci
+libsumo
 numpy
 gymnasium
 stable-baselines3
