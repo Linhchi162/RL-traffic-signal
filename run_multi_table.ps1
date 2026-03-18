@@ -34,30 +34,33 @@ $AllRuns = @()
 
 foreach ($seed in $Seeds) {
     foreach ($reward in $DQNRewards) {
-        # DQN
-        $sd = "$ExpDir\dqn_${reward}_s${seed}"
+        # DQN multi
+        $tag = "dqn_${reward}_multi_s${seed}"
+        $sd  = "$ExpDir\$tag"
         if (-not (Test-Path "$sd\dqn_final_model.zip")) {
-            $AllRuns += [PSCustomObject]@{ Algo="dqn"; Reward=$reward; Seed=$seed; SaveDir=$sd }
+            $AllRuns += [PSCustomObject]@{ Algo="dqn"; Reward=$reward; Seed=$seed; SaveDir=$sd; Tag=$tag }
         } else {
-            Write-Host "[SKIP] dqn_${reward}_s${seed}" -ForegroundColor DarkGray
+            Write-Host "[SKIP] $tag" -ForegroundColor DarkGray
         }
 
-        # DDQN
-        $sd = "$ExpDir\ddqn_${reward}_s${seed}"
+        # DDQN multi
+        $tag = "ddqn_${reward}_multi_s${seed}"
+        $sd  = "$ExpDir\$tag"
         if (-not (Test-Path "$sd\dqn_final_model.zip")) {
-            $AllRuns += [PSCustomObject]@{ Algo="ddqn"; Reward=$reward; Seed=$seed; SaveDir=$sd }
+            $AllRuns += [PSCustomObject]@{ Algo="ddqn"; Reward=$reward; Seed=$seed; SaveDir=$sd; Tag=$tag }
         } else {
-            Write-Host "[SKIP] ddqn_${reward}_s${seed}" -ForegroundColor DarkGray
+            Write-Host "[SKIP] $tag" -ForegroundColor DarkGray
         }
     }
 
     foreach ($reward in $PPORewards) {
-        # PPO 7D (baseline obs)
-        $sd = "$ExpDir\ppo_${reward}_baseline_s${seed}"
+        # PPO 7D baseline multi
+        $tag = "ppo_${reward}_baseline_multi_s${seed}"
+        $sd  = "$ExpDir\$tag"
         if (-not (Test-Path "$sd\ppo_final_model.zip")) {
-            $AllRuns += [PSCustomObject]@{ Algo="ppo"; Reward=$reward; Seed=$seed; SaveDir=$sd }
+            $AllRuns += [PSCustomObject]@{ Algo="ppo"; Reward=$reward; Seed=$seed; SaveDir=$sd; Tag=$tag }
         } else {
-            Write-Host "[SKIP] ppo_${reward}_baseline_s${seed}" -ForegroundColor DarkGray
+            Write-Host "[SKIP] $tag" -ForegroundColor DarkGray
         }
     }
 }
@@ -102,7 +105,7 @@ foreach ($run in $AllRuns) {
     while ($ActiveJobs.Count -ge $Jobs) { Wait-OneJob }
 
     $RunIdx++
-    $label   = "$($run.Algo)_$($run.Reward)_s$($run.Seed)"
+    $label   = $run.Tag
     $logFile = "$LogDir\${label}.log"
     Write-Host "[$RunIdx/$($AllRuns.Count)] Start: $label" -ForegroundColor Cyan
 
@@ -148,7 +151,7 @@ foreach ($run in $AllRuns) {
         } -ArgumentList $Python, $algo, $saveDir, $reward, $seed, $TotalSteps, $logFile, $WorkDir
     }
 
-    $ActiveJobs += [PSCustomObject]@{ Job=$job; Label=$label }
+    $ActiveJobs += [PSCustomObject]@{ Job = $job; Label = $label }
 }
 
 Write-Host ""
