@@ -479,7 +479,7 @@ def main():
         learning_starts=5_000,
         batch_size=64,
         tau=1.0,
-        gamma=0.95,
+        gamma=0.99,
         train_freq=4,
         target_update_interval=1_000,
         exploration_fraction=0.3,
