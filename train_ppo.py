@@ -26,6 +26,7 @@ from pathlib import Path
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 
 if "SUMO_HOME" not in os.environ:
@@ -58,9 +59,9 @@ from rl_controller.encoder_obs import CompressedState_16D
 # Factory môi trường — định nghĩa ở module-level để picklable trên Windows
 # ---------------------------------------------------------------------------
 
-def _make_env(net_file, route_file, obs_cls, reward_type, sim_duration, seed, use_gui):
-    """Tạo một TrafficControlEnv (được gọi trong subprocess với SubprocVecEnv)."""
-    return TrafficControlEnv(
+def _make_env(net_file, route_file, obs_cls, reward_type, sim_duration, seed, use_gui, amber_sec=0):
+    """Tạo một TrafficControlEnv bọc bởi Monitor (để SB3 theo dõi ep_info_buffer)."""
+    env = TrafficControlEnv(
         net_file=net_file,
         route_file=route_file,
         csv_output="",
@@ -70,7 +71,9 @@ def _make_env(net_file, route_file, obs_cls, reward_type, sim_duration, seed, us
         reward_fn=reward_type,
         obs_class=obs_cls,
         sumo_seed=seed,
+        amber_sec=amber_sec,
     )
+    return Monitor(env)
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +186,8 @@ def parse_args():
                    help="Số môi trường song song. Lưu ý: không dùng với --gui")
     p.add_argument("--sim_duration", type=int, default=None,
                    help="Độ dài mỗi episode (giây SUMO). Mặc định: total_steps + 5000")
+    p.add_argument("--amber_sec",    type=int, default=0,
+                   help="Thời gian đèn vàng (giây). 0 = đổi pha tức thì (khuyến nghị)")
     p.add_argument("--gui",      action="store_true", default=False)
     p.add_argument("--log_every", type=int, default=10_000)
     p.add_argument("--lr",        type=float, default=3e-4)
@@ -230,6 +235,7 @@ def main():
     print(f"  Steps    : {args.total_steps:,}")
     print(f"  n_envs   : {n_envs}")
     print(f"  Sim dur  : {sim_dur:,}")
+    print(f"  Amber sec: {args.amber_sec}")
     print(f"  Net file : {Path(net_file).name}")
     print(f"  Route    : {Path(route_file).name}")
     print(f"  Save dir : {args.save_dir}")
@@ -239,7 +245,7 @@ def main():
         functools.partial(
             _make_env,
             net_file, route_file, obs_cls, args.reward_type,
-            sim_dur, args.seed + i, args.gui,
+            sim_dur, args.seed + i, args.gui, args.amber_sec,
         )
         for i in range(n_envs)
     ]
