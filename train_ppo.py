@@ -96,10 +96,11 @@ class ProgressCallback(BaseCallback):
             remaining = (self.total_steps - self.num_timesteps) / rate
 
             vals        = self.model.logger.name_to_value
-            rew         = vals.get("rollout/ep_rew_mean", float("nan"))
+            ep_buf      = getattr(self.model, "ep_info_buffer", [])
+            rew         = float(np.mean([ep["r"] for ep in ep_buf])) if ep_buf else float("nan")
+            ep_len      = float(np.mean([ep["l"] for ep in ep_buf])) if ep_buf else float("nan")
             expl_var    = vals.get("train/explained_variance", float("nan"))
             approx_kl   = vals.get("train/approx_kl", float("nan"))
-            ep_len      = vals.get("rollout/ep_len_mean", float("nan"))
 
             msg = (
                 f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
@@ -298,7 +299,7 @@ def main():
     agent.learn(
         total_timesteps=remaining,
         callback=[metrics_cb, checkpoint_cb, progress_cb],
-        log_interval=10_000,
+        log_interval=4,
         reset_num_timesteps=(steps_done == 0),
     )
 

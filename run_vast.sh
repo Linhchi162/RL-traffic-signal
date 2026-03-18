@@ -59,7 +59,7 @@ echo "    Done."
 # 3. Launch 30 jobs dong thoi
 # ===========================================================
 echo ""
-echo ">>> [3/3] Launch 30 jobs dong thoi..."
+echo ">>> [3/3] Launch 36 jobs dong thoi..."
 printf "    %-48s  %s\n" "JOB" "PID"
 printf "    %-48s  %s\n" "---" "---"
 
