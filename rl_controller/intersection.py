@@ -405,8 +405,19 @@ class SignalController:
         return self.get_avg_speed()
 
     def _pressure_reward(self) -> float:
-        """Phần thưởng áp lực (xe ra - xe vào)."""
-        return self.get_intersection_pressure()
+        """Pressure: -(in_halting - out_halting) chuẩn hóa, clip [-1, 0].
+
+        Dùng xe dừng (halting) thay vì tổng xe; normalize theo
+        n_incoming_lanes × queue_norm_cap để scale tương đương queue reward.
+        """
+        in_halting = sum(
+            self.sumo.lane.getLastStepHaltingNumber(l) for l in self.incoming_lanes
+        )
+        out_halting = sum(
+            self.sumo.lane.getLastStepHaltingNumber(l) for l in self.outgoing_lanes
+        )
+        denom = max(len(self.incoming_lanes) * self.queue_norm_cap, 1.0)
+        return float(max(-1.0, min(0.0, -(in_halting - out_halting) / denom)))
 
     def _wait_clip_reward(self) -> float:
         """RESCO wait-clip: clip(-total_wait/100, -5, 0)."""
