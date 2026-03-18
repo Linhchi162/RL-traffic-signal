@@ -28,8 +28,9 @@ import torch as th
 import torch.nn.functional as F
 import gymnasium as gym
 from gymnasium import spaces
+import time
 from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 
 if "SUMO_HOME" not in os.environ:
     sys.exit("[train_dqn] SUMO_HOME chua duoc khai bao")
@@ -250,6 +251,34 @@ def pressure_reward(ts_id: str, sumo_conn) -> float:
     except Exception:
         pressure = 0.0
     return float(max(-5.0, min(5.0, -pressure)))
+
+
+class ProgressCallback(BaseCallback):
+    def __init__(self, total_steps: int, log_every: int = 10_000):
+        super().__init__()
+        self.total_steps = total_steps
+        self.log_every   = log_every
+        self._next_log   = log_every
+        self._t0         = None
+
+    def _on_training_start(self):
+        self._t0 = time.time()
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps >= self._next_log:
+            elapsed   = time.time() - self._t0
+            pct       = self.num_timesteps / self.total_steps * 100
+            rate      = self.num_timesteps / elapsed if elapsed > 0 else 1
+            remaining = (self.total_steps - self.num_timesteps) / rate
+            print(
+                f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
+                f"{pct:5.1f}% | "
+                f"{elapsed/60:.1f}min elapsed | "
+                f"~{remaining/60:.1f}min left",
+                flush=True,
+            )
+            self._next_log += self.log_every
+        return True
 
 
 REWARD_FN_MAP = {
@@ -499,6 +528,8 @@ def parse_args():
     p.add_argument("--total_steps", type=int, default=200_000)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--save_freq", type=int, default=10_000)
+    p.add_argument("--log_every", type=int, default=10_000,
+                   help="In progress moi N steps (default: 10000)")
     p.add_argument("--gui", action="store_true", default=False)
     return p.parse_args()
 
@@ -568,11 +599,13 @@ def main():
         seed=args.seed,
     )
 
+    progress_cb = ProgressCallback(total_steps=args.total_steps, log_every=args.log_every)
+
     print(f"\nBat dau huan luyen {args.total_steps:,} buoc...")
     agent.learn(
         total_timesteps=args.total_steps,
-        callback=checkpoint_cb,
-        log_interval=10,
+        callback=[checkpoint_cb, progress_cb],
+        log_interval=10_000,
     )
 
     final_model = os.path.join(args.save_dir, "dqn_final_model.zip")

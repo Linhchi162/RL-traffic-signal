@@ -30,6 +30,7 @@ import csv
 import functools
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -98,6 +99,34 @@ def _make_env(net_file, route_file, obs_cls, reward_type, total_steps,
 # ---------------------------------------------------------------------------
 # Callback ghi log
 # ---------------------------------------------------------------------------
+
+class ProgressCallback(BaseCallback):
+    def __init__(self, total_steps: int, log_every: int = 10_000):
+        super().__init__()
+        self.total_steps = total_steps
+        self.log_every   = log_every
+        self._next_log   = log_every
+        self._t0         = None
+
+    def _on_training_start(self):
+        self._t0 = time.time()
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps >= self._next_log:
+            elapsed   = time.time() - self._t0
+            pct       = self.num_timesteps / self.total_steps * 100
+            rate      = self.num_timesteps / elapsed if elapsed > 0 else 1
+            remaining = (self.total_steps - self.num_timesteps) / rate
+            print(
+                f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
+                f"{pct:5.1f}% | "
+                f"{elapsed/60:.1f}min elapsed | "
+                f"~{remaining/60:.1f}min left",
+                flush=True,
+            )
+            self._next_log += self.log_every
+        return True
+
 
 class TrainingMetricsCallback(BaseCallback):
     """
@@ -323,6 +352,8 @@ def parse_args():
                         "Lưu ý: n_envs>1 yêu cầu đủ RAM/CPU; không dùng với --gui")
     p.add_argument("--gui", action="store_true", default=False,
                    help="Bật giao diện SUMO GUI")
+    p.add_argument("--log_every", type=int, default=10_000,
+                   help="In progress moi N steps (default: 10000)")
     p.add_argument("--lr", type=float, default=None,
                    help="Learning rate (default: 3e-4 for single, 3e-6 for multi)")
     return p.parse_args()
@@ -411,7 +442,8 @@ def main():
     else:
         train_env = DummyVecEnv(env_fns)
 
-    metrics_cb = TrainingMetricsCallback(log_path=metrics_log)
+    metrics_cb  = TrainingMetricsCallback(log_path=metrics_log)
+    progress_cb = ProgressCallback(total_steps=remaining, log_every=args.log_every)
     # save_freq đơn vị là "timesteps per env" với VecEnv
     checkpoint_cb = CheckpointCallback(
         save_freq=max(1, args.save_freq // n_envs),
@@ -462,8 +494,8 @@ def main():
     print(f"\nBat dau huan luyen {remaining:,} buoc (tong {args.total_steps:,})...")
     agent.learn(
         total_timesteps=remaining,
-        callback=[metrics_cb, checkpoint_cb],
-        log_interval=1,
+        callback=[metrics_cb, checkpoint_cb, progress_cb],
+        log_interval=10_000,
         reset_num_timesteps=(steps_done == 0),
     )
 
