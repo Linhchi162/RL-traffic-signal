@@ -86,8 +86,7 @@ else
         RUNNING=$((RUNNING + 1))
 
         if [ $RUNNING -ge $JOBS ]; then
-            wait "${PIDS[0]}"
-            echo "[DONE] ${LABELS[0]}"
+            wait "${PIDS[0]}" && echo "[DONE] ${LABELS[0]}" || echo "[FAIL] ${LABELS[0]}"
             PIDS=("${PIDS[@]:1}")
             LABELS=("${LABELS[@]:1}")
             RUNNING=$((RUNNING - 1))
@@ -95,8 +94,7 @@ else
     done
 
     for i in "${!PIDS[@]}"; do
-        wait "${PIDS[$i]}"
-        echo "[DONE] ${LABELS[$i]}"
+        wait "${PIDS[$i]}" && echo "[DONE] ${LABELS[$i]}" || echo "[FAIL] ${LABELS[$i]}"
     done
 fi
 
