@@ -29,6 +29,8 @@ from gymnasium import spaces
 import time
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
 
 if "SUMO_HOME" not in os.environ:
     sys.exit("[train_dqn] SUMO_HOME chua duoc khai bao")
@@ -404,8 +406,12 @@ def parse_args():
     p.add_argument("--total_steps", type=int, default=200_000)
     p.add_argument("--seed",        type=int, default=42)
     p.add_argument("--save_freq",   type=int, default=10_000)
-    p.add_argument("--log_every",   type=int, default=10_000)
-    p.add_argument("--gui",         action="store_true", default=False)
+    p.add_argument("--log_every",    type=int, default=10_000)
+    p.add_argument("--sim_duration", type=int, default=None,
+                   help="Do dai moi episode (giay SUMO). Mac dinh: total_steps + 5000")
+    p.add_argument("--n_envs",       type=int, default=1,
+                   help="So env song song (SubprocVecEnv tren Linux, DummyVecEnv tren Windows)")
+    p.add_argument("--gui",          action="store_true", default=False)
     return p.parse_args()
 
 
@@ -428,14 +434,33 @@ def main():
     print(f"  Route   : {Path(route_file).name}")
     print("=" * 55)
 
-    train_env = RescoDQNEnv(
-        net_file=net_file,
-        route_file=route_file,
-        sim_duration=args.total_steps + 5_000,
-        sumo_seed=args.seed,
-        use_gui=args.gui,
-        reward_type=args.reward_type,
-    )
+    sim_dur = args.sim_duration if args.sim_duration else args.total_steps + 5_000
+    n_envs  = max(1, args.n_envs)
+
+    def _make(seed_offset):
+        return lambda: Monitor(RescoDQNEnv(
+            net_file=net_file,
+            route_file=route_file,
+            sim_duration=sim_dur,
+            sumo_seed=args.seed + seed_offset,
+            use_gui=args.gui,
+            reward_type=args.reward_type,
+        ))
+
+    if n_envs > 1:
+        if sys.platform == "win32":
+            train_env = DummyVecEnv([_make(i) for i in range(n_envs)])
+        else:
+            train_env = SubprocVecEnv([_make(i) for i in range(n_envs)], start_method="spawn")
+    else:
+        train_env = Monitor(RescoDQNEnv(
+            net_file=net_file,
+            route_file=route_file,
+            sim_duration=sim_dur,
+            sumo_seed=args.seed,
+            use_gui=args.gui,
+            reward_type=args.reward_type,
+        ))
 
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
     checkpoint_cb  = CheckpointCallback(
