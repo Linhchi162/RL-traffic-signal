@@ -239,11 +239,14 @@ def main():
         for i in range(n_envs)
     ]
 
-    if n_envs > 1 and sys.platform != "win32":
-        train_env = SubprocVecEnv(env_fns, start_method="fork")
-    else:
-        if n_envs > 1:
+    if n_envs > 1:
+        if sys.platform == "win32":
             print(f"[train_ppo] Windows: dùng DummyVecEnv ({n_envs} envs tuần tự)")
+            train_env = DummyVecEnv(env_fns)
+        else:
+            # spawn thay vi fork: tranh conflict libsumo trong child process
+            train_env = SubprocVecEnv(env_fns, start_method="spawn")
+    else:
         train_env = DummyVecEnv(env_fns)
 
     metrics_cb    = TrainingMetricsCallback(log_path=metrics_log)

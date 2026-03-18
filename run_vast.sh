@@ -1,11 +1,11 @@
 #!/bin/bash
-# run_vast.sh — Train 27 models tren Vast.ai (64 CPU)
+# run_vast.sh — Train 36 models tren Vast.ai (64 CPU)
 #
-# 27 jobs chay DONG THOI:
-#   DQN  : 3 rewards x 3 seeds =  9 jobs  (~1 CPU/job)
-#   DDQN : 3 rewards x 3 seeds =  9 jobs  (~1 CPU/job)
-#   PPO  : 3 rewards x 3 seeds =  9 jobs  (~2 CPU/job, SubprocVecEnv)
-#   Tong CPU su dung: ~9 + 9 + 18 = ~36 CPU (con du 28 CPU cho OS + overhead)
+# 36 jobs chay DONG THOI:
+#   DQN  : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
+#   DDQN : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
+#   PPO  : 3 rewards x 4 seeds = 12 jobs  (~2 CPU/job, SubprocVecEnv spawn)
+#   Tong CPU su dung: ~12 + 12 + 24 = ~48 CPU (con du 16 CPU cho OS + overhead)
 #
 # Usage:
 #   bash run_vast.sh
@@ -31,7 +31,7 @@ LOG_DIR="./logs_vast"
 
 DQN_REWARDS=("queue" "pressure" "wait-clip")
 PPO_REWARDS=("queue" "pressure" "average-speed")
-SEEDS=(42 123 777)
+SEEDS=(42 123 777 999)
 
 # ===========================================================
 # 1. Xoa experiments cu + tao thu muc
