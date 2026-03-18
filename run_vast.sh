@@ -1,11 +1,12 @@
 #!/bin/bash
-# run_vast.sh — Train 32 models tren Vast.ai (64 CPU)
+# run_vast.sh — Train 36 models tren Vast.ai (96 CPU, 512 GB RAM)
 #
-# 32 jobs chay DONG THOI:
-#   DQN  : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
-#   DDQN : 3 rewards x 4 seeds = 12 jobs  (~1 CPU/job)
-#   PPO  : 2 rewards x 4 seeds =  8 jobs  (~2 CPU/job, SubprocVecEnv spawn)
-#   Tong CPU su dung: ~12 + 12 + 16 = ~40 CPU (con du 24 CPU cho OS + overhead)
+# 36 jobs chay DONG THOI:
+#   DQN  : 3 rewards x 4 seeds = 12 jobs  (~2 CPU/job, n_envs=2)
+#   DDQN : 3 rewards x 4 seeds = 12 jobs  (~2 CPU/job, n_envs=2)
+#   PPO  : 3 rewards x 4 seeds = 12 jobs  (~4 CPU/job, SubprocVecEnv spawn)
+#   Tong CPU su dung: ~24 + 24 + 48 = ~96 CPU
+#   RAM: ~30-50 GB / 512 GB (buffer_size=500k tang hieu qua hoc DQN)
 #
 # Usage:
 #   bash run_vast.sh
@@ -30,7 +31,7 @@ EXP_DIR="./experiments"
 LOG_DIR="./logs_vast"
 
 DQN_REWARDS=("queue" "pressure" "wait-clip")
-PPO_REWARDS=("queue" "pressure")
+PPO_REWARDS=("queue" "pressure" "average-speed")
 SEEDS=(42 123 777 999)
 
 # ===========================================================
@@ -56,10 +57,10 @@ python generate_train_flows.py --seed 999 --out generated_flows/test_s999.xml --
 echo "    Done."
 
 # ===========================================================
-# 3. Launch 32 jobs dong thoi
+# 3. Launch 30 jobs dong thoi
 # ===========================================================
 echo ""
-echo ">>> [3/3] Launch 32 jobs dong thoi..."
+echo ">>> [3/3] Launch 36 jobs dong thoi..."
 printf "    %-48s  %s\n" "JOB" "PID"
 printf "    %-48s  %s\n" "---" "---"
 
@@ -77,7 +78,7 @@ _launch() {
     printf "    %-48s  %d\n" "$label" $pid
 }
 
-# --- DQN ---
+# --- DQN (n_envs=2: 2 CPU/job, buffer_size=500k tan dung RAM) ---
 for seed in "${SEEDS[@]}"; do
     for reward in "${DQN_REWARDS[@]}"; do
         _launch "dqn_${reward}_s${seed}" \
@@ -86,11 +87,13 @@ for seed in "${SEEDS[@]}"; do
                 --reward_type "$reward" \
                 --seed "$seed" \
                 --total_steps $STEPS \
+                --n_envs 2 \
+                --buffer_size 500000 \
                 --save_dir "$EXP_DIR/dqn_${reward}_s${seed}"
     done
 done
 
-# --- DDQN ---
+# --- DDQN (n_envs=2: 2 CPU/job, buffer_size=500k) ---
 for seed in "${SEEDS[@]}"; do
     for reward in "${DQN_REWARDS[@]}"; do
         _launch "ddqn_${reward}_s${seed}" \
@@ -99,11 +102,13 @@ for seed in "${SEEDS[@]}"; do
                 --reward_type "$reward" \
                 --seed "$seed" \
                 --total_steps $STEPS \
+                --n_envs 2 \
+                --buffer_size 500000 \
                 --save_dir "$EXP_DIR/ddqn_${reward}_s${seed}"
     done
 done
 
-# --- PPO (n_envs=2: SubprocVecEnv, moi job dung ~2 CPU) ---
+# --- PPO (n_envs=4: SubprocVecEnv, 4 CPU/job) ---
 for seed in "${SEEDS[@]}"; do
     for reward in "${PPO_REWARDS[@]}"; do
         _launch "ppo_${reward}_single_s${seed}" \
@@ -113,7 +118,7 @@ for seed in "${SEEDS[@]}"; do
                 --seed "$seed" \
                 --total_steps $STEPS \
                 --lr 3e-4 \
-                --n_envs 2 \
+                --n_envs 4 \
                 --save_dir "$EXP_DIR/ppo_${reward}_single_s${seed}"
     done
 done

@@ -410,6 +410,8 @@ def parse_args():
                    help="Do dai moi episode (giay SUMO). Mac dinh: total_steps + 5000")
     p.add_argument("--n_envs",       type=int, default=1,
                    help="So env song song (SubprocVecEnv tren Linux, DummyVecEnv tren Windows)")
+    p.add_argument("--buffer_size",  type=int, default=100_000,
+                   help="Kich thuoc replay buffer. Tang len neu co nhieu RAM (e.g. 500000)")
     p.add_argument("--amber_sec",    type=int, default=0,
                    help="So giay den vang khi doi pha. 0 = doi pha tuc thi (khuyen nghi de tranh bias)")
     p.add_argument("--gui",          action="store_true", default=False)
@@ -477,7 +479,7 @@ def main():
         policy="MlpPolicy",
         env=train_env,
         learning_rate=1e-3,
-        buffer_size=100_000,
+        buffer_size=args.buffer_size,
         learning_starts=5_000,
         batch_size=64,
         tau=1.0,
