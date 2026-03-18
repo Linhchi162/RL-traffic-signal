@@ -94,11 +94,18 @@ class ProgressCallback(BaseCallback):
             pct       = self.num_timesteps / self.total_steps * 100
             rate      = self.num_timesteps / elapsed if elapsed > 0 else 1
             remaining = (self.total_steps - self.num_timesteps) / rate
+
+            vals        = self.model.logger.name_to_value
+            rew         = vals.get("rollout/ep_rew_mean", float("nan"))
+            expl_var    = vals.get("train/explained_variance", float("nan"))
+            approx_kl   = vals.get("train/approx_kl", float("nan"))
+            ep_len      = vals.get("rollout/ep_len_mean", float("nan"))
+
             msg = (
                 f"[{self.num_timesteps:>7,}/{self.total_steps:,}] "
                 f"{pct:5.1f}% | "
-                f"{elapsed/60:.1f}min elapsed | "
-                f"~{remaining/60:.1f}min left"
+                f"{elapsed/60:.1f}min | ~{remaining/60:.1f}min left | "
+                f"rew={rew:+.3f} | expl_var={expl_var:.3f} | kl={approx_kl:.4f} | ep_len={ep_len:.0f}"
             )
             print(msg, flush=True)
             sys.stderr.write(msg + "\n")
