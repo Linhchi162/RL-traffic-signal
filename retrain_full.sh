@@ -122,27 +122,58 @@ for seed in "${NEW_SEEDS[@]}"; do
     printf "    %-50s  %d\n" "$label" $pid
 done
 
-echo ""
-echo "    32 jobs dang chay (~1h)."
-echo "    Theo doi PPO : tail -f $LOG_DIR/ppo_queue_single_s42.log"
-echo "    Theo doi DQN : tail -f $LOG_DIR/dqn_wait-clip_s314.log"
-echo ""
-
-# -----------------------------------------------------------------------
-# Wait tất cả
-# -----------------------------------------------------------------------
 TOTAL=${#ALL_PIDS[@]}
-FAIL=0
+echo ""
+echo "    $TOTAL jobs dang chay. Log: $LOG_DIR/"
+echo ""
 
-for i in "${!ALL_PIDS[@]}"; do
-    if wait "${ALL_PIDS[$i]}"; then
-        echo "  [OK]   ${ALL_LABELS[$i]}"
-    else
-        echo "  [FAIL] ${ALL_LABELS[$i]}"
-        FAIL=$((FAIL + 1))
-    fi
+# -----------------------------------------------------------------------
+# Progress bar — cap nhat moi 15 giay
+# -----------------------------------------------------------------------
+GREEN="\033[32m"; YELLOW="\033[33m"; RESET="\033[0m"; BOLD="\033[1m"
+
+declare -a DONE_FLAGS
+for i in "${!ALL_PIDS[@]}"; do DONE_FLAGS[$i]=0; done
+
+_bar() {
+    local done=$1 total=$2 width=30
+    local filled=$(( done * width / total ))
+    local empty=$(( width - filled ))
+    local bar=""
+    [ $filled -gt 0 ] && bar+=$(printf '█%.0s' $(seq 1 $filled))
+    [ $empty  -gt 0 ] && bar+=$(printf '░%.0s' $(seq 1 $empty))
+    echo "$bar"
+}
+
+FAIL=0
+while true; do
+    DONE_COUNT=0
+    for i in "${!ALL_PIDS[@]}"; do
+        if [ "${DONE_FLAGS[$i]}" -eq 1 ]; then
+            DONE_COUNT=$((DONE_COUNT + 1))
+        elif ! kill -0 "${ALL_PIDS[$i]}" 2>/dev/null; then
+            DONE_FLAGS[$i]=1
+            DONE_COUNT=$((DONE_COUNT + 1))
+            if wait "${ALL_PIDS[$i]}"; then
+                echo -e "  ${GREEN}✓${RESET} ${ALL_LABELS[$i]}"
+            else
+                echo -e "  ✗ ${ALL_LABELS[$i]}"
+                FAIL=$((FAIL + 1))
+            fi
+        fi
+    done
+
+    PCT=$(( DONE_COUNT * 100 / TOTAL ))
+    BAR=$(_bar $DONE_COUNT $TOTAL)
+    [ $PCT -ge 50 ] && C=$GREEN || C=$YELLOW
+    printf "\r${BOLD}[%s]${RESET} ${C}%s${RESET} %d/%d (%d%%)   " \
+        "$(date '+%H:%M:%S')" "$BAR" $DONE_COUNT $TOTAL $PCT
+
+    [ $DONE_COUNT -eq $TOTAL ] && break
+    sleep 15
 done
 
+echo ""
 OK=$((TOTAL - FAIL))
 echo ""
 echo "=========================================================="
