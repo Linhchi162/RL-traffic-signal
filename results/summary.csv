@@ -1,9 +1,0 @@
-algo,reward,obs_mode,scope,flow,n_runs,mean_queue,std_queue,median_queue,mean_wait,std_wait,median_wait,mean_speed,std_speed,median_speed
-dqn,wait-clip,resco,single,paper,3,124.778,2.193,125.93,115386.81,6551.0,118152.58,0.4605,0.0103,0.4556
-fixed,-,-,single,paper,1,24.846,0.0,24.846,845.3,0.0,845.3,3.8395,0.0,3.8395
-ppo,average-speed,raw,single,paper,3,41.302,6.368,43.749,1485.2,729.17,999.08,2.4492,0.4157,2.2819
-ppo,diff-waiting-time,raw,single,paper,3,39.304,8.086,36.44,1072.89,202.96,1108.8,2.5415,0.6202,2.564
-ppo,pressure,raw,single,paper,3,41.206,5.723,39.777,1015.69,127.77,1081.2,2.2866,0.3794,2.2188
-ppo,queue,baseline,single,paper,1,33.766,0.0,33.766,1003.61,0.0,1003.61,2.8537,0.0,2.8537
-ppo,queue,raw,single,paper,4,40.793,11.395,42.09,1375.13,605.01,1233.19,2.66,0.8735,2.4219
-webster,-,-,single,paper,1,50.037,0.0,50.037,729.14,0.0,729.14,1.5661,0.0,1.5661

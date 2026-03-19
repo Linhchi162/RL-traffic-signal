@@ -20,6 +20,8 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
+sys.stdout.reconfigure(encoding="utf-8")
+
 
 RANDOM_QUEUE = None   # được đọc từ CSV
 
