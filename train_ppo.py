@@ -293,13 +293,13 @@ def main():
             policy="MlpPolicy",
             env=train_env,
             learning_rate=args.lr,
-            n_steps=1024,
-            batch_size=256,
+            n_steps=256,        # 256×4env=1024/update → ~195 updates trong 200k (vs 49 cũ)
+            batch_size=64,
             n_epochs=10,
-            gamma=0.95,
+            gamma=0.99,
             gae_lambda=0.95,
             clip_range=0.2,
-            ent_coef=0.01,
+            ent_coef=0.05,      # tăng entropy bonus để explore đủ 4 pha
             verbose=1,
             seed=args.seed,
         )

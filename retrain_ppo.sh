@@ -17,7 +17,7 @@ fi
 STEPS=200000
 EXP_DIR="./experiments"
 LOG_DIR="./logs_vast"
-PPO_REWARDS=("queue" "pressure" "average-speed")
+PPO_REWARDS=("queue" "pressure" "wait-clip")
 SEEDS=(42 123 777 999)
 
 mkdir -p "$LOG_DIR"
