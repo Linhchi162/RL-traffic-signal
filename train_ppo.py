@@ -72,6 +72,7 @@ def _make_env(net_file, route_file, obs_cls, reward_type, sim_duration, seed, us
         obs_class=obs_cls,
         sumo_seed=seed,
         amber_sec=amber_sec,
+        show_warnings=False,
     )
     return Monitor(env)
 
