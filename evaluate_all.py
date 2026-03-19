@@ -43,7 +43,11 @@ SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
 # Generated test flows (seed=999, never seen during training).
 # Falls back to paper test_flows.xml if generated file is missing.
 _GENERATED_TEST = _HERE / "generated_flows" / "test_s999.xml"
-SINGLE_ROUTE = _GENERATED_TEST if _GENERATED_TEST.exists() else _RLTSCQ_NETS / "test_flows.xml"
+_route_env   = os.environ.get("EVAL_ROUTE_OVERRIDE")
+SINGLE_ROUTE = (
+    Path(_route_env) if _route_env
+    else (_GENERATED_TEST if _GENERATED_TEST.exists() else _RLTSCQ_NETS / "test_flows.xml")
+)
 
 EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 7_200))  # giay (~2h sim)
 
@@ -507,6 +511,8 @@ def parse_args():
     )
     p.add_argument("--models_dir", default="./experiments")
     p.add_argument("--save_dir",   default="./results")
+    p.add_argument("--route", type=str, default=None,
+                   help="Duong dan toi file flow test (override SINGLE_ROUTE)")
     p.add_argument("--skip_fixed",   action="store_true")
     p.add_argument("--skip_webster", action="store_true")
     p.add_argument("--skip_ae",      action="store_true")
@@ -521,6 +527,11 @@ def main():
     models_dir = Path(args.models_dir)
     save_dir   = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Cho phep override route qua --route hoac env var
+    global SINGLE_ROUTE
+    if args.route:
+        SINGLE_ROUTE = Path(args.route)
 
     if not SINGLE_NET.exists():
         print(f"[WARN] Thieu file mang: {SINGLE_NET}")

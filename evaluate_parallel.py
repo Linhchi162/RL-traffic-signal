@@ -95,6 +95,8 @@ def main():
     ap.add_argument("--models_dir",  default="./experiments")
     ap.add_argument("--eval_duration", type=int, default=7_200,
                     help="Do dai mo phong (giay)")
+    ap.add_argument("--route", type=str, default=None,
+                    help="File flow test (mac dinh: generated_flows/test_s999.xml)")
     ap.add_argument("--skip_ae",     action="store_true", default=True)
     args = ap.parse_args()
 
@@ -137,6 +139,8 @@ def main():
 
         env = os.environ.copy()
         env["EVAL_DURATION_OVERRIDE"] = str(args.eval_duration)
+        if args.route:
+            env["EVAL_ROUTE_OVERRIDE"] = str(args.route)
 
         log_path = save_dir / f"eval_job{i}.log"
         log_file = open(log_path, "w", encoding="utf-8")
