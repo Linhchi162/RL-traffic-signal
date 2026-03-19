@@ -221,7 +221,7 @@ def main():
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")
     final_model    = os.path.join(args.save_dir, "ppo_final_model.zip")
 
-    sim_dur = args.sim_duration if args.sim_duration else args.total_steps + 5_000
+    sim_dur = args.sim_duration if args.sim_duration else 7_200
     n_envs = max(1, args.n_envs)
     if args.gui and n_envs > 1:
         print("[train_ppo] Cảnh báo: --gui không hỗ trợ n_envs>1, đặt lại n_envs=1")

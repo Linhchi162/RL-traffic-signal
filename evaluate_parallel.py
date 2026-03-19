@@ -135,7 +135,7 @@ def main():
             "--skip_ae",
         ]
         if i > 0:
-            cmd += ["--skip_fixed", "--skip_webster"]
+            cmd += ["--skip_fixed", "--skip_webster", "--skip_random"]
 
         env = os.environ.copy()
         env["EVAL_DURATION_OVERRIDE"] = str(args.eval_duration)
@@ -170,7 +170,7 @@ def main():
         if all_csv.exists():
             with open(all_csv, newline="", encoding="utf-8") as f:
                 for row in csv.DictReader(f):
-                    if row["algo"] in ("fixed", "webster"):
+                    if row["algo"] in ("fixed", "webster", "random"):
                         bkey = (row["algo"],)
                         if bkey in seen_baselines:
                             continue

@@ -383,6 +383,67 @@ def run_webster_eval(_step_out: list = None) -> dict:
     }
 
 
+def run_random_eval(n_actions: int = 4, seed: int = 0, _step_out: list = None) -> dict:
+    """Random policy baseline — chon pha ngau nhien de xem PPO co beat duoc khong."""
+    import random
+    rng = random.Random(seed)
+
+    env = TrafficControlEnv(
+        net_file=str(SINGLE_NET),
+        route_file=str(SINGLE_ROUTE),
+        sim_duration=EVAL_DURATION + 500,
+        single_agent=True,
+        reward_fn="queue",
+        obs_class=IntersectionStateExtractor,
+        show_warnings=False,
+    )
+
+    obs, _ = env.reset()
+    tracker = _TravelTracker()
+    metrics_list  = []
+    action_counts = {}
+    _step_idx = 0
+
+    for _ in range(EVAL_DURATION // 5 * 4 + 200):
+        sumo_conn = env.sumo
+        if sumo_conn is None:
+            break
+        if sumo_conn.simulation.getTime() >= EVAL_DURATION:
+            break
+        tracker.update(sumo_conn)
+        m = collect_step_metrics(sumo_conn, env.signal_ids)
+        act = rng.randint(0, n_actions - 1)
+        action_counts[act] = action_counts.get(act, 0) + 1
+        obs, _, _, done, _ = env.step(act)
+        metrics_list.append(m)
+        if _step_out is not None:
+            _step_out.append({"step": _step_idx, "t": int(sumo_conn.simulation.getTime()),
+                              "action": act, "total_queue": m["total_queue"],
+                              "mean_speed": m["mean_speed"]})
+        _step_idx += 1
+        if done:
+            break
+
+    try:
+        env.close()
+    except Exception:
+        pass
+
+    if not metrics_list:
+        return _empty_result()
+
+    _print_action_distribution(action_counts, f"random_seed{seed}")
+    return {
+        "mean_queue":        float(np.mean([m["total_queue"] for m in metrics_list])),
+        "mean_wait":         float(np.mean([m["total_wait"] for m in metrics_list])),
+        "mean_wait_per_veh": float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":        float(np.mean([m["mean_speed"] for m in metrics_list])),
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      float(np.mean([-m["total_queue"] for m in metrics_list])),
+    }
+
+
 def run_fixed_eval(_step_out: list = None) -> dict:
     env = TrafficControlEnv(
         net_file=str(SINGLE_NET),
@@ -515,6 +576,7 @@ def parse_args():
                    help="Duong dan toi file flow test (override SINGLE_ROUTE)")
     p.add_argument("--skip_fixed",   action="store_true")
     p.add_argument("--skip_webster", action="store_true")
+    p.add_argument("--skip_random",  action="store_true")
     p.add_argument("--skip_ae",      action="store_true")
     p.add_argument("--only", type=str, default=None,
                    help="Chi eval cac model co ten khop (phan cach bang dau phay). "
@@ -562,8 +624,25 @@ def main():
         total_jobs += 1
     if not args.skip_webster:
         total_jobs += 1
+    if not args.skip_random:
+        total_jobs += 1
     job_idx = 0
     t0 = time.time()
+
+    # Random policy baseline
+    if not args.skip_random:
+        job_idx += 1
+        print(f"[{job_idx}/{total_jobs}] Random policy baseline (4 pha, seed=0)")
+        try:
+            _sl = []
+            m   = run_random_eval(n_actions=4, seed=0, _step_out=_sl)
+            all_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **m})
+            for s in _sl:
+                ts_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **s})
+            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+        except Exception as exc:
+            import traceback; traceback.print_exc()
+            print(f"  [ERR] {exc}")
 
     # Fixed-time baseline
     if not args.skip_fixed:

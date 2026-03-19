@@ -15,6 +15,7 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 
 STEPS=200000
+SIM_DUR=7200          # 7200s/episode → ~139 episodes (vs 5 voi mac dinh 205000s)
 EXP_DIR="./experiments"
 LOG_DIR="./logs_vast"
 PPO_REWARDS=("queue" "pressure" "wait-clip")
@@ -45,6 +46,7 @@ for seed in "${SEEDS[@]}"; do
             --obs_mode raw \
             --seed "$seed" \
             --total_steps $STEPS \
+            --sim_duration $SIM_DUR \
             --lr 3e-4 \
             --n_envs 4 \
             --save_dir "$sd" \
