@@ -158,21 +158,29 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
                  _step_out: list = None) -> dict:
     from stable_baselines3 import PPO
     from rl_controller.state_builder import IntersectionStateExtractor, BaselineObservation
-    from rl_controller.encoder_obs import (
-        CompressedState_4D, CompressedState_8D, CompressedState_16D,
-        CompressedState_19D, CompressedState_32D,
-    )
 
-    obs_cls = {
-        "raw":            IntersectionStateExtractor,
-        "baseline":       BaselineObservation,
-        "compressed_4d":  CompressedState_4D,
-        "compressed_8d":  CompressedState_8D,
-        "compressed_16d": CompressedState_16D,
-        "compressed_19d": CompressedState_19D,
-        "compressed_32d": CompressedState_32D,
-        "compressed":     CompressedState_16D,
-    }.get(obs_mode, IntersectionStateExtractor)
+    obs_cls_map = {
+        "raw":      IntersectionStateExtractor,
+        "baseline": BaselineObservation,
+    }
+    if obs_mode.startswith("compressed"):
+        try:
+            from rl_controller.encoder_obs import (
+                CompressedState_4D, CompressedState_8D, CompressedState_16D,
+                CompressedState_19D, CompressedState_32D,
+            )
+            obs_cls_map.update({
+                "compressed_4d":  CompressedState_4D,
+                "compressed_8d":  CompressedState_8D,
+                "compressed_16d": CompressedState_16D,
+                "compressed_19d": CompressedState_19D,
+                "compressed_32d": CompressedState_32D,
+                "compressed":     CompressedState_16D,
+            })
+        except ImportError:
+            pass
+
+    obs_cls = obs_cls_map.get(obs_mode, IntersectionStateExtractor)
 
     agent   = PPO.load(model_path, env=None)
     tracker = _TravelTracker()
