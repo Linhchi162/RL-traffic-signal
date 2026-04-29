@@ -6,6 +6,7 @@ tong hop ket qua voi mean +- std, xuat CSV san sang cho plotting.
 
 Su dung:
     python evaluate_all.py --models_dir ./experiments --save_dir ./results
+    python evaluate_all.py --workers 4   # chay 4 model song song
 
 Output:
     results/all_results.csv      -- Tat ca ket qua (moi dong = 1 model)
@@ -18,6 +19,7 @@ import csv
 import os
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Tuple
 
@@ -560,6 +562,49 @@ def discover_models(models_dir: Path, skip_ae: bool = False) -> List[Tuple[str, 
 
 
 # ---------------------------------------------------------------------------
+# Worker wrappers (picklable, pass all needed params explicitly)
+# ---------------------------------------------------------------------------
+
+def _worker_model(task):
+    """Run one model eval in a subprocess worker."""
+    kind, args = task
+    net, route, duration = args["net"], args["route"], args["duration"]
+
+    # Override globals inside worker process
+    global SINGLE_NET, SINGLE_ROUTE, EVAL_DURATION
+    SINGLE_NET    = Path(net)
+    SINGLE_ROUTE  = Path(route)
+    EVAL_DURATION = duration
+
+    _sl = []
+    if kind == "dqn":
+        m = run_dqn_eval(args["model_path"], _step_out=_sl)
+        row = {"algo": args["algo"], "reward": args["reward"],
+               "obs_mode": args["obs_mode"], "seed": args["seed"], **m}
+    elif kind == "ppo":
+        m = run_ppo_eval(args["model_path"], obs_mode=args["obs_mode"], _step_out=_sl)
+        row = {"algo": args["algo"], "reward": args["reward"],
+               "obs_mode": args["obs_mode"], "seed": args["seed"], **m}
+    elif kind == "random":
+        m = run_random_eval(n_actions=args["n_actions"], seed=args["seed"], _step_out=_sl)
+        row = {"algo": "random", "reward": "-", "obs_mode": "-", "seed": str(args["seed"]), **m}
+    elif kind == "fixed":
+        m = run_fixed_eval(_step_out=_sl)
+        row = {"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-", **m}
+    elif kind == "webster":
+        m = run_webster_eval(_step_out=_sl)
+        row = {"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-", **m}
+    else:
+        raise ValueError(f"Unknown task kind: {kind}")
+
+    ts = []
+    for s in _sl:
+        ts.append({"algo": row["algo"], "reward": row["reward"],
+                   "obs_mode": row["obs_mode"], "seed": row["seed"], **s})
+    return row, ts, m
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -579,6 +624,8 @@ def parse_args():
     p.add_argument("--only", type=str, default=None,
                    help="Chi eval cac model co ten khop (phan cach bang dau phay). "
                         "Ket qua se duoc merge vao CSV hien co.")
+    p.add_argument("--workers", type=int, default=1,
+                   help="So tien trinh song song (moi tien trinh 1 SUMO instance).")
     return p.parse_args()
 
 
@@ -617,79 +664,65 @@ def main():
     all_rows = []
     ts_rows  = []
 
-    total_jobs = len(models)
-    if not args.skip_fixed:
-        total_jobs += 1
-    if not args.skip_webster:
-        total_jobs += 1
+    # Build task list
+    _base = {"net": str(SINGLE_NET), "route": str(SINGLE_ROUTE), "duration": EVAL_DURATION}
+    tasks = []
+    task_labels = []
+
     if not args.skip_random:
-        total_jobs += 1
-    job_idx = 0
+        tasks.append(("random", {**_base, "n_actions": 4, "seed": 0}))
+        task_labels.append("Random baseline")
+    if not args.skip_fixed:
+        tasks.append(("fixed", {**_base}))
+        task_labels.append("Fixed-time baseline")
+    if not args.skip_webster:
+        tasks.append(("webster", {**_base}))
+        task_labels.append("Webster baseline")
+    for algo, reward, seed, model_path, obs_mode in models:
+        kind = "dqn" if algo in ("dqn", "ddqn") else "ppo"
+        tasks.append((kind, {**_base, "algo": algo, "reward": reward,
+                             "seed": seed, "model_path": model_path, "obs_mode": obs_mode}))
+        task_labels.append(f"{algo.upper()} reward={reward} seed={seed}")
+
+    total_jobs = len(tasks)
     t0 = time.time()
 
-    # Random policy baseline
-    if not args.skip_random:
-        job_idx += 1
-        print(f"[{job_idx}/{total_jobs}] Random policy baseline (4 pha, seed=0)")
-        try:
-            _sl = []
-            m   = run_random_eval(n_actions=4, seed=0, _step_out=_sl)
-            all_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **m})
-            for s in _sl:
-                ts_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **s})
-            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-        except Exception as exc:
-            import traceback; traceback.print_exc()
-            print(f"  [ERR] {exc}")
+    workers = max(1, args.workers)
+    print(f"Chay {total_jobs} jobs voi {workers} worker(s) song song...\n")
 
-    # Fixed-time baseline
-    if not args.skip_fixed:
-        job_idx += 1
-        print(f"[{job_idx}/{total_jobs}] Fixed-time baseline")
-        try:
-            _sl = []
-            m   = run_fixed_eval(_step_out=_sl)
-            all_rows.append({"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-", **m})
-            for s in _sl:
-                ts_rows.append({"algo": "fixed", "reward": "-", "obs_mode": "-", "seed": "-", **s})
-            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-        except Exception as exc:
-            import traceback; traceback.print_exc()
-            print(f"  [ERR] {exc}")
-
-    # Webster baseline
-    if not args.skip_webster:
-        job_idx += 1
-        print(f"[{job_idx}/{total_jobs}] Webster baseline")
-        try:
-            _sl = []
-            m   = run_webster_eval(_step_out=_sl)
-            all_rows.append({"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-", **m})
-            for s in _sl:
-                ts_rows.append({"algo": "webster", "reward": "-", "obs_mode": "-", "seed": "-", **s})
-            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-        except Exception as exc:
-            import traceback; traceback.print_exc()
-            print(f"  [ERR] {exc}")
-
-    # Trained models
-    for algo, reward, seed, model_path, obs_mode in models:
-        job_idx += 1
-        print(f"[{job_idx}/{total_jobs}] {algo.upper()} | reward={reward} | obs={obs_mode} | seed={seed}")
-        try:
-            _sl = []
-            if algo in ("dqn", "ddqn"):
-                m = run_dqn_eval(model_path, _step_out=_sl)
-            else:
-                m = run_ppo_eval(model_path, obs_mode=obs_mode, _step_out=_sl)
-            all_rows.append({"algo": algo, "reward": reward, "obs_mode": obs_mode, "seed": seed, **m})
-            for s in _sl:
-                ts_rows.append({"algo": algo, "reward": reward, "obs_mode": obs_mode, "seed": seed, **s})
-            print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
-        except Exception as exc:
-            import traceback
-            print(f"  [ERR] {exc}")
-            traceback.print_exc()
+    if workers == 1:
+        # Sequential — giữ output thẳng tắp
+        for idx, (task, label) in enumerate(zip(tasks, task_labels), 1):
+            print(f"[{idx}/{total_jobs}] {label}")
+            try:
+                row, ts, m = _worker_model(task)
+                all_rows.append(row)
+                ts_rows.extend(ts)
+                print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+            except Exception as exc:
+                import traceback; traceback.print_exc()
+                print(f"  [ERR] {exc}")
+    else:
+        # Parallel — dùng spawn để mỗi worker có SUMO instance riêng
+        import multiprocessing
+        ctx = multiprocessing.get_context("spawn")
+        done = 0
+        with ProcessPoolExecutor(max_workers=workers, mp_context=ctx) as pool:
+            future_to_label = {pool.submit(_worker_model, t): lbl
+                               for t, lbl in zip(tasks, task_labels)}
+            for fut in as_completed(future_to_label):
+                label = future_to_label[fut]
+                done += 1
+                try:
+                    row, ts, m = fut.result()
+                    all_rows.append(row)
+                    ts_rows.extend(ts)
+                    print(f"[{done}/{total_jobs}] DONE  {label}")
+                    print(f"  queue={m['mean_queue']:.2f}  wait={m['mean_wait']:.1f}  speed={m['mean_speed']:.3f}")
+                except Exception as exc:
+                    import traceback
+                    print(f"[{done}/{total_jobs}] ERR   {label}: {exc}")
+                    traceback.print_exc()
 
     # Merge với CSV cũ nếu dùng --only
     if only_filter and all_csv.exists():
