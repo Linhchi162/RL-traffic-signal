@@ -15,7 +15,24 @@ from pathlib import Path
 
 import numpy as np
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, CheckpointCallback
+
+
+class StepLogger(BaseCallback):
+    def __init__(self, log_freq: int = 5_000, total_steps: int = 200_000):
+        super().__init__()
+        self.log_freq    = log_freq
+        self.total_steps = total_steps
+
+    def _on_step(self) -> bool:
+        t = self.num_timesteps
+        if t % self.log_freq == 0 and t > 0:
+            pct  = 100 * t / self.total_steps
+            rews = self.locals.get("rewards")
+            mean_rew = float(np.mean(rews)) if rews is not None else float("nan")
+            print(f"  step {t:>7d}/{self.total_steps} ({pct:5.1f}%)"
+                  f"  mean_rew={mean_rew:+.3f}", flush=True)
+        return True
 
 if "SUMO_HOME" not in os.environ:
     sys.exit("[train_grid_ppo] SUMO_HOME chua duoc khai bao")
@@ -99,7 +116,8 @@ def main():
         device        = "cpu",
     )
 
-    model.learn(total_timesteps=args.total_steps, callback=ckpt_cb,
+    callbacks = CallbackList([ckpt_cb, StepLogger(log_freq=5_000, total_steps=args.total_steps)])
+    model.learn(total_timesteps=args.total_steps, callback=callbacks,
                 progress_bar=False)
     model.save(str(save_dir / "grid_ppo_final_model"))
     vec_env.close()
