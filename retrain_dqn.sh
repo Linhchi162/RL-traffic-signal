@@ -44,7 +44,7 @@ for seed in "${SEEDS[@]}"; do
             --reward_type "$reward" \
             --seed "$seed" \
             --total_steps $STEPS \
-            --sim_duration 7200 \
+            --sim_duration 100000 \
             --n_envs $N_ENVS \
             --buffer_size 500000 \
             --save_dir "$sd" \
