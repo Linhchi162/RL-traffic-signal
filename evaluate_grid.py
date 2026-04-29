@@ -33,6 +33,9 @@ EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 7_200))
 from rl_controller.traffic_env  import TrafficControlEnv
 from rl_controller.state_builder import BaselineObservation
 from rl_controller.grid_env     import MultiAgentVecEnv
+from rl_controller.webster      import DynamicWebsterController
+
+USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 
 
 # ---------------------------------------------------------------------------
@@ -266,6 +269,73 @@ def run_grid_fixed_eval(net: str, route: str, duration: int) -> dict:
     }
 
 
+def run_grid_webster_eval(net: str, route: str, duration: int) -> dict:
+    import sumolib
+    import traci as _traci
+
+    label = f"wsb_grid_{int(time.time()*1000) % 100000}"
+    cmd = [
+        sumolib.checkBinary("sumo"),
+        "-n", net,
+        "-r", route,
+        "--time-to-teleport", "-1",
+        "--no-warnings",
+    ]
+    if USE_LIBSUMO:
+        _traci.start(cmd)
+        sumo = _traci
+    else:
+        _traci.start(cmd, label=label)
+        sumo = _traci.getConnection(label)
+
+    signal_ids = list(sumo.trafficlight.getIDList())
+    tracker    = _TravelTracker()
+
+    def get_green_phases(ts):
+        logics = sumo.trafficlight.getAllProgramLogics(ts)
+        if not logics:
+            return [0]
+        return [i for i, ph in enumerate(logics[0].phases)
+                if "G" in ph.state.upper() and "Y" not in ph.state.upper()]
+
+    controllers = {
+        ts: DynamicWebsterController(ts, get_green_phases(ts), sumo)
+        for ts in signal_ids
+    }
+
+    metrics_list = []
+    try:
+        while sumo.simulation.getTime() < duration:
+            sumo.simulationStep()
+            t = sumo.simulation.getTime()
+            tracker.update(sumo)
+            for ctrl in controllers.values():
+                ctrl.step(t)
+            metrics_list.append(_collect_step_metrics(sumo, signal_ids))
+    except Exception as exc:
+        print(f"  [Webster-grid] Loi: {exc}")
+    finally:
+        try:
+            if not USE_LIBSUMO:
+                _traci.switch(label)
+            _traci.close()
+        except Exception:
+            pass
+
+    if not metrics_list:
+        return _empty_result()
+
+    return {
+        "mean_queue":        float(np.mean([m["total_queue"]       for m in metrics_list])),
+        "mean_wait":         float(np.mean([m["total_wait"]         for m in metrics_list])),
+        "mean_wait_per_veh": float(np.mean([m["mean_wait_per_veh"] for m in metrics_list])),
+        "mean_speed":        float(np.mean([m["mean_speed"]         for m in metrics_list])),
+        "throughput":        tracker.throughput,
+        "mean_travel_time":  tracker.mean_travel_time,
+        "total_reward":      0.0,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Model discovery
 # ---------------------------------------------------------------------------
@@ -320,6 +390,9 @@ def _worker(task):
     elif kind == "fixed":
         m = run_grid_fixed_eval(net, route, dur)
         row = {"algo": "fixed", "reward": "-", "seed": "-", **m}
+    elif kind == "webster":
+        m = run_grid_webster_eval(net, route, dur)
+        row = {"algo": "webster", "reward": "-", "seed": "-", **m}
 
     return row, m
 
@@ -332,8 +405,9 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--models_dir", default="./exp_grid")
     p.add_argument("--save_dir",   default="./results_grid")
-    p.add_argument("--skip_fixed",  action="store_true")
-    p.add_argument("--skip_random", action="store_true")
+    p.add_argument("--skip_fixed",   action="store_true")
+    p.add_argument("--skip_random",  action="store_true")
+    p.add_argument("--skip_webster", action="store_true")
     p.add_argument("--workers", type=int, default=1)
     return p.parse_args()
 
@@ -363,6 +437,9 @@ def main():
     if not args.skip_fixed:
         tasks.append(("fixed", {**_base}))
         labels.append("Fixed-time baseline (grid)")
+    if not args.skip_webster:
+        tasks.append(("webster", {**_base}))
+        labels.append("Webster baseline (grid)")
     for algo, reward, seed, model_path in models:
         tasks.append(("model", {**_base, "algo": algo, "reward": reward,
                                 "seed": seed, "model_path": model_path}))
