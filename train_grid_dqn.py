@@ -141,7 +141,7 @@ def main():
     )
 
     model.learn(total_timesteps=args.total_steps, callback=ckpt_cb,
-                progress_bar=False, log_interval=500)
+                progress_bar=False, log_interval=1)
     model.save(str(save_dir / f"grid_{args.algo}_final_model"))
     vec_env.close()
     print(f"[grid-{algo_label}] Done. Saved -> {save_dir}")
