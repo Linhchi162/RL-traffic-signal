@@ -119,7 +119,7 @@
 
     <!-- Central Traffic Light Controlled Junction -->
     <!-- Correct incLanes: lists lanes ENDING at junction 't' -->
-    <junction id="t" type="traffic_light" x="150.00" y="150.00" incLanes="s_t_0 s_t_1 e_t_0 e_t_1 n_t_0 n_t_1 w_t_0 w_t_1" intLanes=":t_0_0 :t_1_0 :t_12_0 :t_3_0 :t_4_0 :t_5_0 :t_6_0 :t_7_0 :t_13_0 :t_9_0 :t_10_0 :t_11_0" shape="143.60,139.60 156.40,139.60 160.40,143.60 160.40,156.40 156.40,160.40 143.60,160.40 139.60,156.40 139.60,143.60">
+    <junction id="t" type="traffic_light_right_on_red" x="150.00" y="150.00" incLanes="s_t_0 s_t_1 e_t_0 e_t_1 n_t_0 n_t_1 w_t_0 w_t_1" intLanes=":t_0_0 :t_1_0 :t_12_0 :t_3_0 :t_4_0 :t_5_0 :t_6_0 :t_7_0 :t_13_0 :t_9_0 :t_10_0 :t_11_0" shape="143.60,139.60 156.40,139.60 160.40,143.60 160.40,156.40 156.40,160.40 143.60,160.40 139.60,156.40 139.60,143.60">
          <!-- Note: Changed type to traffic_light explicitly as it has tlLogic. Requests remain priority-based but overridden by TLS -->
         <request index="0"  response="000000000000" foes="000000010000" cont="0"/> <!-- s_t_0 turning left to t_w_0 -->
         <request index="1"  response="000000000000" foes="111100010000" cont="0"/> <!-- s_t_0 going straight to t_n_0 -->
@@ -142,22 +142,15 @@
 
     <!-- Traffic Light Logic for Junction 't' -->
     <tlLogic id="t" type="static" programID="0" offset="0">
-        <!-- Index:       11 10 9  8  7  6  5  4  3  2  1  0              -->
-        <!-- Connection: W>S W>E W>N N>W N>S N>E E>N E>W E>S S>E S>N S>W  -->
-        <!--             r   s  l   r   s  l   r   s  l   r   s  l       -->
-        <!-- Lane:       1   0  0   1   0  0   1   0  0   1   0  0       -->
-        <!-- Phase 1: E/W straight/left allowed (NS Red) -->
-        <phase duration="39" state="GGrrrrGGrrrr"/> <!-- S>W G, S>N G, E>S r, E>W G, E>N G, N>E r, N>S r, N>W r, W>N G, W>E G, W>S r -->
-        <phase duration="5"  state="yyrrrryyrrrr"/> <!-- Yellow for E/W -->
-        <!-- Phase 2: E/W right turn allowed (All others Red) -->
-        <phase duration="25"  state="rrGrrrrrGrrr"/> <!-- S>E G, N>W G -->
-        <phase duration="5"  state="rryrrrrryrrr"/> <!-- Yellow for E/W Right -->
-        <!-- Phase 3: N/S straight/left allowed (EW Red) -->
-        <phase duration="31" state="rrrGGrrrrGGr"/> <!-- S>W r, S>N G, S>E G, E>S r, E>W r, E>N r, N>E G, N>S G, N>W r, W>N r, W>E r, W>S G -->
-        <phase duration="5"  state="rrryyrrrryyr"/> <!-- Yellow for N/S -->
-        <!-- Phase 4: N/S right turn allowed (All others Red) -->
-        <phase duration="24"  state="rrrrrGrrrrrG"/> <!-- E>N G, W>S G -->
-        <phase duration="5"  state="rrrrryrrrrry"/> <!-- Yellow for N/S Right -->
+        <!-- Index:    0    1    2    3    4    5    6    7    8    9   10   11  -->
+        <!-- Movement: S>W  S>N  S>E  E>S  E>W  E>N  N>E  N>S  N>W  W>N  W>E  W>S -->
+        <!-- Dir:      l    s    r    l    s    r    l    s    r    l    s    r  -->
+        <!-- NS green: N+S straight+left green, right turns permissive (s=yield-on-red), EW red -->
+        <phase duration="40" state="GGsrrsGGsrrs"/>
+        <phase duration="4"  state="yysrrsyysrrs"/>
+        <!-- WE green: E+W straight+left green, right turns permissive (s=yield-on-red), NS red -->
+        <phase duration="40" state="rrsGGsrrsGGs"/>
+        <phase duration="4"  state="rrsyysrrsyys"/>
     </tlLogic>
 
     <!-- Connections through Junction 't' (Controlled by tlLogic above) -->
