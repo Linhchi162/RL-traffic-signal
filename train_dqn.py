@@ -43,16 +43,8 @@ _HERE = Path(__file__).parent
 SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
 SINGLE_ROUTE = _HERE / "nets" / "train_flows.xml"   # fallback neu chua co generated
 
-_GENERATED_FLOWS = {
-    42:   _HERE / "generated_flows" / "train_s0.xml",
-    123:  _HERE / "generated_flows" / "train_s1.xml",
-    777:  _HERE / "generated_flows" / "train_s2.xml",
-    999:  _HERE / "generated_flows" / "train_s0.xml",
-    314:  _HERE / "generated_flows" / "train_s1.xml",
-    2025: _HERE / "generated_flows" / "train_s2.xml",
-    2718: _HERE / "generated_flows" / "train_s0.xml",
-    9999: _HERE / "generated_flows" / "train_s1.xml",
-}
+_TRAIN_FLOW = _HERE / "generated_flows" / "train_s0.xml"
+_GENERATED_FLOWS = {seed: _TRAIN_FLOW for seed in (42, 123, 777, 999, 314, 2025, 2718, 9999)}
 
 # RESCO reward clipping parameters (Eq. 19)
 REWARD_ALPHA = 300.0
