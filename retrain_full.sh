@@ -50,7 +50,7 @@ for seed in "${SEEDS[@]}"; do
         mkdir -p "$sd"
         python train_ppo.py \
             --reward_type "$reward" \
-            --obs_mode raw \
+            --obs_mode baseline \
             --seed "$seed" \
             --total_steps $STEPS \
             --sim_duration $SIM_DUR \
