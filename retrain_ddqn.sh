@@ -13,7 +13,7 @@ export CUDA_VISIBLE_DEVICES=""
 if [ -f ".venv/bin/activate" ]; then source .venv/bin/activate; fi
 
 STEPS=200000
-N_ENVS=4
+N_ENVS=1
 EXP_DIR="./experiments"
 LOG_DIR="./logs_ddqn"
 
