@@ -22,10 +22,9 @@ if "SUMO_HOME" not in os.environ:
     sys.exit("[eval_checkpoints] SUMO_HOME chua duoc khai bao")
 
 _HERE = Path(__file__).parent
-_RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
-SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
+SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
 _GEN_TEST    = _HERE / "generated_flows" / "test_s999.xml"
-SINGLE_ROUTE = _GEN_TEST if _GEN_TEST.exists() else _RLTSCQ_NETS / "test_flows.xml"
+SINGLE_ROUTE = _GEN_TEST if _GEN_TEST.exists() else _HERE / "nets" / "test_flows.xml"
 
 EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 1800))  # nhanh hơn 7200
 

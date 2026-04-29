@@ -37,16 +37,14 @@ import sumolib
 import gymnasium as gym
 
 _HERE = Path(__file__).parent
-_RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
-
-SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
+SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
 # Generated test flows (seed=999, never seen during training).
 # Falls back to paper test_flows.xml if generated file is missing.
 _GENERATED_TEST = _HERE / "generated_flows" / "test_s999.xml"
 _route_env   = os.environ.get("EVAL_ROUTE_OVERRIDE")
 SINGLE_ROUTE = (
     Path(_route_env) if _route_env
-    else (_GENERATED_TEST if _GENERATED_TEST.exists() else _RLTSCQ_NETS / "test_flows.xml")
+    else (_GENERATED_TEST if _GENERATED_TEST.exists() else _HERE / "nets" / "test_flows.xml")
 )
 
 EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 7_200))  # giay (~2h sim)

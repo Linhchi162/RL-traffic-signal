@@ -39,10 +39,9 @@ import traci
 import sumolib
 
 _HERE = Path(__file__).parent
-_RLTSCQ_NETS = _HERE / "RLTSCQ" / "RLTSCQ-main" / "sumo_rl" / "nets" / "RLQ"
 
-SINGLE_NET   = _RLTSCQ_NETS / "caliberated_net.xml"
-SINGLE_ROUTE = _RLTSCQ_NETS / "train_flows.xml"   # fallback neu chua co generated
+SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
+SINGLE_ROUTE = _HERE / "nets" / "train_flows.xml"   # fallback neu chua co generated
 
 _GENERATED_FLOWS = {
     42:  _HERE / "generated_flows" / "train_s0.xml",
