@@ -20,13 +20,22 @@ from stable_baselines3.common.callbacks import BaseCallback, CallbackList, Check
 
 
 class StepLogger(BaseCallback):
-    def __init__(self, log_freq: int = 10_000):
+    def __init__(self, log_freq: int = 5_000, total_steps: int = 200_000):
         super().__init__()
-        self.log_freq = log_freq
+        self.log_freq   = log_freq
+        self.total_steps = total_steps
 
     def _on_step(self) -> bool:
-        if self.num_timesteps % self.log_freq == 0:
-            print(f"  step {self.num_timesteps}", flush=True)
+        t = self.num_timesteps
+        if t % self.log_freq == 0 and t > 0:
+            eps  = getattr(self.model, "exploration_rate", float("nan"))
+            upd  = getattr(self.model, "_n_updates", 0)
+            pct  = 100 * t / self.total_steps
+            rews = self.locals.get("rewards")
+            mean_rew = float(np.mean(rews)) if rews is not None else float("nan")
+            print(f"  step {t:>7d}/{self.total_steps} ({pct:5.1f}%)"
+                  f"  eps={eps:.3f}  updates={upd:>6d}"
+                  f"  mean_rew={mean_rew:+.3f}", flush=True)
         return True
 
 if "SUMO_HOME" not in os.environ:
@@ -151,7 +160,7 @@ def main():
         device               = "cpu",
     )
 
-    callbacks = CallbackList([ckpt_cb, StepLogger(log_freq=10_000)])
+    callbacks = CallbackList([ckpt_cb, StepLogger(log_freq=5_000, total_steps=args.total_steps)])
     model.learn(total_timesteps=args.total_steps, callback=callbacks,
                 progress_bar=False, log_interval=1)
     model.save(str(save_dir / f"grid_{args.algo}_final_model"))
