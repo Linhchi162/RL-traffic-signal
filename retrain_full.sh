@@ -1,10 +1,14 @@
 #!/bin/bash
-# retrain_full.sh — Retrain toàn bộ experiments
+# retrain_full.sh — Train DQN/DDQN các seeds còn thiếu (19 jobs)
 #
-# PPO:  8 seeds × 3 rewards = 24 jobs
-# DQN:  8 seeds × 3 rewards = 24 jobs
-# DDQN: 8 seeds × 3 rewards = 24 jobs
-# Tổng: 72 jobs song song
+# PPO đã có đủ 8 seeds × 3 rewards — không cần retrain.
+# Thiếu:
+#   dqn  pressure:  s777 s999
+#   dqn  queue:     s999
+#   dqn  wait-clip: s314 s777 s999 s2025 s2718 s9999
+#   ddqn pressure:  s777 s999
+#   ddqn queue:     s777 s999
+#   ddqn wait-clip: s314 s777 s999 s2025 s2718 s9999
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -13,117 +17,53 @@ export SUMO_HOME="${SUMO_HOME:-/usr/share/sumo}"
 export LIBSUMO_AS_TRACI="1"
 export OPENBLAS_NUM_THREADS="1"
 export OMP_NUM_THREADS="1"
+export CUDA_VISIBLE_DEVICES=""
 
 if [ -f ".venv/bin/activate" ]; then source .venv/bin/activate; fi
 
 STEPS=200000
-SIM_DUR=7200
 EXP_DIR="./experiments"
 LOG_DIR="./logs_full"
-
-SEEDS=(42 123 777 999 314 2025 2718 9999)
-PPO_REWARDS=("queue" "pressure" "wait-clip")
-DQN_REWARDS=("queue" "pressure" "wait-clip")
-
 mkdir -p "$LOG_DIR"
 
 declare -a ALL_PIDS ALL_LABELS
 
-# -----------------------------------------------------------------------
-# PPO: 8 seeds × 3 rewards = 24 jobs
-# -----------------------------------------------------------------------
-echo ""
-echo ">>> Xoa PPO experiments cu (retrain voi sim_duration=$SIM_DUR)..."
-for seed in "${SEEDS[@]}"; do
-    for reward in "${PPO_REWARDS[@]}"; do
-        rm -rf "$EXP_DIR/ppo_${reward}_single_s${seed}"
-    done
-done
+_launch() {
+    local algo=$1 reward=$2 seed=$3
+    local label="${algo}_${reward}_s${seed}"
+    mkdir -p "$EXP_DIR/$label"
+    python train_dqn.py \
+        --algo "$algo" \
+        --reward_type "$reward" \
+        --seed "$seed" \
+        --total_steps $STEPS \
+        --n_envs 2 \
+        --buffer_size 500000 \
+        --save_dir "$EXP_DIR/$label" \
+        > "$LOG_DIR/${label}.log" 2>&1 &
+    ALL_PIDS+=($!)
+    ALL_LABELS+=("$label")
+    printf "  %-45s  PID %d\n" "$label" $!
+}
+
+echo ">>> DQN (9 jobs)"
+_launch dqn pressure 777
+_launch dqn pressure 999
+_launch dqn queue    999
+for s in 314 777 999 2025 2718 9999; do _launch dqn wait-clip $s; done
 
 echo ""
-echo ">>> Launch 24 PPO jobs..."
-for seed in "${SEEDS[@]}"; do
-    for reward in "${PPO_REWARDS[@]}"; do
-        label="ppo_${reward}_single_s${seed}"
-        sd="$EXP_DIR/$label"
-        mkdir -p "$sd"
-        python train_ppo.py \
-            --reward_type "$reward" \
-            --obs_mode raw \
-            --seed "$seed" \
-            --total_steps $STEPS \
-            --sim_duration $SIM_DUR \
-            --lr 3e-4 \
-            --n_envs 2 \
-            --save_dir "$sd" \
-            > "$LOG_DIR/${label}.log" 2>&1 &
-        pid=$!
-        ALL_PIDS+=($pid)
-        ALL_LABELS+=("$label")
-        printf "  %-50s  PID %d\n" "$label" $pid
-    done
-done
-
-# -----------------------------------------------------------------------
-# DQN: 8 seeds × 3 rewards = 24 jobs
-# -----------------------------------------------------------------------
-echo ""
-echo ">>> Launch 24 DQN jobs..."
-for seed in "${SEEDS[@]}"; do
-    for reward in "${DQN_REWARDS[@]}"; do
-        label="dqn_${reward}_s${seed}"
-        sd="$EXP_DIR/$label"
-        mkdir -p "$sd"
-        python train_dqn.py \
-            --algo dqn \
-            --reward_type "$reward" \
-            --seed "$seed" \
-            --total_steps $STEPS \
-            --n_envs 2 \
-            --buffer_size 500000 \
-            --save_dir "$sd" \
-            > "$LOG_DIR/${label}.log" 2>&1 &
-        pid=$!
-        ALL_PIDS+=($pid)
-        ALL_LABELS+=("$label")
-        printf "  %-50s  PID %d\n" "$label" $pid
-    done
-done
-
-# -----------------------------------------------------------------------
-# DDQN: 8 seeds × 3 rewards = 24 jobs
-# -----------------------------------------------------------------------
-echo ""
-echo ">>> Launch 24 DDQN jobs..."
-for seed in "${SEEDS[@]}"; do
-    for reward in "${DQN_REWARDS[@]}"; do
-        label="ddqn_${reward}_s${seed}"
-        sd="$EXP_DIR/$label"
-        mkdir -p "$sd"
-        python train_dqn.py \
-            --algo ddqn \
-            --reward_type "$reward" \
-            --seed "$seed" \
-            --total_steps $STEPS \
-            --n_envs 2 \
-            --buffer_size 500000 \
-            --save_dir "$sd" \
-            > "$LOG_DIR/${label}.log" 2>&1 &
-        pid=$!
-        ALL_PIDS+=($pid)
-        ALL_LABELS+=("$label")
-        printf "  %-50s  PID %d\n" "$label" $pid
-    done
-done
+echo ">>> DDQN (10 jobs)"
+_launch ddqn pressure  777
+_launch ddqn pressure  999
+_launch ddqn queue     777
+_launch ddqn queue     999
+for s in 314 777 999 2025 2718 9999; do _launch ddqn wait-clip $s; done
 
 TOTAL=${#ALL_PIDS[@]}
 echo ""
 echo "  $TOTAL jobs dang chay. Log: $LOG_DIR/"
-echo ""
 
-# -----------------------------------------------------------------------
-# Progress monitor
-# -----------------------------------------------------------------------
 declare -a DONE_FLAGS
 for i in "${!ALL_PIDS[@]}"; do DONE_FLAGS[$i]=0; done
 FAIL=0
@@ -144,20 +84,13 @@ while true; do
             fi
         fi
     done
-    PCT=$(( DONE_COUNT * 100 / TOTAL ))
-    printf "\r  [%s] %d/%d (%d%%)   " "$(date '+%H:%M:%S')" $DONE_COUNT $TOTAL $PCT
+    printf "\r  [%s] %d/%d   " "$(date '+%H:%M:%S')" $DONE_COUNT $TOTAL
     [ $DONE_COUNT -eq $TOTAL ] && break
     sleep 15
 done
 
 echo ""
-OK=$((TOTAL - FAIL))
+echo "  Hoan tat: $((TOTAL - FAIL))/$TOTAL OK"
 echo ""
-echo "=========================================================="
-echo "  Hoan tat: $OK/$TOTAL OK"
-echo ""
-echo "  Buoc tiep theo:"
-echo "  1. python evaluate_all.py --models_dir ./experiments \\"
-echo "          --save_dir ./results_final --skip_ae"
-echo "  2. python analyze_results.py --results_dir ./results_final"
-echo "=========================================================="
+echo "  Buoc tiep theo — copy experiments ve local:"
+echo "    rsync -avz --progress <user>@<vast-ip>:/workspace/rl-traffic/experiments/ ./experiments/"
