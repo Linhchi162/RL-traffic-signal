@@ -5,9 +5,9 @@
     <edge id="n_t" from="n" to="t" priority="-1" numLanes="3" speed="13.90"/>
     <edge id="s_t" from="s" to="t" priority="-1" numLanes="3" speed="13.90"/>
     <edge id="w_t" from="w" to="t" priority="-1" numLanes="3" speed="13.90"/>
-    <!-- Outgoing: 2 lanes -->
-    <edge id="t_e" from="t" to="e" priority="-1" numLanes="2" speed="13.90"/>
-    <edge id="t_n" from="t" to="n" priority="-1" numLanes="2" speed="13.90"/>
-    <edge id="t_s" from="t" to="s" priority="-1" numLanes="2" speed="13.90"/>
-    <edge id="t_w" from="t" to="w" priority="-1" numLanes="2" speed="13.90"/>
+    <!-- Outgoing: 3 lanes -->
+    <edge id="t_e" from="t" to="e" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t_n" from="t" to="n" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t_s" from="t" to="s" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t_w" from="t" to="w" priority="-1" numLanes="3" speed="13.90"/>
 </edges>
