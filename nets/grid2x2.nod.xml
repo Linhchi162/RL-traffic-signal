@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nodes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/nodes_file.xsd">
+    <node id="t00" x="150.00" y="450.00" type="traffic_light" tl="t00"/>
+    <node id="t01" x="450.00" y="450.00" type="traffic_light" tl="t01"/>
+    <node id="t10" x="150.00" y="150.00" type="traffic_light" tl="t10"/>
+    <node id="t11" x="450.00" y="150.00" type="traffic_light" tl="t11"/>
+    <node id="n00" x="150.00" y="600.00" type="dead_end"/>
+    <node id="n01" x="450.00" y="600.00" type="dead_end"/>
+    <node id="s10" x="150.00" y="0.00" type="dead_end"/>
+    <node id="s11" x="450.00" y="0.00" type="dead_end"/>
+    <node id="w00" x="0.00" y="450.00" type="dead_end"/>
+    <node id="w10" x="0.00" y="150.00" type="dead_end"/>
+    <node id="e01" x="600.00" y="450.00" type="dead_end"/>
+    <node id="e11" x="600.00" y="150.00" type="dead_end"/>
+</nodes>

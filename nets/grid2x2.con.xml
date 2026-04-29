@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connections xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/connections_file.xsd">
+    <!-- t00 -->
+    <connection from="n00_t00" to="t00_w00" fromLane="0" toLane="0"/>
+    <connection from="n00_t00" to="t00_t10" fromLane="1" toLane="1"/>
+    <connection from="n00_t00" to="t00_t01" fromLane="2" toLane="2"/>
+    <connection from="t10_t00" to="t00_t01" fromLane="0" toLane="0"/>
+    <connection from="t10_t00" to="t00_n00" fromLane="1" toLane="1"/>
+    <connection from="t10_t00" to="t00_w00" fromLane="2" toLane="2"/>
+    <connection from="t01_t00" to="t00_t10" fromLane="0" toLane="0"/>
+    <connection from="t01_t00" to="t00_w00" fromLane="1" toLane="1"/>
+    <connection from="t01_t00" to="t00_n00" fromLane="2" toLane="2"/>
+    <connection from="w00_t00" to="t00_n00" fromLane="0" toLane="0"/>
+    <connection from="w00_t00" to="t00_t01" fromLane="1" toLane="1"/>
+    <connection from="w00_t00" to="t00_t10" fromLane="2" toLane="2"/>
+    <!-- t01 -->
+    <connection from="n01_t01" to="t01_t00" fromLane="0" toLane="0"/>
+    <connection from="n01_t01" to="t01_t11" fromLane="1" toLane="1"/>
+    <connection from="n01_t01" to="t01_e01" fromLane="2" toLane="2"/>
+    <connection from="t11_t01" to="t01_e01" fromLane="0" toLane="0"/>
+    <connection from="t11_t01" to="t01_n01" fromLane="1" toLane="1"/>
+    <connection from="t11_t01" to="t01_t00" fromLane="2" toLane="2"/>
+    <connection from="e01_t01" to="t01_t11" fromLane="0" toLane="0"/>
+    <connection from="e01_t01" to="t01_t00" fromLane="1" toLane="1"/>
+    <connection from="e01_t01" to="t01_n01" fromLane="2" toLane="2"/>
+    <connection from="t00_t01" to="t01_n01" fromLane="0" toLane="0"/>
+    <connection from="t00_t01" to="t01_e01" fromLane="1" toLane="1"/>
+    <connection from="t00_t01" to="t01_t11" fromLane="2" toLane="2"/>
+    <!-- t10 -->
+    <connection from="t00_t10" to="t10_w10" fromLane="0" toLane="0"/>
+    <connection from="t00_t10" to="t10_s10" fromLane="1" toLane="1"/>
+    <connection from="t00_t10" to="t10_t11" fromLane="2" toLane="2"/>
+    <connection from="s10_t10" to="t10_t11" fromLane="0" toLane="0"/>
+    <connection from="s10_t10" to="t10_t00" fromLane="1" toLane="1"/>
+    <connection from="s10_t10" to="t10_w10" fromLane="2" toLane="2"/>
+    <connection from="t11_t10" to="t10_s10" fromLane="0" toLane="0"/>
+    <connection from="t11_t10" to="t10_w10" fromLane="1" toLane="1"/>
+    <connection from="t11_t10" to="t10_t00" fromLane="2" toLane="2"/>
+    <connection from="w10_t10" to="t10_t00" fromLane="0" toLane="0"/>
+    <connection from="w10_t10" to="t10_t11" fromLane="1" toLane="1"/>
+    <connection from="w10_t10" to="t10_s10" fromLane="2" toLane="2"/>
+    <!-- t11 -->
+    <connection from="t01_t11" to="t11_t10" fromLane="0" toLane="0"/>
+    <connection from="t01_t11" to="t11_s11" fromLane="1" toLane="1"/>
+    <connection from="t01_t11" to="t11_e11" fromLane="2" toLane="2"/>
+    <connection from="s11_t11" to="t11_e11" fromLane="0" toLane="0"/>
+    <connection from="s11_t11" to="t11_t01" fromLane="1" toLane="1"/>
+    <connection from="s11_t11" to="t11_t10" fromLane="2" toLane="2"/>
+    <connection from="e11_t11" to="t11_s11" fromLane="0" toLane="0"/>
+    <connection from="e11_t11" to="t11_t10" fromLane="1" toLane="1"/>
+    <connection from="e11_t11" to="t11_t01" fromLane="2" toLane="2"/>
+    <connection from="t10_t11" to="t11_t01" fromLane="0" toLane="0"/>
+    <connection from="t10_t11" to="t11_e11" fromLane="1" toLane="1"/>
+    <connection from="t10_t11" to="t11_s11" fromLane="2" toLane="2"/>
+    <connection from="t00_n00"/>
+    <connection from="t01_n01"/>
+    <connection from="t10_s10"/>
+    <connection from="t11_s11"/>
+    <connection from="t00_w00"/>
+    <connection from="t10_w10"/>
+    <connection from="t01_e01"/>
+    <connection from="t11_e11"/>
+</connections>

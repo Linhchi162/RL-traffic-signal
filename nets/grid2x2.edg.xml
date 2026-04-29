@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="n00_t00" from="n00" to="t00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="n01_t01" from="n01" to="t01" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="s10_t10" from="s10" to="t10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="s11_t11" from="s11" to="t11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="w00_t00" from="w00" to="t00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="w10_t10" from="w10" to="t10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="e01_t01" from="e01" to="t01" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="e11_t11" from="e11" to="t11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t00_n00" from="t00" to="n00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t01_n01" from="t01" to="n01" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t10_s10" from="t10" to="s10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t11_s11" from="t11" to="s11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t00_w00" from="t00" to="w00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t10_w10" from="t10" to="w10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t01_e01" from="t01" to="e01" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t11_e11" from="t11" to="e11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t00_t01" from="t00" to="t01" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t01_t00" from="t01" to="t00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t10_t11" from="t10" to="t11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t11_t10" from="t11" to="t10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t00_t10" from="t00" to="t10" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t10_t00" from="t10" to="t00" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t01_t11" from="t01" to="t11" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="t11_t01" from="t11" to="t01" priority="-1" numLanes="3" speed="13.90"/>
+</edges>
