@@ -16,7 +16,18 @@ from pathlib import Path
 
 import numpy as np
 from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, CheckpointCallback
+
+
+class StepLogger(BaseCallback):
+    def __init__(self, log_freq: int = 10_000):
+        super().__init__()
+        self.log_freq = log_freq
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps % self.log_freq == 0:
+            print(f"  step {self.num_timesteps}", flush=True)
+        return True
 
 if "SUMO_HOME" not in os.environ:
     sys.exit("[train_grid_dqn] SUMO_HOME chua duoc khai bao")
@@ -140,7 +151,8 @@ def main():
         device               = "cpu",
     )
 
-    model.learn(total_timesteps=args.total_steps, callback=ckpt_cb,
+    callbacks = CallbackList([ckpt_cb, StepLogger(log_freq=10_000)])
+    model.learn(total_timesteps=args.total_steps, callback=callbacks,
                 progress_bar=False, log_interval=1)
     model.save(str(save_dir / f"grid_{args.algo}_final_model"))
     vec_env.close()
