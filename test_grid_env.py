@@ -73,7 +73,7 @@ vec.close()
 
 # ---------------------------------------------------------------------------
 print()
-print("TEST 3: train PPO ngan (5000 buoc), theo doi reward")
+print("TEST 3: train PPO ngan (1000 buoc), theo doi reward")
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 
@@ -95,13 +95,13 @@ vec2 = MultiAgentVecEnv(make)
 model = PPO("MlpPolicy", vec2, n_steps=256, batch_size=64,
             learning_rate=3e-4, verbose=0, seed=42, device="cpu")
 cb = RewardLogger()
-model.learn(total_timesteps=5000, callback=cb)
+model.learn(total_timesteps=1000, callback=cb)
 vec2.close()
 
 if len(cb.ep_rewards) >= 2:
     trend = cb.ep_rewards[-1] - cb.ep_rewards[0]
     print(f"  Reward trend: {cb.ep_rewards[0]:.4f} -> {cb.ep_rewards[-1]:.4f}  (delta={trend:+.4f})")
-    print("  Env hoat dong dung. Reward co the con nhieu nhieu (5000 buoc qua it de hoc).")
+    print("  Env hoat dong dung. (1000 buoc chi de kiem tra, chua du de hoc)")
 else:
     print("  Khong du du lieu de xet trend.")
 
