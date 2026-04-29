@@ -6,7 +6,6 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 export SUMO_HOME="${SUMO_HOME:-/usr/share/sumo}"
-export LIBSUMO_AS_TRACI="1"
 export OPENBLAS_NUM_THREADS="1"
 export OMP_NUM_THREADS="1"
 export CUDA_VISIBLE_DEVICES=""
