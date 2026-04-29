@@ -42,8 +42,16 @@ _HERE = Path(__file__).parent
 SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
 SINGLE_ROUTE = _HERE / "nets" / "train_flows.xml"   # fallback neu chua co generated
 
-_TRAIN_FLOW = _HERE / "generated_flows" / "train_s0.xml"
-_GENERATED_FLOWS = {seed: _TRAIN_FLOW for seed in (42, 123, 777, 999, 314, 2025, 2718, 9999)}
+_GENERATED_FLOWS = {
+    42:   _HERE / "generated_flows" / "train_s0.xml",
+    123:  _HERE / "generated_flows" / "train_s0.xml",
+    777:  _HERE / "generated_flows" / "train_s0.xml",
+    999:  _HERE / "generated_flows" / "train_s0.xml",
+    314:  _HERE / "generated_flows" / "train_s0.xml",
+    2025: _HERE / "generated_flows" / "train_s0.xml",
+    2718: _HERE / "generated_flows" / "train_s0.xml",
+    9999: _HERE / "generated_flows" / "train_s0.xml",
+}
 
 from rl_controller.traffic_env import TrafficControlEnv
 from rl_controller.state_builder import IntersectionStateExtractor, BaselineObservation

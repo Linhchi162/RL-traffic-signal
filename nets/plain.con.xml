@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connections version="1.20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/connections_file.xsd">
+    <!-- North approach (n_t): Lane0=right→West, Lane1=straight→South, Lane2=left(dedicated)→East -->
+    <connection from="n_t" to="t_w" fromLane="0" toLane="0"/>
+    <connection from="n_t" to="t_s" fromLane="1" toLane="0"/>
+    <connection from="n_t" to="t_e" fromLane="2" toLane="1"/>
+
+    <!-- South approach (s_t): Lane0=right→East, Lane1=straight→North, Lane2=left(dedicated)→West -->
+    <connection from="s_t" to="t_e" fromLane="0" toLane="0"/>
+    <connection from="s_t" to="t_n" fromLane="1" toLane="0"/>
+    <connection from="s_t" to="t_w" fromLane="2" toLane="1"/>
+
+    <!-- East approach (e_t): Lane0=right→South, Lane1=straight→West, Lane2=left(dedicated)→North -->
+    <connection from="e_t" to="t_s" fromLane="0" toLane="0"/>
+    <connection from="e_t" to="t_w" fromLane="1" toLane="0"/>
+    <connection from="e_t" to="t_n" fromLane="2" toLane="1"/>
+
+    <!-- West approach (w_t): Lane0=right→North, Lane1=straight→East, Lane2=left(dedicated)→South -->
+    <connection from="w_t" to="t_n" fromLane="0" toLane="0"/>
+    <connection from="w_t" to="t_e" fromLane="1" toLane="0"/>
+    <connection from="w_t" to="t_s" fromLane="2" toLane="1"/>
+
+    <connection from="t_e"/>
+    <connection from="t_n"/>
+    <connection from="t_s"/>
+    <connection from="t_w"/>
+
+</connections>

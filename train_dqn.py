@@ -43,8 +43,16 @@ _HERE = Path(__file__).parent
 SINGLE_NET   = _HERE / "nets" / "caliberated_net.xml"
 SINGLE_ROUTE = _HERE / "nets" / "train_flows.xml"   # fallback neu chua co generated
 
-_TRAIN_FLOW = _HERE / "generated_flows" / "train_s0.xml"
-_GENERATED_FLOWS = {seed: _TRAIN_FLOW for seed in (42, 123, 777, 999, 314, 2025, 2718, 9999)}
+_GENERATED_FLOWS = {
+    42:   _HERE / "generated_flows" / "train_s0.xml",
+    123:  _HERE / "generated_flows" / "train_s0.xml",
+    777:  _HERE / "generated_flows" / "train_s0.xml",
+    999:  _HERE / "generated_flows" / "train_s0.xml",
+    314:  _HERE / "generated_flows" / "train_s0.xml",
+    2025: _HERE / "generated_flows" / "train_s0.xml",
+    2718: _HERE / "generated_flows" / "train_s0.xml",
+    9999: _HERE / "generated_flows" / "train_s0.xml",
+}
 
 # RESCO reward clipping parameters (Eq. 19)
 REWARD_ALPHA = 300.0
@@ -250,32 +258,6 @@ class ProgressCallback(BaseCallback):
 # RESCO DQN Environment (Single Intersection)
 # ---------------------------------------------------------------------------
 
-def _detect_env_specs(net_file: str) -> tuple:
-    """Run once in main process: detect TS id, green phase indices, obs dim."""
-    label = "spec_detect"
-    if USE_LIBSUMO:
-        traci.start([sumolib.checkBinary("sumo"), "-n", net_file])
-        conn = traci
-    else:
-        traci.start([sumolib.checkBinary("sumo"), "-n", net_file], label=label)
-        conn = traci.getConnection(label)
-
-    ts_id = list(conn.trafficlight.getIDList())[0]
-    green_phases = []
-    logics = conn.trafficlight.getAllProgramLogics(ts_id)
-    if logics:
-        for i, ph in enumerate(logics[0].phases):
-            if "G" in ph.state.upper() and "Y" not in ph.state.upper():
-                green_phases.append(i)
-    if not green_phases:
-        green_phases = [0, 2, 4, 6][:len(logics[0].phases) // 2]
-
-    obs_builder = RescoObservation(ts_id, conn)
-    obs_dim = obs_builder.obs_dim
-    conn.close()
-    return ts_id, green_phases, obs_dim
-
-
 class RescoDQNEnv(gym.Env):
     """
     Moi truong RESCO-DQN cho 1 nut giao.
@@ -298,9 +280,6 @@ class RescoDQNEnv(gym.Env):
         sumo_seed: int = 42,
         use_gui: bool = False,
         reward_type: str = "wait-clip",
-        ts_id: Optional[str] = None,
-        green_phases: Optional[List[int]] = None,
-        obs_dim: Optional[int] = None,
     ):
         super().__init__()
         self._net           = net_file
@@ -315,39 +294,33 @@ class RescoDQNEnv(gym.Env):
         RescoDQNEnv._conn_counter += 1
         self.sumo = None
 
-        if ts_id is not None and green_phases is not None and obs_dim is not None:
-            # Use pre-detected specs — no SUMO init needed in worker
-            self._ts_id       = ts_id
-            self._green_phases = green_phases
-            _obs_space = spaces.Box(low=-np.inf, high=np.inf,
-                                    shape=(obs_dim,), dtype=np.float32)
+        if USE_LIBSUMO:
+            traci.start([sumolib.checkBinary("sumo"), "-n", self._net])
+            tmp = traci
         else:
-            # Fallback: detect specs by starting SUMO (single-env mode)
-            if USE_LIBSUMO:
-                traci.start([sumolib.checkBinary("sumo"), "-n", self._net])
-                tmp = traci
-            else:
-                traci.start([sumolib.checkBinary("sumo"), "-n", self._net],
-                            label=f"init_{self._label}")
-                tmp = traci.getConnection(f"init_{self._label}")
+            traci.start([sumolib.checkBinary("sumo"), "-n", self._net],
+                        label=f"init_{self._label}")
+            tmp = traci.getConnection(f"init_{self._label}")
 
-            signal_ids = list(tmp.trafficlight.getIDList())
-            self._ts_id = signal_ids[0]
+        signal_ids = list(tmp.trafficlight.getIDList())
+        self._ts_id = signal_ids[0]
 
-            self._green_phases = []
-            logics = tmp.trafficlight.getAllProgramLogics(self._ts_id)
-            if logics:
-                for i, ph in enumerate(logics[0].phases):
-                    if "G" in ph.state.upper() and "Y" not in ph.state.upper():
-                        self._green_phases.append(i)
-            if not self._green_phases:
-                self._green_phases = [0, 2, 4, 6][:len(logics[0].phases) // 2]
+        self._green_phases = []
+        logics = tmp.trafficlight.getAllProgramLogics(self._ts_id)
+        if logics:
+            for i, ph in enumerate(logics[0].phases):
+                if "G" in ph.state.upper() and "Y" not in ph.state.upper():
+                    self._green_phases.append(i)
+        if not self._green_phases:
+            self._green_phases = [0, 2, 4, 6][:len(logics[0].phases) // 2]
 
-            obs_builder = RescoObservation(self._ts_id, tmp)
-            _obs_space = obs_builder.observation_space()
-            tmp.close()
+        self.sumo = tmp
+        self._obs_builder = RescoObservation(self._ts_id, tmp)
+        _tmp_obs_space = self._obs_builder.observation_space()
+        tmp.close()
+        self.sumo = None
 
-        self.observation_space = _obs_space
+        self.observation_space = _tmp_obs_space
         self.action_space = spaces.Discrete(len(self._green_phases))
         self._episode = 0
 
@@ -471,10 +444,6 @@ def main():
     sim_dur = args.sim_duration if args.sim_duration else args.total_steps + 5_000
     n_envs  = max(1, args.n_envs)
 
-    print("Detecting env specs from network...")
-    ts_id, green_phases, obs_dim = _detect_env_specs(net_file)
-    print(f"  ts_id={ts_id}, green_phases={green_phases}, obs_dim={obs_dim}")
-
     def _make(seed_offset):
         return lambda: Monitor(RescoDQNEnv(
             net_file=net_file,
@@ -484,13 +453,13 @@ def main():
             use_gui=args.gui,
             reward_type=args.reward_type,
             amber_sec=args.amber_sec,
-            ts_id=ts_id,
-            green_phases=green_phases,
-            obs_dim=obs_dim,
         ))
 
     if n_envs > 1:
-        train_env = DummyVecEnv([_make(i) for i in range(n_envs)])
+        if sys.platform == "win32":
+            train_env = DummyVecEnv([_make(i) for i in range(n_envs)])
+        else:
+            train_env = SubprocVecEnv([_make(i) for i in range(n_envs)], start_method="spawn")
     else:
         train_env = Monitor(RescoDQNEnv(
             net_file=net_file,
@@ -500,9 +469,6 @@ def main():
             use_gui=args.gui,
             reward_type=args.reward_type,
             amber_sec=args.amber_sec,
-            ts_id=ts_id,
-            green_phases=green_phases,
-            obs_dim=obs_dim,
         ))
 
     checkpoint_dir = os.path.join(args.save_dir, "checkpoints")

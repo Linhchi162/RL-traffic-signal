@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tlLogics version="1.20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tllogic_file.xsd">
+    <tlLogic id="t" type="static" programID="0" offset="0">
+        <!-- Phase 1: NS main — S left+straight + N left+straight (39s) -->
+        <phase duration="39" state="GGrrrrGGrrrr"/>
+        <phase duration="5"  state="yyrrrryyrrrr"/>
+        <!-- Phase 3: NS protected right — S right + N right (25s) -->
+        <phase duration="25" state="rrGrrrrrGrrr"/>
+        <phase duration="5"  state="rryrrrrryrrr"/>
+        <!-- Phase 5: EW main — E right+straight + W right+straight (31s) -->
+        <phase duration="31" state="rrrGGrrrrGGr"/>
+        <phase duration="5"  state="rrryyrrrryyr"/>
+        <!-- Phase 7: EW protected left — E left + W left (24s) -->
+        <phase duration="24" state="rrrrrGrrrrrG"/>
+        <phase duration="5"  state="rrrrryrrrrry"/>
+    </tlLogic>
+
+    <!-- linkIndex 0: s_t LEFT  (Lane2 → t_w, toLane 1) -->
+    <connection from="s_t" to="t_w" fromLane="2" toLane="1" tl="t" linkIndex="0"/>
+    <!-- linkIndex 1: s_t STRAIGHT (Lane1 → t_n, toLane 0) -->
+    <connection from="s_t" to="t_n" fromLane="1" toLane="0" tl="t" linkIndex="1"/>
+    <!-- linkIndex 2: s_t RIGHT (Lane0 → t_e, toLane 0) — protected in phase 3 -->
+    <connection from="s_t" to="t_e" fromLane="0" toLane="0" tl="t" linkIndex="2"/>
+
+    <!-- linkIndex 3: e_t RIGHT (Lane0 → t_s, toLane 0) -->
+    <connection from="e_t" to="t_s" fromLane="0" toLane="0" tl="t" linkIndex="3"/>
+    <!-- linkIndex 4: e_t STRAIGHT (Lane1 → t_w, toLane 0) -->
+    <connection from="e_t" to="t_w" fromLane="1" toLane="0" tl="t" linkIndex="4"/>
+    <!-- linkIndex 5: e_t LEFT (Lane2 → t_n, toLane 1) — protected in phase 7 -->
+    <connection from="e_t" to="t_n" fromLane="2" toLane="1" tl="t" linkIndex="5"/>
+
+    <!-- linkIndex 6: n_t LEFT (Lane2 → t_e, toLane 1) -->
+    <connection from="n_t" to="t_e" fromLane="2" toLane="1" tl="t" linkIndex="6"/>
+    <!-- linkIndex 7: n_t STRAIGHT (Lane1 → t_s, toLane 0) -->
+    <connection from="n_t" to="t_s" fromLane="1" toLane="0" tl="t" linkIndex="7"/>
+    <!-- linkIndex 8: n_t RIGHT (Lane0 → t_w, toLane 0) — protected in phase 3 -->
+    <connection from="n_t" to="t_w" fromLane="0" toLane="0" tl="t" linkIndex="8"/>
+
+    <!-- linkIndex 9:  w_t RIGHT (Lane0 → t_n, toLane 0) -->
+    <connection from="w_t" to="t_n" fromLane="0" toLane="0" tl="t" linkIndex="9"/>
+    <!-- linkIndex 10: w_t STRAIGHT (Lane1 → t_e, toLane 0) -->
+    <connection from="w_t" to="t_e" fromLane="1" toLane="0" tl="t" linkIndex="10"/>
+    <!-- linkIndex 11: w_t LEFT (Lane2 → t_s, toLane 1) — protected in phase 7 -->
+    <connection from="w_t" to="t_s" fromLane="2" toLane="1" tl="t" linkIndex="11"/>
+
+</tlLogics>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <!-- Incoming: 3 lanes (lane0=right, lane1=straight, lane2=left dedicated) -->
+    <edge id="e_t" from="e" to="t" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="n_t" from="n" to="t" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="s_t" from="s" to="t" priority="-1" numLanes="3" speed="13.90"/>
+    <edge id="w_t" from="w" to="t" priority="-1" numLanes="3" speed="13.90"/>
+    <!-- Outgoing: 2 lanes -->
+    <edge id="t_e" from="t" to="e" priority="-1" numLanes="2" speed="13.90"/>
+    <edge id="t_n" from="t" to="n" priority="-1" numLanes="2" speed="13.90"/>
+    <edge id="t_s" from="t" to="s" priority="-1" numLanes="2" speed="13.90"/>
+    <edge id="t_w" from="t" to="w" priority="-1" numLanes="2" speed="13.90"/>
+</edges>

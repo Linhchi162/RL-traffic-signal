@@ -505,7 +505,7 @@ def _infer_obs_mode(name: str) -> str:
     for d in (4, 8, 16, 19, 32):
         if f"ae-{d}d" in n or f"ae_{d}d" in n or f"compressed_{d}d" in n:
             return f"compressed_{d}d"
-    if "baseline" in n or "single" in n:
+    if "baseline" in n:
         return "baseline"
     return "raw"
 
@@ -633,7 +633,7 @@ def main():
         print(f"[{job_idx}/{total_jobs}] Random policy baseline (4 pha, seed=0)")
         try:
             _sl = []
-            m   = run_random_eval(n_actions=2, seed=0, _step_out=_sl)
+            m   = run_random_eval(n_actions=4, seed=0, _step_out=_sl)
             all_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **m})
             for s in _sl:
                 ts_rows.append({"algo": "random", "reward": "-", "obs_mode": "-", "seed": "-", **s})

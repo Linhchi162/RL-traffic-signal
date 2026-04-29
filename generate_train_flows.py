@@ -3,7 +3,6 @@ generate_train_flows.py
 Sinh SUMO flow file moi cho training voi luu luong ngau nhien hoa.
 
 Muc tieu:
-  - Khong dung du lieu cua paper goc (train_flows.xml / test_flows.xml)
   - Cover ca NS-dominant, WE-dominant va balanced traffic
   - Time-varying demand (peak / off-peak) de agent hoc policy tong quat
 
@@ -166,6 +165,7 @@ def generate_flows(
     block_intervals: int = 30,         # so interval moi block (~72 phut)
     force_balanced: bool = False,
     output_path: str = "generated_train_flows.xml",
+    scale: float = 1.0,               # nhan vao tat ca demand (0.4 ~ train_flows.xml)
 ):
     rng = random.Random(seed)
 
@@ -197,10 +197,10 @@ def generate_flows(
 
         ns_lo, ns_hi = demand["NS"]
         we_lo, we_hi = demand["WE"]
-        total_N = rng.uniform(ns_lo, ns_hi) * time_factor
-        total_S = rng.uniform(ns_lo, ns_hi) * time_factor
-        total_W = rng.uniform(we_lo, we_hi) * time_factor
-        total_E = rng.uniform(we_lo, we_hi) * time_factor
+        total_N = rng.uniform(ns_lo, ns_hi) * time_factor * scale
+        total_S = rng.uniform(ns_lo, ns_hi) * time_factor * scale
+        total_W = rng.uniform(we_lo, we_hi) * time_factor * scale
+        total_E = rng.uniform(we_lo, we_hi) * time_factor * scale
 
         approach_totals = {
             "N": total_N, "S": total_S,
@@ -260,6 +260,8 @@ def parse_args():
                    help="So time slots moi traffic block (~30*145s = 73 phut)")
     p.add_argument("--balanced", action="store_true",
                    help="Chi sinh balanced traffic (test khong co distribution shift)")
+    p.add_argument("--scale", type=float, default=1.0,
+                   help="He so nhan vao tat ca demand (0.4 ~ mat do train_flows.xml)")
     return p.parse_args()
 
 
@@ -272,4 +274,5 @@ if __name__ == "__main__":
         block_intervals=args.block,
         force_balanced=args.balanced,
         output_path=args.out,
+        scale=args.scale,
     )
