@@ -12,7 +12,7 @@ Chay:
 import os, sys
 os.environ.setdefault("SUMO_HOME", r"/usr/share/sumo" if sys.platform != "win32"
                       else r"D:\Program Files\Eclipse\Sumo")
-sys.path.insert(0, os.path.join(os.environ["SUMO_HOME"], "tools"))
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], "tools"))
 
 from pathlib import Path
 import numpy as np
