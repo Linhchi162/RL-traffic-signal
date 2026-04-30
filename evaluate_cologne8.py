@@ -15,9 +15,11 @@ Su dung:
 
 import argparse
 import csv
+import logging
 import os
 import sys
 import time
+import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
@@ -335,20 +337,28 @@ def discover_grid_models(models_dir: Path):
 # ---------------------------------------------------------------------------
 
 def _worker(task):
+    import logging, traceback, os, sys
+    wlog = logging.getLogger(f"worker.{os.getpid()}")
     kind, args = task
-    if kind == "model":
-        m   = run_model_eval(args["model_path"], args["algo"])
-        row = {"algo": args["algo"], "reward": args["reward"], "seed": args["seed"], **m}
-    elif kind == "random":
-        m   = run_random_eval(args["seed"])
-        row = {"algo": "random", "reward": "-", "seed": str(args["seed"]), **m}
-    elif kind == "fixed":
-        m   = run_fixed_eval()
-        row = {"algo": "fixed",  "reward": "-", "seed": "-", **m}
-    elif kind == "webster":
-        m   = run_webster_eval()
-        row = {"algo": "webster","reward": "-", "seed": "-", **m}
-    return row, m
+    wlog.info("START %s %s", kind, args.get("algo","") or args.get("seed",""))
+    try:
+        if kind == "model":
+            m   = run_model_eval(args["model_path"], args["algo"])
+            row = {"algo": args["algo"], "reward": args["reward"], "seed": args["seed"], **m}
+        elif kind == "random":
+            m   = run_random_eval(args["seed"])
+            row = {"algo": "random", "reward": "-", "seed": str(args["seed"]), **m}
+        elif kind == "fixed":
+            m   = run_fixed_eval()
+            row = {"algo": "fixed",  "reward": "-", "seed": "-", **m}
+        elif kind == "webster":
+            m   = run_webster_eval()
+            row = {"algo": "webster","reward": "-", "seed": "-", **m}
+        wlog.info("DONE  %s -> queue=%.2f wait=%.1f", kind, m["mean_queue"], m["mean_wait"])
+        return row, m
+    except Exception:
+        wlog.error("FAILED %s\n%s", kind, traceback.format_exc())
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +383,20 @@ def main():
     models_dir = Path(args.models_dir)
     save_dir   = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Ghi log ra file de debug tren Vast
+    log_path = save_dir / "eval.log"
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(log_path, mode="a", encoding="utf-8"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
+    log = logging.getLogger(__name__)
+    log.info("=== evaluate_cologne8 start ===")
+    log.info("Log file: %s", log_path)
 
     if not C8_NET.exists():
         sys.exit(f"[ERR] Thieu file mang: {C8_NET}\n"

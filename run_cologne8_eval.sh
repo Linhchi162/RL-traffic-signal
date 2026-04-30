@@ -24,11 +24,16 @@ echo "Time   : 25200s-28800s (7am-8am, 3600s peak hour)"
 echo "Workers: $WORKERS / $NCPU CPU"
 echo ""
 
+LOG="$WORK_DIR/results_cologne8/run.log"
+echo "Log: $LOG"
+echo ""
+
 python evaluate_cologne8.py \
     --models_dir ./exp_grid \
     --save_dir   ./results_cologne8 \
     --workers    "$WORKERS" \
-    --resume
+    --resume 2>&1 | tee "$LOG"
 
 echo ""
-echo "Ket qua luu tai: $WORK_DIR/results_cologne8/"
+echo "Ket qua : $WORK_DIR/results_cologne8/"
+echo "Full log: $LOG"
