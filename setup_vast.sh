@@ -37,23 +37,27 @@ else
 fi
 
 echo "=== [3/4] Cai Python deps ==="
-python3 -m venv .venv
+# --system-site-packages: ke thua torch/numpy tu image Vast (tranh download ~500MB)
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install --quiet --upgrade pip
 
-# pip_retry: thu cai lai toi da 5 lan, --no-cache-dir tranh broken pipe
+# Cai tung goi mot, moi goi nho nen it bi broken pipe
 pip_retry() {
     local attempt
     for attempt in 1 2 3 4 5; do
         pip install --quiet --no-cache-dir --timeout 120 "$@" && return 0
-        echo "    [pip attempt $attempt/5] that bai, thu lai sau 5s..."
+        echo "    [pip attempt $attempt/5] $* that bai, thu lai sau 5s..."
         sleep 5
     done
     echo "[FATAL] pip install that bai sau 5 lan: $*" >&2
     return 1
 }
 
-pip_retry -r requirements.txt
+pip_retry sumolib
+pip_retry traci
+pip_retry gymnasium
+pip_retry stable-baselines3
 pip_retry libsumo
 
 echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
