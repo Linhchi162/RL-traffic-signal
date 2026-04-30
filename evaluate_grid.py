@@ -43,20 +43,29 @@ USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
 # ---------------------------------------------------------------------------
 
 class _TravelTracker:
+    """Track throughput and travel time by diffing vehicle ID sets each agent step.
+
+    getDepartedVehiclesIDs/getArrivedVehiclesIDs only cover the single most-recent
+    SUMO substep, so they miss intermediate substeps inside vec_env.step().
+    Diffing getIDList() between agent steps captures all vehicles correctly.
+    """
     def __init__(self):
-        self._dep:     dict = {}
-        self._tt:      list = []
-        self._arrived:  int = 0
+        self._dep:      dict = {}
+        self._tt:       list = []
+        self._arrived:  int  = 0
+        self._prev_ids: set  = set()
 
     def update(self, sumo_conn):
         t = sumo_conn.simulation.getTime()
         try:
-            for vid in sumo_conn.simulation.getDepartedVehiclesIDs():
+            current_ids = set(sumo_conn.vehicle.getIDList())
+            for vid in current_ids - self._prev_ids:   # newly appeared → departed
                 self._dep[vid] = t
-            for vid in sumo_conn.simulation.getArrivedVehiclesIDs():
+            for vid in self._prev_ids - current_ids:   # disappeared → arrived/teleported
                 self._arrived += 1
                 if vid in self._dep:
                     self._tt.append(t - self._dep.pop(vid))
+            self._prev_ids = current_ids
         except AttributeError:
             pass
 
