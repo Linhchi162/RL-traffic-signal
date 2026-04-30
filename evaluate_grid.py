@@ -409,6 +409,8 @@ def parse_args():
     p.add_argument("--skip_random",  action="store_true")
     p.add_argument("--skip_webster", action="store_true")
     p.add_argument("--workers", type=int, default=1)
+    p.add_argument("--resume", action="store_true",
+                   help="Doc CSV hien co, bo qua job da xong, append them.")
     return p.parse_args()
 
 
@@ -430,27 +432,39 @@ def main():
 
     _base = {"net": str(GRID_NET), "route": str(GRID_TEST), "duration": EVAL_DURATION}
     tasks, labels = [], []
+    fields = ["algo", "reward", "seed",
+              "mean_queue", "mean_wait", "mean_wait_per_veh", "mean_speed",
+              "throughput", "mean_travel_time", "total_reward"]
+    all_rows = []
 
-    if not args.skip_random:
+    # Load existing results when resuming
+    all_csv  = save_dir / "all_results.csv"
+    done_keys: set = set()
+    if args.resume and all_csv.exists():
+        with open(all_csv, newline="") as f:
+            for row in csv.DictReader(f):
+                all_rows.append(row)
+                done_keys.add((row["algo"], row["reward"], row["seed"]))
+        print(f"[--resume] Da co {len(all_rows)} ket qua, se bo qua.\n")
+
+    if not args.skip_random and ("random", "-", "0") not in done_keys:
         tasks.append(("random", {**_base, "seed": 0}))
         labels.append("Random baseline (grid)")
-    if not args.skip_fixed:
+    if not args.skip_fixed and ("fixed", "-", "-") not in done_keys:
         tasks.append(("fixed", {**_base}))
         labels.append("Fixed-time baseline (grid)")
-    if not args.skip_webster:
+    if not args.skip_webster and ("webster", "-", "-") not in done_keys:
         tasks.append(("webster", {**_base}))
         labels.append("Webster baseline (grid)")
     for algo, reward, seed, model_path in models:
+        if (algo, reward, seed) in done_keys:
+            continue
         tasks.append(("model", {**_base, "algo": algo, "reward": reward,
                                 "seed": seed, "model_path": model_path}))
         labels.append(f"{algo.upper()} reward={reward} seed={seed}")
 
     total  = len(tasks)
     t0     = time.time()
-    fields = ["algo", "reward", "seed",
-              "mean_queue", "mean_wait", "mean_wait_per_veh", "mean_speed",
-              "throughput", "mean_travel_time", "total_reward"]
-    all_rows = []
     workers  = max(1, args.workers)
     print(f"Chay {total} jobs voi {workers} worker(s)...\n")
 
@@ -486,7 +500,6 @@ def main():
                     print(f"[{done}/{total}] ERR  {lbl}: {exc}")
 
     # Write CSV
-    all_csv = save_dir / "all_results.csv"
     with open(all_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         w.writeheader(); w.writerows(all_rows)
