@@ -177,7 +177,7 @@ def _aggregate(metrics_list, tracker, total_reward):
 
 def run_model_eval(model_path: str, algo: str) -> dict:
     from stable_baselines3 import PPO, DQN
-    agent = (PPO if algo == "ppo" else DQN).load(model_path, env=None)
+    agent = (PPO if algo == "ppo" else DQN).load(model_path, env=None, device="cpu")
 
     vec_env = MultiAgentVecEnv(lambda: _make_env())
     obs     = vec_env.reset()
