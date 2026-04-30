@@ -41,17 +41,20 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --quiet --upgrade pip
 
-# Retry 3 lan phong truong hop Vast.ai bi broken pipe
-for attempt in 1 2 3; do
-    pip install --quiet --retries 5 --timeout 120 -r requirements.txt && break
-    echo "    [attempt $attempt/3] requirements.txt that bai, thu lai..."
-    sleep 5
-done
-for attempt in 1 2 3; do
-    pip install --quiet --retries 5 --timeout 120 libsumo && break
-    echo "    [attempt $attempt/3] libsumo that bai, thu lai..."
-    sleep 5
-done
+# pip_retry: thu cai lai toi da 5 lan, --no-cache-dir tranh broken pipe
+pip_retry() {
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        pip install --quiet --no-cache-dir --timeout 120 "$@" && return 0
+        echo "    [pip attempt $attempt/5] that bai, thu lai sau 5s..."
+        sleep 5
+    done
+    echo "[FATAL] pip install that bai sau 5 lan: $*" >&2
+    return 1
+}
+
+pip_retry -r requirements.txt
+pip_retry libsumo
 
 echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
 C8_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments/cologne8"
