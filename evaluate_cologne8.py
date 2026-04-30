@@ -115,7 +115,8 @@ def _make_env(fixed_signal=False):
     return TrafficControlEnv(
         net_file        = str(C8_NET),
         route_file      = str(C8_ROUTE),
-        sim_duration    = SUMO_END,        # done khi sim_time >= 28800
+        sim_duration    = SUMO_END + 99999, # lon hon SUMO_END de done khong bao gio trigger
+                                            # → tranh auto-reset lam libsumo hang
         reward_fn       = "queue",
         obs_class       = BaselineObservation,
         single_agent    = False,
