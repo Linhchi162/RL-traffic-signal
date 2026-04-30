@@ -40,8 +40,18 @@ echo "=== [3/4] Cai Python deps ==="
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --quiet --upgrade pip
-pip install --quiet -r requirements.txt
-pip install --quiet libsumo
+
+# Retry 3 lan phong truong hop Vast.ai bi broken pipe
+for attempt in 1 2 3; do
+    pip install --quiet --retries 5 --timeout 120 -r requirements.txt && break
+    echo "    [attempt $attempt/3] requirements.txt that bai, thu lai..."
+    sleep 5
+done
+for attempt in 1 2 3; do
+    pip install --quiet --retries 5 --timeout 120 libsumo && break
+    echo "    [attempt $attempt/3] libsumo that bai, thu lai..."
+    sleep 5
+done
 
 echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
 C8_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments/cologne8"
