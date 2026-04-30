@@ -59,6 +59,7 @@ pip_retry traci
 pip_retry gymnasium
 pip_retry stable-baselines3
 pip_retry libsumo
+pip_retry pandas
 
 echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
 C8_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments/cologne8"

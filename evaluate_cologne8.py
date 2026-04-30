@@ -176,11 +176,23 @@ def _aggregate(metrics_list, tracker, total_reward):
 # ---------------------------------------------------------------------------
 
 def run_model_eval(model_path: str, algo: str) -> dict:
-    from stable_baselines3 import PPO, DQN
-    agent = (PPO if algo == "ppo" else DQN).load(model_path, env=None, device="cpu")
+    import sys as _sys
+    _log = logging.getLogger(__name__)
 
+    _log.info("  step1: importing stable_baselines3"); _sys.stdout.flush()
+    from stable_baselines3 import PPO, DQN
+
+    _log.info("  step2: loading model %s", model_path); _sys.stdout.flush()
+    agent = (PPO if algo == "ppo" else DQN).load(model_path, env=None, device="cpu")
+    _log.info("  step3: model loaded OK"); _sys.stdout.flush()
+
+    _log.info("  step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)"); _sys.stdout.flush()
     vec_env = MultiAgentVecEnv(lambda: _make_env())
+    _log.info("  step5: VecEnv OK, n_agents=%d", vec_env.num_envs); _sys.stdout.flush()
+
+    _log.info("  step6: resetting env"); _sys.stdout.flush()
     obs     = vec_env.reset()
+    _log.info("  step7: reset OK, obs.shape=%s", str(obs.shape)); _sys.stdout.flush()
     tracker = _TravelTracker()
 
     # Closure de get_actions co the dung obs hien tai
