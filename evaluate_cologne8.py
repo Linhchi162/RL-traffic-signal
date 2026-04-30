@@ -337,10 +337,19 @@ def discover_grid_models(models_dir: Path):
 # ---------------------------------------------------------------------------
 
 def _worker(task):
-    import logging, traceback, os, sys
-    wlog = logging.getLogger(f"worker.{os.getpid()}")
+    import logging, traceback, os
+    # Spawn process khong ke thua logging config tu main → phai setup lai
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format=f"%(asctime)s [pid={os.getpid()}] [%(levelname)s] %(message)s",
+        handlers=[logging.StreamHandler()],
+        force=True,
+    )
+    wlog = logging.getLogger(__name__)
+
     kind, args = task
-    wlog.info("START %s %s", kind, args.get("algo","") or args.get("seed",""))
+    label = f"{kind} {args.get('algo','') or ''} {args.get('seed','') or ''}".strip()
+    wlog.info("START %s", label)
     try:
         if kind == "model":
             m   = run_model_eval(args["model_path"], args["algo"])
@@ -354,10 +363,10 @@ def _worker(task):
         elif kind == "webster":
             m   = run_webster_eval()
             row = {"algo": "webster","reward": "-", "seed": "-", **m}
-        wlog.info("DONE  %s -> queue=%.2f wait=%.1f", kind, m["mean_queue"], m["mean_wait"])
+        wlog.info("DONE  %s -> queue=%.2f wait=%.1f", label, m["mean_queue"], m["mean_wait"])
         return row, m
     except Exception:
-        wlog.error("FAILED %s\n%s", kind, traceback.format_exc())
+        wlog.error("FAILED %s\n%s", label, traceback.format_exc())
         raise
 
 
