@@ -180,9 +180,14 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
         except ImportError:
             pass
 
-    obs_cls = obs_cls_map.get(obs_mode, IntersectionStateExtractor)
-
     agent   = PPO.load(model_path, env=None)
+
+    # Auto-detect obs class from saved model's observation space dimension.
+    # Filename inference (_infer_obs_mode) can be wrong; the saved dim is ground truth.
+    saved_dim = agent.observation_space.shape[0]
+    dim_to_cls = {7: BaselineObservation, 19: IntersectionStateExtractor}
+    obs_cls = dim_to_cls.get(saved_dim) or obs_cls_map.get(obs_mode, IntersectionStateExtractor)
+
     tracker = _TravelTracker()
 
     env = TrafficControlEnv(
@@ -634,6 +639,8 @@ def parse_args():
                         "Ket qua se duoc merge vao CSV hien co.")
     p.add_argument("--workers", type=int, default=1,
                    help="So tien trinh song song (moi tien trinh 1 SUMO instance).")
+    p.add_argument("--resume", action="store_true",
+                   help="Doc CSV hien co, bo qua job da co ket qua, append them.")
     return p.parse_args()
 
 
@@ -672,21 +679,32 @@ def main():
     all_rows = []
     ts_rows  = []
 
+    # Load existing results when resuming
+    done_keys: set = set()
+    if args.resume and all_csv.exists():
+        with open(all_csv, newline="") as f:
+            for row in csv.DictReader(f):
+                all_rows.append(row)
+                done_keys.add((row["algo"], row["reward"], row["seed"]))
+        print(f"[--resume] Da co {len(all_rows)} ket qua, se bo qua.\n")
+
     # Build task list
     _base = {"net": str(SINGLE_NET), "route": str(SINGLE_ROUTE), "duration": EVAL_DURATION}
     tasks = []
     task_labels = []
 
-    if not args.skip_random:
+    if not args.skip_random and ("random", "-", "0") not in done_keys:
         tasks.append(("random", {**_base, "n_actions": 4, "seed": 0}))
         task_labels.append("Random baseline")
-    if not args.skip_fixed:
+    if not args.skip_fixed and ("fixed", "-", "-") not in done_keys:
         tasks.append(("fixed", {**_base}))
         task_labels.append("Fixed-time baseline")
-    if not args.skip_webster:
+    if not args.skip_webster and ("webster", "-", "-") not in done_keys:
         tasks.append(("webster", {**_base}))
         task_labels.append("Webster baseline")
     for algo, reward, seed, model_path, obs_mode in models:
+        if (algo, reward, seed) in done_keys:
+            continue
         kind = "dqn" if algo in ("dqn", "ddqn") else "ppo"
         tasks.append((kind, {**_base, "algo": algo, "reward": reward,
                              "seed": seed, "model_path": model_path, "obs_mode": obs_mode}))
