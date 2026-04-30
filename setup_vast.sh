@@ -43,7 +43,14 @@ pip install --quiet --upgrade pip
 pip install --quiet -r requirements.txt
 pip install --quiet libsumo
 
-echo "=== [4/4] Kiem tra ==="
+echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
+C8_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments/cologne8"
+mkdir -p "$WORK_DIR/nets/cologne8"
+wget -q "$C8_BASE/cologne8.net.xml" -O "$WORK_DIR/nets/cologne8/cologne8.net.xml"
+wget -q "$C8_BASE/cologne8.rou.xml" -O "$WORK_DIR/nets/cologne8/cologne8.rou.xml"
+echo "    cologne8.net.xml + cologne8.rou.xml OK"
+
+echo "=== [5/5] Kiem tra ==="
 python3 -c "import libsumo; print('libsumo OK:', libsumo.__version__)"
 python3 -c "
 import os, sys
