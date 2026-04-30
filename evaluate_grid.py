@@ -408,6 +408,8 @@ def parse_args():
     p.add_argument("--skip_fixed",   action="store_true")
     p.add_argument("--skip_random",  action="store_true")
     p.add_argument("--skip_webster", action="store_true")
+    p.add_argument("--skip_models",  action="store_true",
+                   help="Bo qua tat ca RL model, chi chay baselines.")
     p.add_argument("--workers", type=int, default=1)
     p.add_argument("--resume", action="store_true",
                    help="Doc CSV hien co, bo qua job da xong, append them.")
@@ -456,12 +458,13 @@ def main():
     if not args.skip_webster and ("webster", "-", "-") not in done_keys:
         tasks.append(("webster", {**_base}))
         labels.append("Webster baseline (grid)")
-    for algo, reward, seed, model_path in models:
-        if (algo, reward, seed) in done_keys:
-            continue
-        tasks.append(("model", {**_base, "algo": algo, "reward": reward,
-                                "seed": seed, "model_path": model_path}))
-        labels.append(f"{algo.upper()} reward={reward} seed={seed}")
+    if not args.skip_models:
+        for algo, reward, seed, model_path in models:
+            if (algo, reward, seed) in done_keys:
+                continue
+            tasks.append(("model", {**_base, "algo": algo, "reward": reward,
+                                    "seed": seed, "model_path": model_path}))
+            labels.append(f"{algo.upper()} reward={reward} seed={seed}")
 
     total  = len(tasks)
     t0     = time.time()
