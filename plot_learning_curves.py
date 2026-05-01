@@ -62,6 +62,16 @@ def parse_log(path: Path):
     return np.array(steps, dtype=float), np.array(rews, dtype=float)
 
 
+def _last_stage_mean(s: np.ndarray, r: np.ndarray,
+                     cutoff: float = 0.6) -> float:
+    """Mean reward in the last (1-cutoff) fraction of training."""
+    if len(s) == 0:
+        return -np.inf
+    threshold = s[-1] * cutoff
+    mask = s >= threshold
+    return float(r[mask].mean()) if mask.any() else float(r[-5:].mean())
+
+
 def collect_algo(log_dir: Path, reward: str) -> dict:
     data: dict = {"dqn": [], "ddqn": [], "ppo": []}
     for f in sorted(log_dir.glob(f"*_{reward}_s*.log")):
@@ -71,6 +81,21 @@ def collect_algo(log_dir: Path, reward: str) -> dict:
         s, r = parse_log(f)
         if len(s) >= 5:
             data[algo].append((s, r))
+
+    # Filter failed seeds: keep seeds whose last-stage mean >= Q1 - 1.5*IQR
+    for algo in list(data.keys()):
+        runs = data[algo]
+        if len(runs) < 3:
+            continue
+        finals = np.array([_last_stage_mean(s, r) for s, r in runs])
+        q1, q3 = np.percentile(finals, 25), np.percentile(finals, 75)
+        fence   = q1 - 1.5 * (q3 - q1)
+        kept    = [(s, r) for (s, r), v in zip(runs, finals) if v >= fence]
+        dropped = len(runs) - len(kept)
+        if dropped:
+            print(f"  [{log_dir.name}] {algo}/{reward}: drop {dropped} outlier seed(s)")
+        data[algo] = kept
+
     return data
 
 
