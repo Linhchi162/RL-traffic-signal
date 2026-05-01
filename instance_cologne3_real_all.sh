@@ -18,8 +18,6 @@ set -euo pipefail
 
 REPO_URL="https://github.com/Linhchi162/RL-traffic-signal.git"
 WORK_DIR="/workspace/rl-traffic"
-MAX_WORKERS=${MAX_WORKERS:-24}   # so jobs chay song song (giam xuong 16 neu RAM thieu)
-
 # ── 1. Cai SUMO ──────────────────────────────────────────────────────────────
 if ! command -v sumo &>/dev/null; then
     echo "=== [1/4] Cai SUMO ==="
@@ -132,55 +130,51 @@ done
 TOTAL=${#JOB_CMDS[@]}
 echo ""
 echo ">>> Net    : $NET"
-echo ">>> Route  : $ROUTE  (luu luong that, 3600s)"
-echo ">>> Steps  : $STEPS  | SimDur: ${SIM_DUR}s"
-echo ">>> $TOTAL jobs tong cong (DQN x24 + DDQN x24 + PPO x24), chay ${MAX_WORKERS} song song"
+echo ">>> Route  : $ROUTE  (luu luong that, 25200-28800s)"
+echo ">>> Steps  : $STEPS  | SimDur: ${SIM_DUR}s | SumoBegin: ${SUMO_BEGIN}s"
+echo ">>> Launch $TOTAL jobs (DQN x24 + DDQN x24 + PPO x24) cung luc..."
 echo ">>> Logs: $LOG_DIR/"
 echo ""
 
-# ── 6. Worker pool ───────────────────────────────────────────────────────────
-declare -a RUNNING_PIDS=() RUNNING_LABELS=()
+# ── 6. Launch tat ca 72 jobs cung luc ────────────────────────────────────────
+declare -a ALL_PIDS=() ALL_LABELS=()
+
+for i in "${!JOB_CMDS[@]}"; do
+    eval "${JOB_CMDS[$i]}" &
+    pid=$!
+    ALL_PIDS+=("$pid")
+    ALL_LABELS+=("${JOB_LABELS[$i]}")
+    printf "  %-52s PID %d\n" "${JOB_LABELS[$i]}" "$pid"
+done
+
+echo ""
+echo "  $TOTAL jobs dang chay. Logs: $LOG_DIR/"
+echo ""
+
+declare -a DONE_FLAGS
+for i in "${!ALL_PIDS[@]}"; do DONE_FLAGS[$i]=0; done
 FAIL=0
-DONE_COUNT=0
-JOB_IDX=0
 
-while [ "$DONE_COUNT" -lt "$TOTAL" ]; do
-    # Nap them job vao pool neu con cho trong
-    while [ "${#RUNNING_PIDS[@]}" -lt "$MAX_WORKERS" ] && [ "$JOB_IDX" -lt "$TOTAL" ]; do
-        label="${JOB_LABELS[$JOB_IDX]}"
-        eval "${JOB_CMDS[$JOB_IDX]}" &
-        pid=$!
-        RUNNING_PIDS+=("$pid")
-        RUNNING_LABELS+=("$label")
-        printf "  START %-52s PID %d\n" "$label" "$pid"
-        JOB_IDX=$(( JOB_IDX + 1 ))
-    done
-
-    # Reap cac job da xong
-    new_pids=()
-    new_labels=()
-    for i in "${!RUNNING_PIDS[@]}"; do
-        if ! kill -0 "${RUNNING_PIDS[$i]}" 2>/dev/null; then
-            if wait "${RUNNING_PIDS[$i]}"; then
-                echo "  OK  ${RUNNING_LABELS[$i]}"
+while true; do
+    DONE_COUNT=0
+    for i in "${!ALL_PIDS[@]}"; do
+        if [ "${DONE_FLAGS[$i]}" -eq 1 ]; then
+            DONE_COUNT=$(( DONE_COUNT + 1 ))
+        elif ! kill -0 "${ALL_PIDS[$i]}" 2>/dev/null; then
+            DONE_FLAGS[$i]=1
+            DONE_COUNT=$(( DONE_COUNT + 1 ))
+            if wait "${ALL_PIDS[$i]}"; then
+                echo "  OK  ${ALL_LABELS[$i]}"
             else
-                echo "  ERR ${RUNNING_LABELS[$i]}"
+                echo "  ERR ${ALL_LABELS[$i]}"
                 FAIL=$(( FAIL + 1 ))
             fi
-            DONE_COUNT=$(( DONE_COUNT + 1 ))
-        else
-            new_pids+=("${RUNNING_PIDS[$i]}")
-            new_labels+=("${RUNNING_LABELS[$i]}")
         fi
     done
-    RUNNING_PIDS=("${new_pids[@]+"${new_pids[@]}"}")
-    RUNNING_LABELS=("${new_labels[@]+"${new_labels[@]}"}")
-
     PCT=$(( DONE_COUNT * 100 / TOTAL ))
-    printf "\r  [%s] %d/%d (%d%%)  dang chay: %d   " \
-        "$(date '+%H:%M:%S')" "$DONE_COUNT" "$TOTAL" "$PCT" "${#RUNNING_PIDS[@]}"
-
-    sleep 10
+    printf "\r  [%s] %d/%d (%d%%)   " "$(date '+%H:%M:%S')" "$DONE_COUNT" "$TOTAL" "$PCT"
+    [ "$DONE_COUNT" -eq "$TOTAL" ] && break
+    sleep 15
 done
 
 echo ""
