@@ -97,55 +97,49 @@ def interp_mean_std(runs, n_pts=200):
 
 def plot_scenario(data: dict, scenario: str, out: Path):
     """
-    1 figure duy nhat: tat ca algo × reward tren cung 1 truc.
-    Mau = algo, net = reward type.
+    1 figure, 3 subplots (queue | pressure | wait-clip).
+    Moi subplot: 3 lines (DQN, DDQN, PPO) voi mean ± std shading.
+    Tach subplot de tranh scale mismatch giua reward types.
     """
-    has_data = any(
-        reward in data[algo] and data[algo][reward]
-        for algo in data
-        for reward in ("queue", "pressure", "wait-clip")
-    )
-    if not has_data:
+    rewards_present = [rw for rw in ("queue", "pressure", "wait-clip")
+                       if any(data[a].get(rw) for a in data)]
+    if not rewards_present:
         print(f"  [Skip] Khong co du lieu cho {scenario}")
         return
 
-    fig, ax = plt.subplots(figsize=(11, 5.5))
-    ax.set_title(f"Training Reward Curves — {scenario}", fontsize=12, fontweight="bold")
-    ax.set_xlabel("Timesteps")
-    ax.set_ylabel("Mean Step Reward (smoothed)")
+    n = len(rewards_present)
+    fig, axes = plt.subplots(1, n, figsize=(8 * n, 5.5), sharey=False)
+    if n == 1:
+        axes = [axes]
+    fig.suptitle(f"Training Reward Curves — {scenario}", fontsize=13,
+                 fontweight="bold")
 
-    plotted = 0
-    for algo in ("dqn", "ddqn", "ppo"):
-        for reward in ("queue", "pressure", "wait-clip"):
+    for ax, reward in zip(axes, rewards_present):
+        ax.set_title(REWARD_LABELS[reward], fontsize=11)
+        ax.set_xlabel("Timesteps")
+        if ax is axes[0]:
+            ax.set_ylabel("Mean Step Reward (smoothed)")
+
+        plotted = 0
+        for algo in ("dqn", "ddqn", "ppo"):
             runs = data[algo].get(reward, [])
             if not runs:
                 continue
             x, mean, std = interp_mean_std(runs)
             if len(mean) == 0:
                 continue
-            sm   = smooth(mean, w=12)
-            ss   = smooth(std,  w=12)
-            xs   = x[:len(sm)]
-            c    = ALGO_COLORS[algo]
-            ls   = REWARD_STYLES[reward]
-            lbl  = f"{ALGO_LABELS[algo]} / {REWARD_LABELS[reward]}  (n={len(runs)})"
-            ax.plot(xs, sm, color=c, linestyle=ls, linewidth=1.8, label=lbl)
-            ax.fill_between(xs, sm - ss, sm + ss, color=c, alpha=0.08)
+            sm = smooth(mean, w=12)
+            ss = smooth(std,  w=12)
+            xs = x[:len(sm)]
+            c  = ALGO_COLORS[algo]
+            ax.plot(xs, sm, color=c, linewidth=2,
+                    label=f"{ALGO_LABELS[algo]}  (n={len(runs)})")
+            ax.fill_between(xs, sm - ss, sm + ss, color=c, alpha=0.15)
             plotted += 1
 
-    if plotted == 0:
-        plt.close(fig)
-        return
-
-    ax.set_xlim(left=0)
-    # Legend: 2 columns, sort by algo then reward
-    ax.legend(ncol=2, fontsize=7.5, loc="lower right",
-              framealpha=0.9, borderpad=0.6)
-
-    # Annotate line style convention
-    style_note = "Line style: solid=Queue  dashed=Pressure  dotted=Wait-clip"
-    ax.text(0.01, 0.02, style_note, transform=ax.transAxes,
-            fontsize=7, color="gray", va="bottom")
+        if plotted > 0:
+            ax.legend(fontsize=8, loc="lower right")
+            ax.set_xlim(left=0)
 
     fig.tight_layout()
     fig.savefig(out, bbox_inches="tight")

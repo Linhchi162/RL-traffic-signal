@@ -231,6 +231,22 @@ def find_best_model(models_dir: Path, algo: str, seed: str = "s42"):
 
 # ── Plotting ─────────────────────────────────────────────────────────────────
 
+def _ctrl_color(ctrl_name: str) -> str:
+    """Match controller name (co the co suffix) voi mau."""
+    PALETTE = {
+        "DQN":        "#1976D2",
+        "DDQN":       "#F57C00",
+        "PPO":        "#388E3C",
+        "Fixed-time": "#757575",
+        "Webster":    "#455A64",
+        "Random":     "#C62828",
+    }
+    for key, color in PALETTE.items():
+        if ctrl_name.upper().startswith(key.upper()):
+            return color
+    return "#999999"
+
+
 def plot_per_junction(rows: list, out_path: Path):
     import matplotlib
     matplotlib.use("Agg")
@@ -240,45 +256,41 @@ def plot_per_junction(rows: list, out_path: Path):
         return
 
     controllers = list(dict.fromkeys(r["controller"] for r in rows))
-    junctions   = sorted({r["junction"] for r in rows})
+    # Map junction IDs -> J1, J2... J8 (theo thu tu sort)
+    raw_junctions = sorted({r["junction"] for r in rows})
+    jid_map       = {j: f"J{i+1}" for i, j in enumerate(raw_junctions)}
 
-    # Map controller → color
-    COLORS = {
-        "DQN":       "#1976D2",
-        "DDQN":      "#F57C00",
-        "PPO":       "#388E3C",
-        "Fixed-time":"#757575",
-        "Webster":   "#455A64",
-        "Random":    "#C62828",
-    }
+    print(f"\n  Junction ID mapping:")
+    for raw, short in jid_map.items():
+        print(f"    {short} = {raw}")
 
     data = {ctrl: [] for ctrl in controllers}
-    for jid in junctions:
+    for raw_j in raw_junctions:
         for ctrl in controllers:
             q = next((float(r["mean_queue"]) for r in rows
-                      if r["junction"] == jid and r["controller"] == ctrl), 0.0)
+                      if r["junction"] == raw_j and r["controller"] == ctrl), 0.0)
             data[ctrl].append(q)
 
-    x   = np.arange(len(junctions))
-    n   = len(controllers)
-    w   = 0.8 / n
+    x = np.arange(len(raw_junctions))
+    n = len(controllers)
+    w = 0.8 / n
 
-    fig, ax = plt.subplots(figsize=(max(10, len(junctions) * 1.5), 5))
+    fig, ax = plt.subplots(figsize=(max(10, len(raw_junctions) * 1.8), 5))
     ax.set_title("Per-Intersection Queue — Cologne8 (7:00–8:00 AM)",
                  fontsize=12, fontweight="bold")
 
     for i, ctrl in enumerate(controllers):
         offset = (i - n / 2 + 0.5) * w
         ax.bar(x + offset, data[ctrl], w,
-               color=COLORS.get(ctrl, "#999"), alpha=0.85, label=ctrl)
+               color=_ctrl_color(ctrl), alpha=0.85, label=ctrl)
 
     ax.set_xticks(x)
-    ax.set_xticklabels([f"J{j}" if str(j).isdigit() else str(j)
-                         for j in junctions], fontsize=8)
+    ax.set_xticklabels(list(jid_map.values()), fontsize=9)
     ax.set_ylabel("Mean Queue (veh/step)")
-    ax.set_xlabel("Junction ID")
+    ax.set_xlabel("Junction (J1–J8 mapping in console output)")
     ax.legend(fontsize=8, loc="upper right")
     ax.grid(axis="y", alpha=0.3, linestyle="--")
+    ax.set_ylim(bottom=0)
 
     plt.rcParams.update({"figure.dpi": 150})
     fig.tight_layout()

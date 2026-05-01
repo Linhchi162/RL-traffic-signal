@@ -151,6 +151,12 @@ def fig1b_wait(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
     if not scenarios:
         return
 
+    for name, df in scenarios:
+        neg = df[df[col] < 0][col] if col in df.columns else pd.Series(dtype=float)
+        if not neg.empty:
+            print(f"  [WARN] {name}: {len(neg)} rows co mean_wait_per_veh am "
+                  f"(min={neg.min():.2f}). Co the do model crash tra ve _empty_result().")
+
     fig, axes = plt.subplots(1, len(scenarios), figsize=(9 * len(scenarios), 5.5),
                               sharey=False)
     if len(scenarios) == 1:
@@ -162,6 +168,7 @@ def fig1b_wait(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
             continue
         groups = build_bar_groups(df, col)
         draw_bars(ax, groups, "Mean Wait/veh (s)")
+        ax.set_ylim(bottom=0)   # waiting time khong the am
         ax.set_title(name, fontsize=11)
 
     _add_legend(fig)
@@ -172,15 +179,12 @@ def fig1b_wait(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
 
 
 def _add_legend(fig):
-    """Legend chung: mau = algo, hatch = reward type."""
-    handles = (
-        [plt.Rectangle((0,0),1,1, fc=ALGO_COLORS[a], label=ALGO_LABELS[a])
-         for a in RL_ALGOS + BASELINES]
-        + [plt.Rectangle((0,0),1,1, fc="#BBBBBB", hatch=REWARD_HATCH[rw], ec="gray",
-                         label=f"reward={REWARD_LABELS[rw]}") for rw in REWARDS]
-    )
-    fig.legend(handles=handles, loc="lower center", ncol=6,
-               bbox_to_anchor=(0.5, -0.04), framealpha=0.9, fontsize=7.5)
+    """Legend chung: chi mau theo algo (khong co texture — truc x da ghi ro reward)."""
+    handles = [plt.Rectangle((0,0),1,1, fc=ALGO_COLORS[a], label=ALGO_LABELS[a])
+               for a in RL_ALGOS + BASELINES]
+    fig.legend(handles=handles, loc="lower center",
+               ncol=len(handles), bbox_to_anchor=(0.5, -0.04),
+               framealpha=0.9, fontsize=8.5)
 
 
 # ── Figure 2: Scalability C3 → C8 ────────────────────────────────────────────
@@ -231,8 +235,9 @@ def fig2_scalability(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
         return
 
     fig, ax = plt.subplots(figsize=(max(8, len(items) * 1.6), 5))
-    ax.set_title("Scalability: Cologne3 → Cologne8  (queue length)",
-                 fontsize=12, fontweight="bold")
+    ax.set_title("Scalability: Cologne3 → Cologne8  (queue length)\n"
+                 "Best reward per algo = lowest queue on Cologne3",
+                 fontsize=11, fontweight="bold")
 
     n = len(items); x = np.arange(n); w = 0.38
     for i, (lbl, m3, s3, m8, s8, c) in enumerate(items):
@@ -275,7 +280,7 @@ def fig3_ablation(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
     n_rows = len(scenarios)
     fig, axes = plt.subplots(n_rows, len(RL_ALGOS),
                               figsize=(4.5 * len(RL_ALGOS), 4 * n_rows),
-                              squeeze=False)
+                              squeeze=False, sharey="row")
     fig.suptitle("Reward Function Ablation (Queue Length)",
                  fontsize=12, fontweight="bold", y=1.02)
 
