@@ -149,11 +149,17 @@ def main():
         name_prefix= f"{net_name}_{args.algo}_ckpt",
     )
 
+    # Scale buffer theo so agent: moi step VecEnv luu n_agents transitions.
+    # buffer_size=500k / 3 agents → buffer day tai ~167k step → gay dip.
+    # Nhan voi n_agents de dam bao buffer tuong duong 500k step thuc te.
+    scaled_buffer = args.buffer_size * n_agents
+    print(f"  buffer_size={args.buffer_size} × {n_agents} agents = {scaled_buffer}")
+
     AlgoClass = DoubleDQN if args.algo == "ddqn" else DQN
     model = AlgoClass(
         "MlpPolicy", vec_env,
         learning_rate         = args.lr,
-        buffer_size           = args.buffer_size,
+        buffer_size           = scaled_buffer,
         learning_starts       = 5_000,
         batch_size            = 128,
         tau                   = 1.0,
