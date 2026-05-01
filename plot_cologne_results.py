@@ -1,20 +1,18 @@
 """
-plot_cologne_results.py — Ve toan bo bieu do thesis cho Cologne3 & Cologne8.
+plot_cologne_results.py — Ve bieu do thesis cho Cologne3 & Cologne8.
+
+Output:
+    fig1a_queue.png        — Queue bar chart, C3 | C8 subplots
+    fig1b_wait.png         — Wait/veh bar chart, C3 | C8 subplots
+    fig2_scalability.png   — Scalability grouped bar (best-per-algo, queue)
+    fig3_ablation.png      — Reward ablation: C3 | C8 subplots
+    fig4_boxplot.png       — Seed stability boxplot: C3 | C8 subplots
+    improvement_vs_baselines.csv  (luu cho reproducibility)
 
 Su dung:
     python plot_cologne_results.py
-    python plot_cologne_results.py --c3 results_cologne3_real --c8 results_cologne8_real --out figures
-
-Bieu do tao ra:
-    fig1_perf_cologne3.png       — Group 1: Performance bar chart C3
-    fig1_perf_cologne8.png       — Group 1: Performance bar chart C8
-    fig2_improvement.png         — Group 1: % improvement vs baselines (heatmap)
-    fig3_scalability.png         — Group 2: Scalability C3 → C8
-    fig4_ablation_cologne3.png   — Group 2: Reward ablation C3
-    fig4_ablation_cologne8.png   — Group 2: Reward ablation C8
-    fig5_boxplot_cologne3.png    — Group 3: Seed stability C3
-    fig5_boxplot_cologne8.png    — Group 3: Seed stability C8
-    improvement_vs_baselines.csv — So lieu % cai thien
+    python plot_cologne_results.py --c3 results_cologne3_real \
+                                    --c8 results_cologne8_real --out figures
 """
 
 import argparse
@@ -33,15 +31,17 @@ ALGO_COLORS = {
     "ppo":     "#388E3C",
     "fixed":   "#757575",
     "webster": "#455A64",
-    "random":  "#C62828",
 }
-ALGO_LABELS  = {"dqn": "DQN", "ddqn": "DDQN", "ppo": "PPO",
-                "fixed": "Fixed-time", "webster": "Webster", "random": "Random"}
+ALGO_LABELS = {
+    "dqn": "DQN", "ddqn": "DDQN", "ppo": "PPO",
+    "fixed": "Fixed-time", "webster": "Webster",
+}
 REWARD_LABELS = {"queue": "Queue", "pressure": "Pressure", "wait-clip": "Wait-clip"}
 REWARD_HATCH  = {"queue": "", "pressure": "//", "wait-clip": "xx"}
-BASELINES     = ["random", "fixed", "webster"]
-RL_ALGOS      = ["dqn", "ddqn", "ppo"]
-REWARDS       = ["queue", "pressure", "wait-clip"]
+
+BASELINES  = ["fixed", "webster"]          # bỏ random
+RL_ALGOS   = ["dqn", "ddqn", "ppo"]
+REWARDS    = ["queue", "pressure", "wait-clip"]
 
 plt.rcParams.update({
     "font.family":     "DejaVu Sans",
@@ -58,7 +58,7 @@ plt.rcParams.update({
 })
 
 
-# ── I/O helpers ───────────────────────────────────────────────────────────────
+# ── I/O ──────────────────────────────────────────────────────────────────────
 
 def load_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -72,355 +72,270 @@ def load_csv(path: Path) -> pd.DataFrame:
     return df
 
 
-def rdf(df): return df[~df["algo"].isin(BASELINES)].copy()
+def rdf(df): return df[~df["algo"].isin(["random", "fixed", "webster"])].copy()
 def bdf(df): return df[ df["algo"].isin(BASELINES)].copy()
 
 
-# ── Figure 1: Performance comparison ─────────────────────────────────────────
+# ── Helper: bar groups cho 1 scenario ────────────────────────────────────────
 
-def fig1_performance(df: pd.DataFrame, scenario: str, out: Path):
+def build_bar_groups(df: pd.DataFrame, col: str):
     """
-    4 subplots (Queue / Wait/veh / Travel Time / Throughput).
-    Bars: each (algo x reward) combo + 3 baselines.
-    Error bars = std across seeds.
+    Returns list of (label, mean, std, color, hatch).
+    Bao gom 9 RL combos (algo x reward) + Fixed + Webster (khong co Random).
     """
-    METRICS = [
-        ("mean_queue",        "Mean Queue (veh) ↓",  True),
-        ("mean_wait_per_veh", "Mean Wait/veh (s) ↓", True),
-        ("mean_travel_time",  "Travel Time (s) ↓",   True),
-        ("throughput",        "Throughput (veh) ↑",  False),
-    ]
-    METRICS = [(c, l, lb) for c, l, lb in METRICS if c in df.columns]
-    if not METRICS:
-        return
-
-    r = rdf(df); b = bdf(df)
-
-    fig, axes = plt.subplots(1, len(METRICS), figsize=(4.8 * len(METRICS), 5.5))
-    if len(METRICS) == 1:
-        axes = [axes]
-    fig.suptitle(f"Performance Comparison — {scenario}", fontsize=13,
-                 fontweight="bold", y=1.02)
-
-    for ax, (col, ylabel, lower_better) in zip(axes, METRICS):
-        groups = []
-        for algo in RL_ALGOS:
-            for rw in REWARDS:
-                sub = r[(r["algo"] == algo) & (r["reward"] == rw)][col].dropna()
-                if sub.empty:
-                    continue
-                lbl = f"{ALGO_LABELS[algo]}\n{REWARD_LABELS[rw]}"
-                groups.append((lbl, sub.mean(), sub.std(),
-                                ALGO_COLORS[algo], REWARD_HATCH[rw]))
-        for bl in BASELINES:
-            sub = b[b["algo"] == bl][col].dropna()
+    r_ = rdf(df); b_ = bdf(df)
+    groups = []
+    for algo in RL_ALGOS:
+        for rw in REWARDS:
+            sub = r_[(r_["algo"] == algo) & (r_["reward"] == rw)][col].dropna()
             if sub.empty:
                 continue
-            groups.append((ALGO_LABELS[bl], sub.mean(), 0,
-                           ALGO_COLORS[bl], ""))
-
-        if not groups:
+            lbl = f"{ALGO_LABELS[algo]}\n{REWARD_LABELS[rw]}"
+            groups.append((lbl, sub.mean(), sub.std(),
+                            ALGO_COLORS[algo], REWARD_HATCH[rw]))
+    for bl in BASELINES:
+        sub = b_[b_["algo"] == bl][col].dropna()
+        if sub.empty:
             continue
+        groups.append((ALGO_LABELS[bl], sub.mean(), 0, ALGO_COLORS[bl], ""))
+    return groups
 
-        x = np.arange(len(groups))
-        for i, (_, m, s, c, h) in enumerate(groups):
-            ax.bar(x[i], m, yerr=s if s > 0 else None,
-                   capsize=3, color=c, hatch=h, alpha=0.85,
-                   edgecolor="white" if not h else "gray", linewidth=0.5)
 
-        n_rl = len(RL_ALGOS) * len(REWARDS)
-        if n_rl < len(groups):
-            ax.axvline(n_rl - 0.5, color="black", lw=1.2, ls="--", alpha=0.5)
-            ax.text(n_rl - 0.3, ax.get_ylim()[1] * 0.97, "baselines",
-                    fontsize=6.5, alpha=0.6, ha="left", va="top")
+def draw_bars(ax, groups, ylabel, show_separator=True):
+    x = np.arange(len(groups))
+    for i, (_, m, s, c, h) in enumerate(groups):
+        ax.bar(x[i], m, yerr=s if s > 0 else None,
+               capsize=3, color=c, hatch=h, alpha=0.85,
+               edgecolor="gray" if h else "white", linewidth=0.5)
+    n_rl = len(RL_ALGOS) * len(REWARDS)
+    if show_separator and n_rl < len(groups):
+        ax.axvline(n_rl - 0.5, color="black", lw=1.1, ls="--", alpha=0.45)
+    ax.set_xticks(x)
+    ax.set_xticklabels([g[0] for g in groups], rotation=40, ha="right", fontsize=7)
+    ax.set_ylabel(ylabel)
 
-        ax.set_xticks(x)
-        ax.set_xticklabels([g[0] for g in groups], rotation=40, ha="right", fontsize=7)
-        ax.set_ylabel(ylabel)
-        ax.set_title(ylabel.split("(")[0].strip())
 
-    # Legend: algo colors + reward hatches
-    legend_handles = (
-        [plt.Rectangle((0,0),1,1, fc=ALGO_COLORS[a], label=ALGO_LABELS[a])
-         for a in RL_ALGOS + BASELINES]
-        + [plt.Rectangle((0,0),1,1, fc="white", hatch=REWARD_HATCH[rw], ec="gray",
-                         label=f"reward={REWARD_LABELS[rw]}")
-           for rw in REWARDS]
-    )
-    fig.legend(handles=legend_handles, loc="lower center",
-               ncol=6, bbox_to_anchor=(0.5, -0.05), framealpha=0.9, fontsize=7.5)
+# ── Figure 1a: Queue bar chart ────────────────────────────────────────────────
 
-    fig.tight_layout(rect=[0, 0.04, 1, 1])
+def fig1a_queue(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
+    col = "mean_queue"
+    scenarios = [(n, d) for n, d in [("Cologne3", df3), ("Cologne8", df8)] if not d.empty]
+    if not scenarios:
+        return
+
+    fig, axes = plt.subplots(1, len(scenarios), figsize=(9 * len(scenarios), 5.5),
+                              sharey=False)
+    if len(scenarios) == 1:
+        axes = [axes]
+    fig.suptitle("Mean Queue Length Comparison", fontsize=13, fontweight="bold", y=1.02)
+
+    for ax, (name, df) in zip(axes, scenarios):
+        if col not in df.columns:
+            continue
+        groups = build_bar_groups(df, col)
+        draw_bars(ax, groups, "Mean Queue (veh)")
+        ax.set_title(name, fontsize=11)
+
+    _add_legend(fig)
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
     fig.savefig(out, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved: {out.name}")
 
 
-# ── Figure 2: % Improvement heatmap ──────────────────────────────────────────
+# ── Figure 1b: Wait/veh bar chart ────────────────────────────────────────────
 
-def fig2_improvement(df3: pd.DataFrame, df8: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
-    """Heatmap % improvement of (algo,reward) vs Fixed-time and Webster."""
-    METRICS = [
-        ("mean_queue",        "Queue"),
-        ("mean_wait_per_veh", "Wait/veh"),
-        ("mean_travel_time",  "TravelTime"),
-    ]
+def fig1b_wait(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
+    col = "mean_wait_per_veh"
+    scenarios = [(n, d) for n, d in [("Cologne3", df3), ("Cologne8", df8)] if not d.empty]
+    if not scenarios:
+        return
 
-    rows = []
-    for scenario, df in [("C3", df3), ("C8", df8)]:
-        if df.empty:
-            continue
-        r_ = rdf(df); b_ = bdf(df)
-        for algo in RL_ALGOS:
-            for rw in REWARDS:
-                sub = r_[(r_["algo"] == algo) & (r_["reward"] == rw)]
-                if sub.empty:
-                    continue
-                row = {"Scenario": scenario,
-                       "Algo": ALGO_LABELS[algo], "Reward": REWARD_LABELS[rw]}
-                for col, lbl in METRICS:
-                    if col not in df.columns:
-                        continue
-                    rl_m = sub[col].mean()
-                    for bname in ["fixed", "webster"]:
-                        bv = b_[b_["algo"] == bname][col]
-                        bval = bv.mean() if not bv.empty else np.nan
-                        if np.isnan(bval) or bval == 0:
-                            pct = np.nan
-                        else:
-                            pct = round((bval - rl_m) / abs(bval) * 100, 1)
-                        row[f"vs_{bname}_{lbl}"] = pct
-                rows.append(row)
-
-    if not rows:
-        return pd.DataFrame()
-
-    result = pd.DataFrame(rows)
-    csv_out = out_dir / "improvement_vs_baselines.csv"
-    result.to_csv(csv_out, index=False)
-    print(f"  Saved: {csv_out.name}")
-
-    # ── Heatmap figure ──
-    scenarios_present = [s for s in ["C3", "C8"] if s in result["Scenario"].values]
-    if not scenarios_present:
-        return result
-
-    metric_cols_f = [f"vs_fixed_{l}"   for _, l in METRICS]
-    metric_cols_w = [f"vs_webster_{l}" for _, l in METRICS]
-    metric_names  = [l for _, l in METRICS]
-
-    n_panels = len(scenarios_present) * 2
-    fig, axes = plt.subplots(1, n_panels, figsize=(6.5 * len(scenarios_present), 5.8),
-                              gridspec_kw={"wspace": 0.06})
-    if n_panels == 1:
+    fig, axes = plt.subplots(1, len(scenarios), figsize=(9 * len(scenarios), 5.5),
+                              sharey=False)
+    if len(scenarios) == 1:
         axes = [axes]
-    fig.suptitle("% Improvement vs Baselines (green = better than baseline)",
-                 fontsize=11, fontweight="bold")
+    fig.suptitle("Mean Waiting Time per Vehicle", fontsize=13, fontweight="bold", y=1.02)
 
-    ax_idx = 0
-    for scenario in scenarios_present:
-        sub = result[result["Scenario"] == scenario].copy()
-        sub["Y"] = sub["Algo"] + " / " + sub["Reward"]
+    for ax, (name, df) in zip(axes, scenarios):
+        if col not in df.columns:
+            continue
+        groups = build_bar_groups(df, col)
+        draw_bars(ax, groups, "Mean Wait/veh (s)")
+        ax.set_title(name, fontsize=11)
 
-        for title_sfx, cols in [("vs Fixed-time", metric_cols_f),
-                                  ("vs Webster",    metric_cols_w)]:
-            ax = axes[ax_idx]; ax_idx += 1
-            pivot = sub[[c for c in cols if c in sub.columns]].values.astype(float)
-            col_names = [m for m, c in zip(metric_names, cols) if c in sub.columns]
-            y_labels  = sub["Y"].values
-
-            im = ax.imshow(pivot, aspect="auto", cmap="RdYlGn",
-                           vmin=-40, vmax=60, interpolation="nearest")
-            ax.set_xticks(range(len(col_names)))
-            ax.set_xticklabels(col_names, rotation=25, ha="right", fontsize=8)
-            ax.set_yticks(range(len(y_labels)))
-            ax.set_yticklabels(y_labels if ax_idx % 2 == 1 else [], fontsize=7)
-            ax.set_title(f"{scenario} {title_sfx}", fontsize=9)
-
-            for i in range(pivot.shape[0]):
-                for j in range(pivot.shape[1]):
-                    v = pivot[i, j]
-                    if not np.isnan(v):
-                        tc = "white" if abs(v) > 45 else "black"
-                        ax.text(j, i, f"{v:.0f}%", ha="center", va="center",
-                                fontsize=6.5, color=tc)
-
-    plt.colorbar(im, ax=axes[-1], label="% better than baseline", shrink=0.8)
-    fig.tight_layout()
-    p = out_dir / "fig2_improvement.png"
-    fig.savefig(p, bbox_inches="tight")
+    _add_legend(fig)
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
+    fig.savefig(out, bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved: {p.name}")
-    return result
+    print(f"  Saved: {out.name}")
 
 
-# ── Figure 3: Scalability C3 → C8 ────────────────────────────────────────────
+def _add_legend(fig):
+    """Legend chung: mau = algo, hatch = reward type."""
+    handles = (
+        [plt.Rectangle((0,0),1,1, fc=ALGO_COLORS[a], label=ALGO_LABELS[a])
+         for a in RL_ALGOS + BASELINES]
+        + [plt.Rectangle((0,0),1,1, fc="#BBBBBB", hatch=REWARD_HATCH[rw], ec="gray",
+                         label=f"reward={REWARD_LABELS[rw]}") for rw in REWARDS]
+    )
+    fig.legend(handles=handles, loc="lower center", ncol=6,
+               bbox_to_anchor=(0.5, -0.04), framealpha=0.9, fontsize=7.5)
 
-def fig3_scalability(df3: pd.DataFrame, df8: pd.DataFrame, out_dir: Path):
-    if df3.empty or df8.empty:
-        print("  [Skip] Scalability: missing one scenario")
+
+# ── Figure 2: Scalability C3 → C8 ────────────────────────────────────────────
+
+def fig2_scalability(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
+    """
+    Grouped bar chart: x = algo (best reward per algo) + Fixed + Webster.
+    2 bars per group: C3 (solid) | C8 (hatched).
+    Metric: queue only.
+    """
+    if df3.empty and df8.empty:
+        return
+    col = "mean_queue"
+
+    items = []   # (label, c3_mean, c3_std, c8_mean, c8_std, color)
+
+    for algo in RL_ALGOS:
+        r3 = rdf(df3)[rdf(df3)["algo"] == algo] if not df3.empty else pd.DataFrame()
+        r8 = rdf(df8)[rdf(df8)["algo"] == algo] if not df8.empty else pd.DataFrame()
+
+        # Best reward theo C3 (hoac C8 neu C3 khong co)
+        src = r3 if not r3.empty else r8
+        if src.empty:
+            continue
+        grp = src.groupby("reward")[col].mean()
+        best_r = grp.idxmin()
+
+        v3 = r3[r3["reward"] == best_r][col].dropna() if not r3.empty else pd.Series(dtype=float)
+        v8 = r8[r8["reward"] == best_r][col].dropna() if not r8.empty else pd.Series(dtype=float)
+
+        lbl = f"{ALGO_LABELS[algo]}\n({REWARD_LABELS.get(best_r, best_r)})"
+        items.append((lbl,
+                      v3.mean() if not v3.empty else np.nan, v3.std() if not v3.empty else 0,
+                      v8.mean() if not v8.empty else np.nan, v8.std() if not v8.empty else 0,
+                      ALGO_COLORS[algo]))
+
+    for bl in BASELINES:
+        b3 = bdf(df3)[bdf(df3)["algo"] == bl][col].dropna() if not df3.empty else pd.Series(dtype=float)
+        b8 = bdf(df8)[bdf(df8)["algo"] == bl][col].dropna() if not df8.empty else pd.Series(dtype=float)
+        if b3.empty and b8.empty:
+            continue
+        items.append((ALGO_LABELS[bl],
+                      b3.mean() if not b3.empty else np.nan, 0,
+                      b8.mean() if not b8.empty else np.nan, 0,
+                      ALGO_COLORS[bl]))
+
+    if not items:
         return
 
-    METRICS = [
-        ("mean_queue",        "Mean Queue (veh) ↓",  True),
-        ("mean_wait_per_veh", "Mean Wait/veh (s) ↓", True),
-        ("mean_travel_time",  "Travel Time (s) ↓",   True),
-        ("throughput",        "Throughput (veh) ↑",  False),
-    ]
-    METRICS = [(c, l, lb) for c, l, lb in METRICS
-               if c in df3.columns and c in df8.columns]
-
-    r3 = rdf(df3); r8 = rdf(df8)
-    b3 = bdf(df3); b8 = bdf(df8)
-
-    fig, axes = plt.subplots(1, len(METRICS), figsize=(4.8 * len(METRICS), 5.5))
-    if len(METRICS) == 1:
-        axes = [axes]
-    fig.suptitle("Scalability: Cologne3 → Cologne8", fontsize=13,
-                 fontweight="bold", y=1.02)
-
-    for ax, (col, ylabel, lower_better) in zip(axes, METRICS):
-        items = []
-
-        for algo in RL_ALGOS:
-            s3 = r3[r3["algo"] == algo]
-            s8 = r8[r8["algo"] == algo]
-            if s3.empty:
-                continue
-            grp3 = s3.groupby("reward")[col].mean()
-            if grp3.empty:
-                continue
-            best_r = grp3.idxmin() if lower_better else grp3.idxmax()
-            v3 = s3[s3["reward"] == best_r][col].dropna()
-            v8 = s8[s8["reward"] == best_r][col].dropna() if not s8.empty else pd.Series(dtype=float)
-            if v3.empty:
-                continue
-            label = f"{ALGO_LABELS[algo]}\n({REWARD_LABELS.get(best_r, best_r)})"
-            items.append((label, v3.mean(), v3.std(),
-                          v8.mean() if not v8.empty else np.nan,
-                          v8.std()  if not v8.empty else 0,
-                          ALGO_COLORS[algo]))
-
-        for bl in BASELINES:
-            v3 = b3[b3["algo"] == bl][col].dropna()
-            v8 = b8[b8["algo"] == bl][col].dropna()
-            if v3.empty:
-                continue
-            items.append((ALGO_LABELS[bl],
-                          v3.mean(), 0,
-                          v8.mean() if not v8.empty else np.nan, 0,
-                          ALGO_COLORS[bl]))
-
-        if not items:
-            continue
-
-        n = len(items); x = np.arange(n); w = 0.38
-        for i, (lbl, m3, s3_, m8, s8_, c) in enumerate(items):
-            ax.bar(x[i] - w/2, m3, w,
-                   yerr=s3_ if s3_ > 0 else None,
-                   capsize=3, color=c, alpha=0.92,
-                   label="Cologne3" if i == 0 else "_")
-            if not np.isnan(m8):
-                ax.bar(x[i] + w/2, m8, w,
-                       yerr=s8_ if s8_ > 0 else None,
-                       capsize=3, color=c, alpha=0.40, hatch="//",
-                       label="Cologne8" if i == 0 else "_")
-
-        ax.set_xticks(x)
-        ax.set_xticklabels([g[0] for g in items], rotation=30, ha="right", fontsize=7)
-        ax.set_ylabel(ylabel)
-        ax.set_title(ylabel.split("(")[0].strip())
-        if ax is axes[0]:
-            ax.legend(["Cologne3", "Cologne8 (hatched)"], fontsize=8)
-
-    fig.tight_layout(rect=[0, 0.02, 1, 1])
-    p = out_dir / "fig3_scalability.png"
-    fig.savefig(p, bbox_inches="tight")
-    plt.close(fig)
-    print(f"  Saved: {p.name}")
-
-
-# ── Figure 4: Reward function ablation ───────────────────────────────────────
-
-def fig4_ablation(df3: pd.DataFrame, df8: pd.DataFrame, out_dir: Path):
-    REWARD_COLORS = {"queue": "#1565C0", "pressure": "#6A1B9A", "wait-clip": "#BF360C"}
-    METRICS = [("mean_queue", "Mean Queue (veh) ↓"),
-               ("mean_wait_per_veh", "Mean Wait/veh (s) ↓")]
-
-    for scenario, df in [("cologne3", df3), ("cologne8", df8)]:
-        if df.empty:
-            continue
-        r_ = rdf(df)
-        valid = [(c, l) for c, l in METRICS if c in df.columns]
-        if not valid:
-            continue
-
-        fig, axes = plt.subplots(len(valid), len(RL_ALGOS),
-                                 figsize=(4.5 * len(RL_ALGOS), 4 * len(valid)),
-                                 squeeze=False)
-        fig.suptitle(f"Reward Function Ablation — {scenario.capitalize()}",
-                     fontsize=12, fontweight="bold", y=1.02)
-
-        for row_i, (col, title) in enumerate(valid):
-            for col_i, algo in enumerate(RL_ALGOS):
-                ax = axes[row_i][col_i]
-                sub = r_[r_["algo"] == algo]
-                means, stds, lbls, clrs = [], [], [], []
-                for rw in REWARDS:
-                    vals = sub[sub["reward"] == rw][col].dropna()
-                    if vals.empty:
-                        continue
-                    means.append(vals.mean())
-                    stds.append(vals.std())
-                    lbls.append(REWARD_LABELS[rw])
-                    clrs.append(REWARD_COLORS[rw])
-                if not means:
-                    continue
-                x = np.arange(len(means))
-                ax.bar(x, means, yerr=stds, capsize=4, color=clrs, alpha=0.85)
-                ax.set_xticks(x); ax.set_xticklabels(lbls)
-                if col_i == 0:
-                    ax.set_ylabel(title)
-                if row_i == 0:
-                    ax.set_title(ALGO_LABELS[algo], fontsize=11, fontweight="bold")
-
-                # best marker
-                if means:
-                    best_i = np.argmin(means)
-                    ax.bar(x[best_i], means[best_i], capsize=0,
-                           color=clrs[best_i], edgecolor="black",
-                           linewidth=2, alpha=0.95)
-
-        fig.tight_layout()
-        p = out_dir / f"fig4_ablation_{scenario}.png"
-        fig.savefig(p, bbox_inches="tight")
-        plt.close(fig)
-        print(f"  Saved: {p.name}")
-
-
-# ── Figure 5: Boxplot seed stability ─────────────────────────────────────────
-
-def fig5_boxplot(df: pd.DataFrame, scenario: str, out_dir: Path):
-    r_ = rdf(df)
-    if r_.empty:
-        return
-    METRICS = [(c, l) for c, l in
-               [("mean_queue",        "Mean Queue (veh)"),
-                ("mean_wait_per_veh", "Mean Wait/veh (s)")]
-               if c in df.columns]
-    if not METRICS:
-        return
-
-    fig, axes = plt.subplots(1, len(METRICS), figsize=(7 * len(METRICS), 5.5))
-    if len(METRICS) == 1:
-        axes = [axes]
-    fig.suptitle(f"Seed Stability (10 seeds) — {scenario}",
+    fig, ax = plt.subplots(figsize=(max(8, len(items) * 1.6), 5))
+    ax.set_title("Scalability: Cologne3 → Cologne8  (queue length)",
                  fontsize=12, fontweight="bold")
 
-    b_ = bdf(df)
-    line_styles = {"fixed": "--", "webster": "-.", "random": ":"}
+    n = len(items); x = np.arange(n); w = 0.38
+    for i, (lbl, m3, s3, m8, s8, c) in enumerate(items):
+        if not np.isnan(m3):
+            ax.bar(x[i] - w/2, m3, w, yerr=s3 if s3 > 0 else None,
+                   capsize=3, color=c, alpha=0.92,
+                   label="Cologne3" if i == 0 else "_")
+        if not np.isnan(m8):
+            ax.bar(x[i] + w/2, m8, w, yerr=s8 if s8 > 0 else None,
+                   capsize=3, color=c, alpha=0.42, hatch="//",
+                   label="Cologne8" if i == 0 else "_")
 
-    for ax, (col, ylabel) in zip(axes, METRICS):
+    ax.set_xticks(x)
+    ax.set_xticklabels([g[0] for g in items], rotation=20, ha="right")
+    ax.set_ylabel("Mean Queue (veh)")
+    ax.legend(["Cologne3", "Cologne8 (hatched)"], fontsize=9)
+
+    fig.tight_layout()
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {out.name}")
+
+
+# ── Figure 3: Reward ablation (C3 | C8 subplots) ─────────────────────────────
+
+def fig3_ablation(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
+    """
+    2 rows (C3, C8) × 3 cols (DQN, DDQN, PPO).
+    Y-axis: queue length.
+    3 bars per subplot: queue / pressure / wait-clip.
+    """
+    REWARD_COLORS = {"queue": "#1565C0", "pressure": "#6A1B9A", "wait-clip": "#BF360C"}
+    col = "mean_queue"
+
+    scenarios = [(n, d) for n, d in [("Cologne3", df3), ("Cologne8", df8)]
+                 if not d.empty and col in d.columns]
+    if not scenarios:
+        return
+
+    n_rows = len(scenarios)
+    fig, axes = plt.subplots(n_rows, len(RL_ALGOS),
+                              figsize=(4.5 * len(RL_ALGOS), 4 * n_rows),
+                              squeeze=False)
+    fig.suptitle("Reward Function Ablation (Queue Length)",
+                 fontsize=12, fontweight="bold", y=1.02)
+
+    for row_i, (scenario, df) in enumerate(scenarios):
+        r_ = rdf(df)
+        for col_i, algo in enumerate(RL_ALGOS):
+            ax = axes[row_i][col_i]
+            sub = r_[r_["algo"] == algo]
+            means, stds, lbls, clrs = [], [], [], []
+            for rw in REWARDS:
+                vals = sub[sub["reward"] == rw][col].dropna()
+                if vals.empty:
+                    continue
+                means.append(vals.mean())
+                stds.append(vals.std())
+                lbls.append(REWARD_LABELS[rw])
+                clrs.append(REWARD_COLORS[rw])
+            if not means:
+                continue
+            x = np.arange(len(means))
+            bars = ax.bar(x, means, yerr=stds, capsize=4, color=clrs, alpha=0.85)
+            # Highlight best
+            best_i = int(np.argmin(means))
+            bars[best_i].set_edgecolor("black"); bars[best_i].set_linewidth(2)
+            ax.set_xticks(x); ax.set_xticklabels(lbls)
+            if col_i == 0:
+                ax.set_ylabel(f"{scenario}\nMean Queue (veh)")
+            if row_i == 0:
+                ax.set_title(ALGO_LABELS[algo], fontsize=11, fontweight="bold")
+
+    fig.tight_layout()
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {out.name}")
+
+
+# ── Figure 4: Boxplot seed stability (C3 | C8) ───────────────────────────────
+
+def fig4_boxplot(df3: pd.DataFrame, df8: pd.DataFrame, out: Path):
+    """
+    2 subplots: C3 | C8.
+    X-axis: algo × reward combos.
+    Baseline horizontal lines: Fixed-time, Webster.
+    """
+    col = "mean_queue"
+    line_styles = {"fixed": "--", "webster": "-."}
+
+    scenarios = [(n, d) for n, d in [("Cologne3", df3), ("Cologne8", df8)]
+                 if not d.empty and col in d.columns]
+    if not scenarios:
+        return
+
+    fig, axes = plt.subplots(1, len(scenarios),
+                              figsize=(8 * len(scenarios), 5.5), sharey=False)
+    if len(scenarios) == 1:
+        axes = [axes]
+    fig.suptitle("Seed Stability — Mean Queue (10 seeds)", fontsize=12, fontweight="bold")
+
+    for ax, (scenario, df) in zip(axes, scenarios):
+        r_ = rdf(df); b_ = bdf(df)
         data_list, tick_labels, tick_colors = [], [], []
 
         for algo in RL_ALGOS:
@@ -446,83 +361,109 @@ def fig5_boxplot(df: pd.DataFrame, scenario: str, out_dir: Path):
             if not np.isnan(bval):
                 ax.axhline(bval, color=ALGO_COLORS[bl],
                            linestyle=line_styles.get(bl, "-"),
-                           linewidth=1.6, alpha=0.8, label=ALGO_LABELS[bl])
+                           linewidth=1.8, alpha=0.85,
+                           label=ALGO_LABELS[bl])
 
         ax.set_xticks(range(1, len(tick_labels) + 1))
         ax.set_xticklabels(tick_labels, rotation=30, ha="right", fontsize=7)
-        ax.set_ylabel(ylabel); ax.set_title(ylabel)
-        ax.legend(fontsize=7, loc="upper right")
+        ax.set_ylabel("Mean Queue (veh)")
+        ax.set_title(scenario)
+        ax.legend(fontsize=8, loc="upper right")
 
     fig.tight_layout()
-    p = out_dir / f"fig5_boxplot_{scenario.lower().replace(' ','_')}.png"
-    fig.savefig(p, bbox_inches="tight")
+    fig.savefig(out, bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved: {p.name}")
+    print(f"  Saved: {out.name}")
 
 
-# ── Console summary table ─────────────────────────────────────────────────────
+# ── Console: summary table + % improvement ───────────────────────────────────
 
 def print_table(df: pd.DataFrame, scenario: str):
     if df.empty:
         return
-    print(f"\n{'='*90}")
-    print(f"  {scenario}  ({len(df)} rows total)")
-    print(f"{'='*90}")
-    W = "  {:8s}  {:12s}  {:3s}  {:>14s}  {:>14s}  {:>14s}  {:>7s}"
-    print(W.format("Algo", "Reward", "N", "Queue±std", "Wait/veh±std", "TrvlTime±std", "Thru"))
-    print("  " + "-" * 80)
+    r_ = rdf(df); b_ = bdf(df)
+    cols_show = ["mean_queue", "mean_wait_per_veh", "mean_travel_time",
+                 "mean_speed", "throughput"]
+    cols_show = [c for c in cols_show if c in df.columns]
+
+    fv = b_[b_["algo"] == "fixed"]["mean_queue"].mean() if "mean_queue" in df.columns else np.nan
+    wv = b_[b_["algo"] == "webster"]["mean_queue"].mean() if "mean_queue" in df.columns else np.nan
 
     def s(sub, col):
-        if col not in sub.columns:
-            return "N/A"
         v = sub[col].dropna()
         if v.empty:
             return "N/A"
         return f"{v.mean():6.2f}±{v.std():.2f}" if len(v) > 1 else f"{v.mean():6.2f}"
 
-    r_ = rdf(df); b_ = bdf(df)
+    def pct(val, ref):
+        if np.isnan(ref) or ref == 0 or np.isnan(val):
+            return "N/A"
+        return f"{(ref - val) / abs(ref) * 100:+.1f}%"
+
+    print(f"\n{'='*95}")
+    print(f"  {scenario}")
+    print(f"{'='*95}")
+    hdr = f"  {'Algo':6s} {'Reward':12s} {'N':>2}  {'Queue±std':>14}  {'Wait/veh±std':>14}  "
+    hdr += f"{'TrvlTime':>10}  {'Speed':>7}  {'Thru':>6}  {'vsFixed':>8}  {'vsWebster':>9}"
+    print(hdr)
+    print("  " + "-" * 90)
+
     for algo in RL_ALGOS:
         for rw in REWARDS:
             sub = r_[(r_["algo"] == algo) & (r_["reward"] == rw)]
             if sub.empty:
                 continue
-            thru = f"{sub['throughput'].mean():.0f}" if "throughput" in sub.columns else "N/A"
-            print(W.format(algo, rw, str(len(sub)),
-                           s(sub, "mean_queue"), s(sub, "mean_wait_per_veh"),
-                           s(sub, "mean_travel_time"), thru))
-    print("  " + "-" * 80)
+            q_mean = sub["mean_queue"].mean() if "mean_queue" in sub.columns else np.nan
+            row = f"  {algo:6s} {rw:12s} {len(sub):>2}  "
+            row += f"{s(sub, 'mean_queue'):>14}  {s(sub, 'mean_wait_per_veh'):>14}  "
+            row += f"{s(sub, 'mean_travel_time'):>10}  "
+            spd = f"{sub['mean_speed'].mean():.3f}" if "mean_speed" in sub.columns else "N/A"
+            thr = f"{sub['throughput'].mean():.0f}" if "throughput" in sub.columns else "N/A"
+            row += f"{spd:>7}  {thr:>6}  {pct(q_mean, fv):>8}  {pct(q_mean, wv):>9}"
+            print(row)
+
+    print("  " + "-" * 90)
     for bl in BASELINES:
         sub = b_[b_["algo"] == bl]
         if sub.empty:
             continue
-        thru = f"{sub['throughput'].mean():.0f}" if "throughput" in sub.columns else "N/A"
-        print(W.format(bl, "—", str(len(sub)),
-                       s(sub, "mean_queue"), s(sub, "mean_wait_per_veh"),
-                       s(sub, "mean_travel_time"), thru))
+        print(f"  {bl:6s} {'—':12s} {len(sub):>2}  "
+              f"{s(sub, 'mean_queue'):>14}  {s(sub, 'mean_wait_per_veh'):>14}  "
+              f"{s(sub, 'mean_travel_time'):>10}  "
+              f"{sub['mean_speed'].mean() if 'mean_speed' in sub.columns else 0:>7.3f}  "
+              f"{sub['throughput'].mean() if 'throughput' in sub.columns else 0:>6.0f}")
 
 
-def print_improvement(df: pd.DataFrame, scenario: str):
-    if df.empty:
-        return
-    col = "mean_queue"
-    if col not in df.columns:
-        return
-    b_   = bdf(df)
-    fv   = b_[b_["algo"] == "fixed"][col].mean()
-    wv   = b_[b_["algo"] == "webster"][col].mean()
-    r_   = rdf(df)
+def save_improvement_csv(df3: pd.DataFrame, df8: pd.DataFrame, out_dir: Path):
+    """Luu CSV % improvement (cho reproducibility, khong phai figure)."""
+    METRICS = [("mean_queue", "Queue"), ("mean_wait_per_veh", "Wait/veh"),
+               ("mean_travel_time", "TravelTime")]
+    rows = []
+    for scenario, df in [("C3", df3), ("C8", df8)]:
+        if df.empty:
+            continue
+        r_ = rdf(df); b_ = bdf(df)
+        for algo in RL_ALGOS:
+            for rw in REWARDS:
+                sub = r_[(r_["algo"] == algo) & (r_["reward"] == rw)]
+                if sub.empty:
+                    continue
+                row = {"Scenario": scenario, "Algo": algo, "Reward": rw}
+                for col, lbl in METRICS:
+                    if col not in df.columns:
+                        continue
+                    m = sub[col].mean()
+                    for bname in BASELINES:
+                        bv = b_[b_["algo"] == bname][col]
+                        bval = bv.mean() if not bv.empty else np.nan
+                        pct = round((bval - m) / abs(bval) * 100, 2) if not np.isnan(bval) and bval != 0 else np.nan
+                        row[f"vs_{bname}_{lbl}"] = pct
+                rows.append(row)
 
-    print(f"\n  >> {scenario}: Queue ↓ vs baselines")
-    print(f"     {'Algo':8s} {'Reward':12s}  vs Fixed  vs Webster")
-    for algo in RL_ALGOS:
-        for rw in REWARDS:
-            sub = r_[(r_["algo"] == algo) & (r_["reward"] == rw)][col]
-            if sub.empty:
-                continue
-            m = sub.mean()
-            pf = (fv - m) / abs(fv) * 100 if fv and not np.isnan(fv) else 0
-            pw = (wv - m) / abs(wv) * 100 if wv and not np.isnan(wv) else 0
-            print(f"     {algo:8s} {rw:12s}  {pf:+.1f}%    {pw:+.1f}%")
+    if rows:
+        csv_path = out_dir / "improvement_vs_baselines.csv"
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
+        print(f"  Saved: {csv_path.name}  (reproducibility)")
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -553,29 +494,16 @@ def main():
 
     print_table(df3, "Cologne3")
     print_table(df8, "Cologne8")
-    print_improvement(df3, "Cologne3")
-    print_improvement(df8, "Cologne8")
 
     print("\n=== Generating figures ===")
+    fig1a_queue(df3, df8, out_dir / "fig1a_queue.png")
+    fig1b_wait( df3, df8, out_dir / "fig1b_wait.png")
+    fig2_scalability(df3, df8, out_dir / "fig2_scalability.png")
+    fig3_ablation(df3, df8, out_dir / "fig3_ablation.png")
+    fig4_boxplot(df3, df8, out_dir / "fig4_boxplot.png")
+    save_improvement_csv(df3, df8, out_dir)
 
-    if not df3.empty:
-        fig1_performance(df3, "Cologne3",
-                         out_dir / "fig1_perf_cologne3.png")
-        fig5_boxplot(df3, "Cologne3", out_dir)
-
-    if not df8.empty:
-        fig1_performance(df8, "Cologne8",
-                         out_dir / "fig1_perf_cologne8.png")
-        fig5_boxplot(df8, "Cologne8", out_dir)
-
-    if not df3.empty or not df8.empty:
-        fig2_improvement(df3, df8, out_dir)
-        fig4_ablation(df3, df8, out_dir)
-
-    if not df3.empty and not df8.empty:
-        fig3_scalability(df3, df8, out_dir)
-
-    print(f"\nHoan tat. Tat ca bieu do luu tai: {out_dir}/")
+    print(f"\nHoan tat. Bieu do luu tai: {out_dir}/")
     for f in sorted(out_dir.glob("fig*.png")):
         print(f"  {f.name}")
 
