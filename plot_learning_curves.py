@@ -169,7 +169,7 @@ def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--c3_logs", default="./logs_cologne3_direct")
+    p.add_argument("--c3_logs", default="./logs_cologne3_real_all")
     p.add_argument("--c8_logs", default="./logs_cologne8_direct")
     p.add_argument("--smooth",  type=int, default=8)
     p.add_argument("--out",     default="./figures")
