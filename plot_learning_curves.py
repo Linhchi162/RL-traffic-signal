@@ -159,6 +159,17 @@ def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
     )
     ax.tick_params(axis="x", labelsize=8)
 
+    # Clip y-axis theo p5-p95 cua duong median, tranh 1 algo keo toan bo scale
+    lines_data = [line.get_ydata() for line in ax.get_lines()
+                  if len(line.get_ydata()) > 1]
+    if lines_data:
+        all_y = np.concatenate(lines_data)
+        all_y = all_y[np.isfinite(all_y)]
+        if len(all_y):
+            p5, p95 = np.percentile(all_y, 5), np.percentile(all_y, 95)
+            margin  = max(abs(p95 - p5) * 0.25, 0.005)
+            ax.set_ylim(bottom=p5 - margin, top=min(p95 + margin, 0.02))
+
     if any_run:
         ax.legend(fontsize=8, loc="lower right", framealpha=0.85)
 
