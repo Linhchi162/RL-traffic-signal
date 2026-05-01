@@ -1,35 +1,32 @@
 """
-plot_learning_curves.py — Learning curves DQN / DDQN / PPO tren C3 va C8.
+plot_learning_curves.py — Training reward curves, layout 2x3.
 
-Doc training logs (StepLogger output), lay mean_rew theo training steps,
-ve mean +- std qua seeds. Default dung reward=wait-clip.
+Row 0 : Cologne3   |  Row 1 : Cologne8
+Col 0 : Queue      |  Col 1 : Pressure  |  Col 2 : Wait-clip
 
-Output: figures/fig_learning_curves.png  (2 panel: (a) C3, (b) C8)
+Moi panel ve mean +- std (shaded band) qua seeds.
 
 Su dung:
     python plot_learning_curves.py
-    python plot_learning_curves.py --reward queue --smooth 3
-    python plot_learning_curves.py --reward all   # gop ca 3 reward type
+    python plot_learning_curves.py --c3_logs logs_cologne3_rand_curr \
+        --c8_logs logs_cologne8_rand_curr --smooth 8 --out figures
 """
 
 import argparse
 import re
-from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 
 # ── Style ─────────────────────────────────────────────────────────────────────
-ALGO_COLOR = {
-    "dqn":  "#E91E63",   # pink
-    "ddqn": "#1565C0",   # navy blue
-    "ppo":  "#00BCD4",   # cyan
-}
+ALGO_COLOR = {"dqn": "#1f77b4", "ddqn": "#ff7f0e", "ppo": "#2ca02c"}
 ALGO_LABEL = {"dqn": "DQN", "ddqn": "DDQN", "ppo": "PPO"}
-REWARDS    = ["queue", "pressure", "wait-clip"]
+REWARDS       = ["queue", "pressure", "wait-clip"]
+REWARD_TITLES = {"queue": "Queue", "pressure": "Pressure", "wait-clip": "Wait-clip"}
 
 plt.rcParams.update({
     "font.family":    "DejaVu Sans",
@@ -41,9 +38,9 @@ plt.rcParams.update({
 })
 
 # ── Parsing ───────────────────────────────────────────────────────────────────
-_RE = re.compile(r"step\s+(\d+)/\d+.*?mean_rew=([+-]?\d+\.\d+)")
+_RE = re.compile(r"step\s+(\d+)/\d+.*?mean_rew=([+-]?\d+(?:\.\d+)?)")
 
-def parse_log(path: Path) -> tuple[np.ndarray, np.ndarray]:
+def parse_log(path: Path):
     steps, rews = [], []
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         m = _RE.search(line)
@@ -53,110 +50,84 @@ def parse_log(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return np.array(steps, dtype=float), np.array(rews, dtype=float)
 
 
-def collect_algo(log_dir: Path, reward: str) -> dict[str, list[tuple]]:
-    """
-    Returns {algo: [(steps, rews), ...]} for all seeds.
-    reward='all' merges all 3 reward types per algo.
-    """
-    data: dict[str, list] = {"dqn": [], "ddqn": [], "ppo": []}
-    rewlist = REWARDS if reward == "all" else [reward]
-    for rw in rewlist:
-        for f in sorted(log_dir.glob(f"*_{rw}_s*.log")):
-            algo = f.stem.split("_")[0]
-            if algo not in data:
-                continue
-            s, r = parse_log(f)
-            if len(s) >= 5:
-                data[algo].append((s, r))
+def collect_algo(log_dir: Path, reward: str) -> dict:
+    """Returns {algo: [(steps, rews), ...]} for the given reward type."""
+    data: dict = {"dqn": [], "ddqn": [], "ppo": []}
+    for f in sorted(log_dir.glob(f"*_{reward}_s*.log")):
+        algo = f.stem.split("_")[0]
+        if algo not in data:
+            continue
+        s, r = parse_log(f)
+        if len(s) >= 5:
+            data[algo].append((s, r))
     return data
 
 
-# ── Aggregate: align seeds at shared step grid ────────────────────────────────
+# ── Aggregate ─────────────────────────────────────────────────────────────────
 
-def aggregate(runs: list[tuple]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Align all runs to a shared step grid (union of all step positions),
-    interpolating missing values. Returns (steps_k, mean, std).
-    Values are negated so higher = better (learning progress going up).
-    """
+def aggregate(runs):
     if not runs:
         return np.array([]), np.array([]), np.array([])
-
-    # Build common step grid from first run (all seeds should match)
     all_steps = sorted({int(v) for s, _ in runs for v in s})
     grid = np.array(all_steps, dtype=float)
-
-    mat = np.array([
-        np.interp(grid, s, -r)      # negate: high start, drop = learning
-        for s, r in runs
-    ])
-
+    mat  = np.array([np.interp(grid, s, r) for s, r in runs])
     mean = mat.mean(axis=0)
     std  = mat.std(axis=0, ddof=1) if len(mat) > 1 else np.zeros_like(mean)
-    return grid / 1_000, mean, std   # x in units of 1000 steps
+    return grid, mean, std
 
 
 def smooth(arr: np.ndarray, w: int) -> np.ndarray:
     if w <= 1 or len(arr) < w:
         return arr
-    kernel = np.ones(w) / w
-    return np.convolve(arr, kernel, mode="same")
+    return np.convolve(arr, np.ones(w) / w, mode="same")
 
 
 # ── Panel ─────────────────────────────────────────────────────────────────────
 
 def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
-               title: str, ylabel: bool):
+               col_title: str, row_label: str):
     data = collect_algo(log_dir, reward)
 
     for algo in ("dqn", "ddqn", "ppo"):
         runs = data[algo]
         if not runs:
             continue
-
         color = ALGO_COLOR[algo]
-
-        # Individual seed lines (thin, transparent)
-        all_x = None
-        for s, r in runs:
-            x_k = s / 1_000
-            y   = smooth(-r, smooth_w)
-            ax.plot(x_k, y, color=color, linewidth=0.4, alpha=0.25)
-            all_x = x_k   # same for all seeds
-
-        # Thick mean line
-        x_k, mean, _ = aggregate(runs)
+        x, mean, std = aggregate(runs)
         if len(mean) == 0:
             continue
+
         ms = smooth(mean, smooth_w)
-        ax.plot(x_k, ms, color=color, linewidth=2.2,
-                label=ALGO_LABEL[algo])
+        ss = smooth(std,  smooth_w)
 
-    ax.set_title(title, fontsize=11)
-    ax.set_xlabel("Training steps (×10³)", fontsize=10)
-    if ylabel:
-        ax.set_ylabel("Negated reward (high→bad, low→good)", fontsize=9)
-    ax.set_xlim(0, None)
-    ax.set_ylim(bottom=0)
+        label = f"{ALGO_LABEL[algo]} (n={len(runs)})"
+        ax.plot(x, ms, color=color, linewidth=1.8, label=label)
+        ax.fill_between(x, ms - ss, ms + ss, color=color, alpha=0.2)
 
-    n = max((len(v) for v in data.values()), default=0)
-    rw_label = reward if reward != "all" else "all rewards"
-    ax.text(0.98, 0.96, f"reward: {rw_label}   n={n} runs/algo",
-            transform=ax.transAxes, ha="right", va="top",
-            fontsize=7.5, color="#666666")
-    ax.legend(fontsize=10, loc="best", framealpha=0.85)
+    if col_title:
+        ax.set_title(col_title, fontsize=11, fontweight="bold")
+
+    ax.set_xlabel("Timesteps", fontsize=9)
+
+    if row_label:
+        ax.set_ylabel(f"{row_label}\nMean Reward (smoothed)", fontsize=9)
+
+    # Format x-axis: show full numbers (100000, 200000 ...)
+    ax.xaxis.set_major_formatter(
+        mticker.FuncFormatter(lambda x, _: f"{int(x):,}".replace(",", " "))
+    )
+    ax.tick_params(axis="x", labelsize=8)
+
+    ax.legend(fontsize=8, loc="best", framealpha=0.85)
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--c3_logs", default="./logs_cologne3_real_all")
-    p.add_argument("--c8_logs", default="./logs_cologne8_real_all")
-    p.add_argument("--reward",  default="wait-clip",
-                   choices=["queue", "pressure", "wait-clip", "all"])
-    p.add_argument("--smooth",  type=int, default=8,
-                   help="Smoothing window over the aligned step grid.")
+    p.add_argument("--c3_logs", default="./logs_cologne3_rand_curr")
+    p.add_argument("--c8_logs", default="./logs_cologne8_rand_curr")
+    p.add_argument("--smooth",  type=int, default=8)
     p.add_argument("--out",     default="./figures")
     return p.parse_args()
 
@@ -166,19 +137,24 @@ def main():
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+    scenarios = [
+        (Path(args.c3_logs), "Cologne3"),
+        (Path(args.c8_logs), "Cologne8"),
+    ]
 
-    plot_panel(axes[0], Path(args.c3_logs), args.reward, args.smooth,
-               title="(a) Cologne3",  ylabel=True)
-    plot_panel(axes[1], Path(args.c8_logs), args.reward, args.smooth,
-               title="(b) Cologne8",  ylabel=False)
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    fig.suptitle("Training Reward Curves", fontsize=13, fontweight="bold", y=1.01)
 
-    fig.suptitle("Learning Curves: DQN vs DDQN vs PPO\n"
-                 "(thin lines = individual seeds, thick = mean)",
-                 fontsize=11, y=1.01)
+    for row, (log_dir, scenario_name) in enumerate(scenarios):
+        for col, reward in enumerate(REWARDS):
+            ax        = axes[row][col]
+            col_title = REWARD_TITLES[reward] if row == 0 else ""
+            row_label = scenario_name         if col == 0 else ""
+            plot_panel(ax, log_dir, reward, args.smooth, col_title, row_label)
+
     fig.tight_layout()
 
-    out = out_dir / "fig_learning_curves.png"
+    out = out_dir / "fig_training_curves.png"
     fig.savefig(out, bbox_inches="tight", dpi=150)
     plt.close(fig)
     print(f"Saved: {out}")
