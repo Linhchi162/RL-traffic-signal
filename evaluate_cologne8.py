@@ -326,6 +326,13 @@ def run_webster_eval() -> dict:
 # ---------------------------------------------------------------------------
 
 def discover_grid_models(models_dir: Path):
+    """Tim final model trong models_dir.
+
+    Ho tro nhieu naming pattern:
+      grid_{algo}_final_model.zip   (grid experiments)
+      cologne8_{algo}_final_model.zip / cologne8_{algo}_final_model  (cologne8 real)
+      cologne3.net_{algo}_final_model  (cologne3 cu truoc fix)
+    """
     results = []
     if not models_dir.exists():
         return results
@@ -338,14 +345,13 @@ def discover_grid_models(models_dir: Path):
         algo   = parts[0]
         seed   = parts[-1]
         reward = "_".join(parts[1:-1])
-        if algo == "ppo":
-            model_path = subdir / "grid_ppo_final_model.zip"
-        elif algo in ("dqn", "ddqn"):
-            model_path = subdir / f"grid_{algo}_final_model.zip"
-        else:
+        if algo not in ("dqn", "ddqn", "ppo"):
             continue
-        if model_path.exists():
-            results.append((algo, reward, seed, str(model_path)))
+        # Tim bat ky file *_{algo}_final_model hoac *_{algo}_final_model.zip
+        candidates = (sorted(subdir.glob(f"*_{algo}_final_model.zip")) +
+                      sorted(subdir.glob(f"*_{algo}_final_model")))
+        if candidates:
+            results.append((algo, reward, seed, str(candidates[0])))
     return results
 
 
