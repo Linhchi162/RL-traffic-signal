@@ -38,10 +38,11 @@ class StepLogger(BaseCallback):
         super().__init__()
         self.log_freq    = log_freq
         self.total_steps = total_steps
+        self._next_log   = log_freq
 
     def _on_step(self) -> bool:
         t = self.num_timesteps
-        if t % self.log_freq == 0 and t > 0:
+        if t >= self._next_log:
             eps      = getattr(self.model, "exploration_rate", float("nan"))
             upd      = getattr(self.model, "_n_updates", 0)
             pct      = 100 * t / self.total_steps
@@ -50,6 +51,7 @@ class StepLogger(BaseCallback):
             print(f"  step {t:>7d}/{self.total_steps} ({pct:5.1f}%)"
                   f"  eps={eps:.3f}  updates={upd:>6d}"
                   f"  mean_rew={mean_rew:+.3f}", flush=True)
+            self._next_log = t + self.log_freq
         return True
 
 
