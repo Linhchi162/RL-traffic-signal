@@ -40,8 +40,6 @@ results_multi_cloud/
 # Windows crash dump
 bash.exe.stackdump
 
-# Claude Code internal
-.claude/
 exp_cologne3_real/*/checkpoints/
 exp_cologne8_real/*/checkpoints/
 exp_cologne3_curr/*/checkpoints/
