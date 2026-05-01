@@ -5,13 +5,12 @@ Row 0 : Cologne3   |  Row 1 : Cologne8
 Col 0 : Queue      |  Col 1 : Pressure  |  Col 2 : Wait-clip
 
 Moi panel ve median + Q1/Q3 band qua seeds.
-Duong doc: cac buoc chuyen curriculum stage.
 
 Su dung:
     python plot_learning_curves.py
     python plot_learning_curves.py \
-        --c3_logs logs_cologne3_rand_curr \
-        --c8_logs logs_cologne8_rand_curr --smooth 8 --out figures
+        --c3_logs logs_cologne3_direct \
+        --c8_logs logs_cologne8_direct --smooth 8 --out figures
 """
 
 import argparse
@@ -29,17 +28,9 @@ ALGO_COLOR = {"dqn": "#1f77b4", "ddqn": "#ff7f0e", "ppo": "#2ca02c"}
 ALGO_LABEL = {"dqn": "DQN", "ddqn": "DDQN", "ppo": "PPO"}
 REWARDS       = ["queue", "pressure", "wait-clip"]
 REWARD_TITLES = {"queue": "Queue", "pressure": "Pressure", "wait-clip": "Wait-clip"}
-TOP_K_SEEDS   = 5   # chi giu top-K seed tot nhat moi (algo, reward)
+TOP_K_SEEDS   = 999  # lay tat ca seeds (khong loc top-K)
 
-# Curriculum stage boundaries (fraction of total_steps=500k)
-CURRICULUM     = [0.25, 0.50, 0.75, 1.00]
-STAGE_PORTIONS = [0.15, 0.20, 0.25, 0.40]
-TOTAL_STEPS    = 500_000
-STAGE_STARTS   = []
-_cum = 0
-for portion in STAGE_PORTIONS[:-1]:
-    _cum += round(TOTAL_STEPS * portion)
-    STAGE_STARTS.append(_cum)   # [75000, 175000, 300000]
+STAGE_STARTS = []  # direct training: no curriculum stage markers
 
 plt.rcParams.update({
     "font.family":    "DejaVu Sans",
@@ -159,16 +150,16 @@ def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
     )
     ax.tick_params(axis="x", labelsize=8)
 
-    # Clip y-axis theo p5-p95 cua duong median, tranh 1 algo keo toan bo scale
+    # Y-axis: padding nhe, khong cap cung
     lines_data = [line.get_ydata() for line in ax.get_lines()
                   if len(line.get_ydata()) > 1]
     if lines_data:
         all_y = np.concatenate(lines_data)
         all_y = all_y[np.isfinite(all_y)]
         if len(all_y):
-            p5, p95 = np.percentile(all_y, 5), np.percentile(all_y, 95)
-            margin  = max(abs(p95 - p5) * 0.25, 0.005)
-            ax.set_ylim(bottom=p5 - margin, top=min(p95 + margin, 0.02))
+            ymin, ymax = all_y.min(), all_y.max()
+            margin = max(abs(ymax - ymin) * 0.08, 1e-4)
+            ax.set_ylim(bottom=ymin - margin, top=ymax + margin)
 
     if any_run:
         ax.legend(fontsize=8, loc="lower right", framealpha=0.85)
@@ -178,9 +169,9 @@ def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--c3_logs", default="./logs_cologne3_rand_curr")
-    p.add_argument("--c8_logs", default="./logs_cologne8_rand_curr")
-    p.add_argument("--smooth",  type=int, default=8)
+    p.add_argument("--c3_logs", default="./logs_cologne3_real_all")
+    p.add_argument("--c8_logs", default="./logs_cologne8_direct")
+    p.add_argument("--smooth",  type=int, default=15)
     p.add_argument("--out",     default="./figures")
     return p.parse_args()
 
@@ -197,7 +188,7 @@ def main():
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 8))
     fig.suptitle(
-        "Training Reward Curves  (median ± IQR, dotted lines = curriculum stage)",
+        "Training Reward Curves  (median ± IQR across seeds)",
         fontsize=12, fontweight="bold", y=1.01
     )
 
