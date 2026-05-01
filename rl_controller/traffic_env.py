@@ -237,7 +237,7 @@ class TrafficControlEnv(gym.Env):
                 min_green_sec=self.min_green,
                 max_green_sec=self.max_green,
                 enforce_cap=self.enforce_max_green,
-                sim_start=0,
+                sim_start=conn.simulation.getTime(),
                 reward_fn=reward_map[sid],
                 reward_weights=self.reward_weights,
                 sumo_conn=conn,
