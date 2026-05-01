@@ -291,12 +291,13 @@ def discover_cologne3_models(models_dir: Path):
         reward = "_".join(parts[1:-1])      # queue / pressure / wait-clip
         if algo not in ("dqn", "ddqn", "ppo"):
             continue
-        # stem cua "cologne3.net.xml" la "cologne3.net" (khong phai "cologne3")
-        # nen tim ca hai pattern
+        # Thu tat ca bien the: co/khong .zip, co/khong .net trong ten
         model_path = next(
             (p for p in [
+                subdir / f"cologne3.net_{algo}_final_model",
                 subdir / f"cologne3.net_{algo}_final_model.zip",
                 subdir / f"cologne3_{algo}_final_model.zip",
+                subdir / f"cologne3_{algo}_final_model",
             ] if p.exists()),
             None,
         )
