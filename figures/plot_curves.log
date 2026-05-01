@@ -1,0 +1,15 @@
+=======================================================
+  plot_training_curves.py
+  C3 logs : ./logs_cologne3_real_all/
+  C8 logs : ./logs_cologne8_real_all/
+  Output  : ./figures/
+=======================================================
+
+--- Cologne3 ---
+  Parsed 90 log files from logs_cologne3_real_all/
+
+--- Cologne8 ---
+  Parsed 90 log files from logs_cologne8_real_all/
+  Saved: fig_training_grid.png
+
+Hoan tat.
