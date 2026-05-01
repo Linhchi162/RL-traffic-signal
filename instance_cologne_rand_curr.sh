@@ -102,7 +102,7 @@ LOG8="$WORK_DIR/logs_cologne8_rand_curr"
 STEPS=500000
 SIM_DUR=3600
 SUMO_BEGIN=25200
-SEEDS=(42 123 777 999 314 2025 2718 9999)
+SEEDS=(42 123 777 999 314 2025 2718 9999 1111 5678)
 REWARDS=("queue" "pressure" "wait-clip")
 
 mkdir -p "$LOG3" "$LOG8"
@@ -187,7 +187,7 @@ echo ">>> C3 net : $NET3  |  rand routes: cologne3_rand_*pct.rou.xml"
 echo ">>> C8 net : $NET8  |  rand routes: cologne8_rand_*pct.rou.xml"
 echo ">>> Eval   : route that (cologne{3,8}.rou.xml) — chua thay trong training"
 echo ">>> Steps  : $STEPS  |  SimDur: ${SIM_DUR}s  |  SumoBegin: ${SUMO_BEGIN}s"
-echo ">>> Launch $TOTAL jobs (C3: 72 + C8: 72) song song..."
+echo ">>> Launch $TOTAL jobs (C3: 90 + C8: 90) song song..."
 echo ""
 
 # ── 7. Launch ────────────────────────────────────────────────────────────────
