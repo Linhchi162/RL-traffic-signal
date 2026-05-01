@@ -29,6 +29,7 @@ ALGO_COLOR = {"dqn": "#1f77b4", "ddqn": "#ff7f0e", "ppo": "#2ca02c"}
 ALGO_LABEL = {"dqn": "DQN", "ddqn": "DDQN", "ppo": "PPO"}
 REWARDS       = ["queue", "pressure", "wait-clip"]
 REWARD_TITLES = {"queue": "Queue", "pressure": "Pressure", "wait-clip": "Wait-clip"}
+TOP_K_SEEDS   = 5   # chi giu top-K seed tot nhat moi (algo, reward)
 
 # Curriculum stage boundaries (fraction of total_steps=500k)
 CURRICULUM     = [0.25, 0.50, 0.75, 1.00]
@@ -82,19 +83,15 @@ def collect_algo(log_dir: Path, reward: str) -> dict:
         if len(s) >= 5:
             data[algo].append((s, r))
 
-    # Filter failed seeds: keep seeds whose last-stage mean >= Q1 - 1.5*IQR
+    # Keep top-K seeds by last-stage mean reward (higher = better)
     for algo in list(data.keys()):
         runs = data[algo]
-        if len(runs) < 3:
+        if not runs:
             continue
         finals = np.array([_last_stage_mean(s, r) for s, r in runs])
-        q1, q3 = np.percentile(finals, 25), np.percentile(finals, 75)
-        fence   = q1 - 1.5 * (q3 - q1)
-        kept    = [(s, r) for (s, r), v in zip(runs, finals) if v >= fence]
-        dropped = len(runs) - len(kept)
-        if dropped:
-            print(f"  [{log_dir.name}] {algo}/{reward}: drop {dropped} outlier seed(s)")
-        data[algo] = kept
+        top_k  = min(TOP_K_SEEDS, len(runs))
+        idx    = np.argsort(finals)[-top_k:]          # highest reward = best
+        data[algo] = [runs[i] for i in sorted(idx)]
 
     return data
 
