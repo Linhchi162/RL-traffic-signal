@@ -34,18 +34,25 @@ from rl_controller.grid_env      import MultiAgentVecEnv
 
 
 class StepLogger(BaseCallback):
-    def __init__(self, log_freq: int = 5_000, total_steps: int = 500_000):
+    def __init__(self, log_freq: int = 5_000, total_steps: int = 500_000,
+                 window: int = 200):
         super().__init__()
         self.log_freq    = log_freq
         self.total_steps = total_steps
+        self.window      = window
         self._next_log   = log_freq
+        self._rew_buf    = []
 
     def _on_step(self) -> bool:
+        rews = self.locals.get("rewards")
+        if rews is not None:
+            self._rew_buf.extend(float(r) for r in rews)
+            if len(self._rew_buf) > self.window:
+                self._rew_buf = self._rew_buf[-self.window:]
         t = self.num_timesteps
         if t >= self._next_log:
-            pct  = 100 * t / self.total_steps
-            rews = self.locals.get("rewards")
-            mean_rew = float(np.mean(rews)) if rews is not None else float("nan")
+            pct      = 100 * t / self.total_steps
+            mean_rew = float(np.mean(self._rew_buf)) if self._rew_buf else float("nan")
             print(f"  step {t:>7d}/{self.total_steps} ({pct:5.1f}%)"
                   f"  mean_rew={mean_rew:+.3f}", flush=True)
             self._next_log = t + self.log_freq
