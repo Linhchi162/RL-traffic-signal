@@ -131,8 +131,8 @@ def plot_grid(data_c3: dict, data_c8: dict, out: Path):
                 x, mean, std = interp_mean_std(runs)
                 if len(mean) == 0:
                     continue
-                sm = smooth(mean, w=12)
-                ss = smooth(std,  w=12)
+                sm = smooth(mean, w=5)
+                ss = smooth(std,  w=5)
                 xs = x[:len(sm)]
                 c  = ALGO_COLORS[algo]
                 ax.plot(xs, sm, color=c, linewidth=2,
