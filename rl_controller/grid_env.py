@@ -3,7 +3,6 @@ grid_env.py — MultiAgentVecEnv wrapper cho 2x2 grid.
 
 Boc TrafficControlEnv(single_agent=False) thanh SB3-compatible VecEnv.
 4 agent (moi junction 1 agent), cung chia se 1 SUMO simulation.
-Dung cho IPPO voi shared policy weights.
 """
 
 from __future__ import annotations
