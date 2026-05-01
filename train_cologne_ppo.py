@@ -100,7 +100,7 @@ def main():
         args.reward_type, args.seed, args.sim_duration, args.sumo_begin, args.gui,
     ))
     n_agents = vec_env.num_envs
-    net_name = Path(args.net_file).stem
+    net_name = Path(args.net_file).name.split(".")[0]
     print(f"[{net_name}-PPO] {n_agents} agents | reward={args.reward_type} | seed={args.seed}")
     print(f"  obs={vec_env.observation_space.shape} | act={vec_env.action_space}")
 

@@ -139,7 +139,7 @@ def main():
     ))
     n_agents    = vec_env.num_envs
     algo_label  = args.algo.upper()
-    net_name    = Path(args.net_file).stem
+    net_name    = Path(args.net_file).name.split(".")[0]
     print(f"[{net_name}-{algo_label}] {n_agents} agents | reward={args.reward_type} | seed={args.seed}")
     print(f"  obs={vec_env.observation_space.shape} | act={vec_env.action_space}")
 
