@@ -5,13 +5,12 @@ Row 0 : Cologne3   |  Row 1 : Cologne8
 Col 0 : Queue      |  Col 1 : Pressure  |  Col 2 : Wait-clip
 
 Moi panel ve median + Q1/Q3 band qua seeds.
-Duong doc: cac buoc chuyen curriculum stage.
 
 Su dung:
     python plot_learning_curves.py
     python plot_learning_curves.py \
-        --c3_logs logs_cologne3_rand_curr \
-        --c8_logs logs_cologne8_rand_curr --smooth 8 --out figures
+        --c3_logs logs_cologne3_direct \
+        --c8_logs logs_cologne8_direct --smooth 8 --out figures
 """
 
 import argparse
@@ -31,15 +30,7 @@ REWARDS       = ["queue", "pressure", "wait-clip"]
 REWARD_TITLES = {"queue": "Queue", "pressure": "Pressure", "wait-clip": "Wait-clip"}
 TOP_K_SEEDS   = 5   # chi giu top-K seed tot nhat moi (algo, reward)
 
-# Curriculum stage boundaries (fraction of total_steps=500k)
-CURRICULUM     = [0.25, 0.50, 0.75, 1.00]
-STAGE_PORTIONS = [0.15, 0.20, 0.25, 0.40]
-TOTAL_STEPS    = 500_000
-STAGE_STARTS   = []
-_cum = 0
-for portion in STAGE_PORTIONS[:-1]:
-    _cum += round(TOTAL_STEPS * portion)
-    STAGE_STARTS.append(_cum)   # [75000, 175000, 300000]
+STAGE_STARTS = []  # direct training: no curriculum stage markers
 
 plt.rcParams.update({
     "font.family":    "DejaVu Sans",
@@ -178,8 +169,8 @@ def plot_panel(ax, log_dir: Path, reward: str, smooth_w: int,
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--c3_logs", default="./logs_cologne3_rand_curr")
-    p.add_argument("--c8_logs", default="./logs_cologne8_rand_curr")
+    p.add_argument("--c3_logs", default="./logs_cologne3_direct")
+    p.add_argument("--c8_logs", default="./logs_cologne8_direct")
     p.add_argument("--smooth",  type=int, default=8)
     p.add_argument("--out",     default="./figures")
     return p.parse_args()
@@ -197,7 +188,7 @@ def main():
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 8))
     fig.suptitle(
-        "Training Reward Curves  (median ± IQR, dotted lines = curriculum stage)",
+        "Training Reward Curves  (median ± IQR across 5 seeds)",
         fontsize=12, fontweight="bold", y=1.01
     )
 
