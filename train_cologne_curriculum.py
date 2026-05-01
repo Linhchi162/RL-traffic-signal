@@ -1,24 +1,26 @@
 """
-train_cologne_curriculum.py — Curriculum learning cho Cologne3.
+train_cologne_curriculum.py — Curriculum learning cho Cologne3 / Cologne8.
 
-Demand tang dan qua 4 giai doan: 25% -> 50% -> 75% -> 100% luu luong that.
-Ho tro ca 3 thuat toan: DQN, DDQN, PPO.
-
-Scaled route files duoc tao tu dong neu chua co.
-Model cuoi cung luu dung ten de evaluate_cologne3_real.py phat hien duoc.
+Hai che do:
+  Mac dinh  : 4 giai doan 25->50->75->100% tren route file that (scaled subsample).
+  --rand    : 4 giai doan tren route file SYNTHETIC (random OD, cung luong).
+              Phai chay make_random_routes.py truoc de tao _rand_*.rou.xml.
+              Eval tren route that -> train/test separation thuc su.
 
 Su dung:
+    # Curriculum tren du lieu that (tranh local optima):
     python train_cologne_curriculum.py \\
         --net_file nets/cologne3/cologne3.net.xml \\
         --route_file nets/cologne3/cologne3.rou.xml \\
         --algo ddqn --reward_type wait-clip --seed 42 \\
         --save_dir ./exp_cologne3_curr/ddqn_wait-clip_s42
 
+    # Curriculum tren du lieu synthetic (train/test separation):
     python train_cologne_curriculum.py \\
-        --net_file nets/cologne3/cologne3.net.xml \\
-        --route_file nets/cologne3/cologne3.rou.xml \\
-        --algo ppo --reward_type pressure --seed 42 \\
-        --save_dir ./exp_cologne3_curr/ppo_pressure_s42
+        --net_file nets/cologne8/cologne8.net.xml \\
+        --route_file nets/cologne8/cologne8.rou.xml \\
+        --algo ddqn --reward_type wait-clip --seed 42 \\
+        --save_dir ./exp_cologne8_rand_curr/ddqn_wait-clip_s42 --rand
 """
 
 import argparse
@@ -55,7 +57,16 @@ CURRICULUM = [
 ]
 
 
-# ── Scaled route generation ───────────────────────────────────────────────────
+# ── Route helpers ────────────────────────────────────────────────────────────
+
+def rand_route_path(route_file: Path, fraction: float) -> Path:
+    """Tra ve duong dan den random route file (phai ton tai truoc)."""
+    stem = route_file.stem
+    for suffix in (".rou", ".net"):
+        stem = stem.replace(suffix, "")
+    pct = int(round(fraction * 100))
+    return route_file.parent / f"{stem}_rand_{pct}pct.rou.xml"
+
 
 def ensure_scaled_route(route_file: Path, fraction: float,
                         begin: float, end: float, seed: int) -> Path:
@@ -213,6 +224,9 @@ def parse_args():
     p.add_argument("--save_freq",    type=int,   default=25_000)
     p.add_argument("--clear_buffer", action="store_true",
                    help="Clear DQN/DDQN replay buffer at each stage transition.")
+    p.add_argument("--rand",         action="store_true",
+                   help="Dung random synthetic routes thay vi scaled real routes. "
+                        "Phai chay make_random_routes.py truoc.")
     p.add_argument("--gui",          action="store_true")
     return p.parse_args()
 
@@ -251,12 +265,25 @@ def main():
     print(f"  save_dir: {save_dir}")
     print("=" * 65)
 
-    # ── Ensure scaled route files ─────────────────────────────────────────────
-    stage_routes = [
-        str(ensure_scaled_route(route_file, frac,
-                                args.window_begin, args.window_end, args.seed))
-        for frac, _ in stage_steps
-    ]
+    # ── Ensure route files per stage ──────────────────────────────────────────
+    if args.rand:
+        stage_routes = []
+        for frac, _ in stage_steps:
+            p = rand_route_path(route_file, frac)
+            if not p.exists():
+                sys.exit(
+                    f"[ERR] Khong tim thay random route: {p}\n"
+                    f"      Chay truoc: python make_random_routes.py "
+                    f"--net {args.net_file} --rou {args.route_file}"
+                )
+            print(f"  [rand] {p.name}", flush=True)
+            stage_routes.append(str(p))
+    else:
+        stage_routes = [
+            str(ensure_scaled_route(route_file, frac,
+                                    args.window_begin, args.window_end, args.seed))
+            for frac, _ in stage_steps
+        ]
 
     # ── Build initial model on Stage-1 env ────────────────────────────────────
     first_env = MultiAgentVecEnv(make_env_fn(
