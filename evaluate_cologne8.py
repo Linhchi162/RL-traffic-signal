@@ -38,7 +38,7 @@ C8_NET          = _HERE / "nets" / "cologne8" / "cologne8.net.xml"
 C8_ROUTE_REAL   = _HERE / "nets" / "cologne8" / "cologne8.rou.xml"
 C8_ROUTE_SYN    = _HERE / "nets" / "cologne8" / "cologne8_synthetic.rou.xml"
 
-# Cologne8 vehicles depart during this window (real Cologne peak hour)
+# Cologne peak hour (chung cho moi cologne network)
 SUMO_BEGIN = 25200   # 7:00 AM
 SUMO_END   = 28800   # 8:00 AM
 _EXTRA_ARGS = f"--begin {SUMO_BEGIN}"
@@ -49,7 +49,8 @@ from rl_controller.grid_env      import MultiAgentVecEnv
 from rl_controller.webster       import DynamicWebsterController
 
 USE_LIBSUMO   = "LIBSUMO_AS_TRACI" in os.environ
-_ACTIVE_ROUTE = C8_ROUTE_REAL   # overridden in main() nếu --route_file được chỉ định
+_ACTIVE_NET   = C8_NET            # overridden in main() neu --net_file duoc chi dinh
+_ACTIVE_ROUTE = C8_ROUTE_REAL     # overridden in main() neu --route_file duoc chi dinh
 
 
 # ---------------------------------------------------------------------------
@@ -115,11 +116,11 @@ def _empty_result():
 
 
 def _make_env(fixed_signal=False, route_file=None):
-    """Factory tra ve TrafficControlEnv voi Cologne8 net/route."""
+    """Factory tra ve TrafficControlEnv voi Cologne net/route."""
     if route_file is None:
         route_file = str(_ACTIVE_ROUTE)
     return TrafficControlEnv(
-        net_file        = str(C8_NET),
+        net_file        = str(_ACTIVE_NET),
         route_file      = route_file,
         sim_duration    = SUMO_END + 99999, # lon hon SUMO_END de done khong bao gio trigger
                                             # → tranh auto-reset lam libsumo hang
@@ -394,6 +395,8 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--models_dir",    default="./exp_grid")
     p.add_argument("--save_dir",      default="./results_cologne8")
+    p.add_argument("--net_file",      default=None,
+                   help="Net file tuy chinh (mac dinh: cologne8.net.xml)")
     p.add_argument("--route_file",    default=None,
                    help="Route file tuy chinh (mac dinh: cologne8.rou.xml that). "
                         "Dung voi cologne8_synthetic.rou.xml de danh gia tren demand tuong tu train.")
@@ -407,12 +410,14 @@ def parse_args():
 
 
 def main():
-    global _ACTIVE_ROUTE
+    global _ACTIVE_NET, _ACTIVE_ROUTE
     args       = parse_args()
     models_dir = Path(args.models_dir)
     save_dir   = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
+    if args.net_file:
+        _ACTIVE_NET = Path(args.net_file)
     if args.route_file:
         _ACTIVE_ROUTE = Path(args.route_file)
     C8_ROUTE = _ACTIVE_ROUTE

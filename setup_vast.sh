@@ -61,12 +61,18 @@ pip_retry stable-baselines3
 pip_retry libsumo
 pip_retry pandas
 
-echo "=== [4/5] Download Cologne8 (RESCO benchmark) ==="
-C8_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments/cologne8"
+echo "=== [4/5] Download Cologne networks (RESCO benchmark) ==="
+RESCO_BASE="https://raw.githubusercontent.com/Pi-Star-Lab/RESCO/main/resco_benchmark/environments"
+
 mkdir -p "$WORK_DIR/nets/cologne8"
-wget -q "$C8_BASE/cologne8.net.xml" -O "$WORK_DIR/nets/cologne8/cologne8.net.xml"
-wget -q "$C8_BASE/cologne8.rou.xml" -O "$WORK_DIR/nets/cologne8/cologne8.rou.xml"
-echo "    cologne8.net.xml + cologne8.rou.xml OK"
+wget -q "$RESCO_BASE/cologne8/cologne8.net.xml" -O "$WORK_DIR/nets/cologne8/cologne8.net.xml"
+wget -q "$RESCO_BASE/cologne8/cologne8.rou.xml" -O "$WORK_DIR/nets/cologne8/cologne8.rou.xml"
+echo "    cologne8 OK"
+
+mkdir -p "$WORK_DIR/nets/cologne3"
+wget -q "$RESCO_BASE/cologne3/cologne3.net.xml" -O "$WORK_DIR/nets/cologne3/cologne3.net.xml"
+wget -q "$RESCO_BASE/cologne3/cologne3.rou.xml" -O "$WORK_DIR/nets/cologne3/cologne3.rou.xml"
+echo "    cologne3 OK"
 
 echo "=== [5/5] Kiem tra ==="
 python3 -c "import libsumo; print('libsumo OK:', libsumo.__version__)"
