@@ -17,6 +17,7 @@ scenarios/**/_tmp_density/
 
 # Experiment outputs
 *.png
+!figures/*.png
 results_stmarl_eval/
 
 # Local notes / extracted documents
