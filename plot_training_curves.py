@@ -57,7 +57,14 @@ def parse_log(path: Path):
     return steps, rewards
 
 
-def smooth(arr, w=10):
+def clip_outliers(arr, sigma=2.5):
+    if len(arr) < 4:
+        return arr
+    m, s = np.median(arr), np.std(arr)
+    return np.clip(arr, m - sigma * s, m + sigma * s)
+
+
+def smooth(arr, w=5):
     if len(arr) < w:
         return arr
     return np.convolve(arr, np.ones(w) / w, mode="valid")
@@ -131,6 +138,7 @@ def plot_grid(data_c3: dict, data_c8: dict, out: Path):
                 x, mean, std = interp_mean_std(runs)
                 if len(mean) == 0:
                     continue
+                mean = clip_outliers(mean)
                 sm = smooth(mean, w=5)
                 ss = smooth(std,  w=5)
                 xs = x[:len(sm)]
