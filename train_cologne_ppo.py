@@ -50,18 +50,21 @@ class StepLogger(BaseCallback):
         return True
 
 
-def make_env(net_file, route_file, reward_type, seed, sim_duration, gui=False):
+def make_env(net_file, route_file, reward_type, seed, sim_duration, sumo_begin=0, gui=False):
+    sim_end = sumo_begin + sim_duration
+    extra   = f"--begin {sumo_begin}" if sumo_begin > 0 else None
     def _make():
         return TrafficControlEnv(
-            net_file     = net_file,
-            route_file   = route_file,
-            sim_duration = sim_duration,
-            reward_fn    = reward_type,
-            obs_class    = BaselineObservation,
-            sumo_seed    = seed,
-            single_agent = False,
-            use_gui      = gui,
-            show_warnings= False,
+            net_file        = net_file,
+            route_file      = route_file,
+            sim_duration    = sim_end,
+            reward_fn       = reward_type,
+            obs_class       = BaselineObservation,
+            sumo_seed       = seed,
+            single_agent    = False,
+            use_gui         = gui,
+            show_warnings   = False,
+            extra_sumo_args = extra,
         )
     return _make
 
@@ -74,7 +77,10 @@ def parse_args():
                    choices=["queue", "pressure", "wait-clip"])
     p.add_argument("--seed",          type=int,   default=42)
     p.add_argument("--total_steps",   type=int,   default=500_000)
-    p.add_argument("--sim_duration",  type=int,   default=3_600)
+    p.add_argument("--sim_duration",  type=int,   default=3_600,
+                   help="Do dai episode (s). Voi cologne real: 3600.")
+    p.add_argument("--sumo_begin",    type=int,   default=0,
+                   help="Thoi diem bat dau tuyet doi trong route file (s). Voi cologne real: 25200.")
     p.add_argument("--lr",            type=float, default=3e-4)
     p.add_argument("--save_dir",      default="./exp_cologne3_real/ppo_s42")
     p.add_argument("--save_freq",     type=int,   default=50_000)
@@ -91,7 +97,7 @@ def main():
 
     vec_env = MultiAgentVecEnv(make_env(
         args.net_file, args.route_file,
-        args.reward_type, args.seed, args.sim_duration, args.gui,
+        args.reward_type, args.seed, args.sim_duration, args.sumo_begin, args.gui,
     ))
     n_agents = vec_env.num_envs
     net_name = Path(args.net_file).stem

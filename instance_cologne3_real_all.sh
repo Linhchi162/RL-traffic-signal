@@ -91,6 +91,7 @@ EXP_DIR="$WORK_DIR/exp_cologne3_real"
 LOG_DIR="$WORK_DIR/logs_cologne3_real_all"
 STEPS=500000
 SIM_DUR=3600
+SUMO_BEGIN=25200   # 7:00 AM tuyet doi trong cologne3.rou.xml
 SEEDS=(42 123 777 999 314 2025 2718 9999)
 REWARDS=("queue" "pressure" "wait-clip")
 
@@ -108,6 +109,7 @@ for algo in dqn ddqn; do
                 --net_file '$NET' --route_file '$ROUTE' \
                 --algo $algo --reward_type '$reward' \
                 --seed $seed --total_steps $STEPS --sim_duration $SIM_DUR \
+                --sumo_begin $SUMO_BEGIN \
                 --save_dir '$sd' > '$LOG_DIR/${label}.log' 2>&1")
         done
     done
@@ -122,6 +124,7 @@ for seed in "${SEEDS[@]}"; do
             --net_file '$NET' --route_file '$ROUTE' \
             --reward_type '$reward' \
             --seed $seed --total_steps $STEPS --sim_duration $SIM_DUR \
+            --sumo_begin $SUMO_BEGIN \
             --save_dir '$sd' > '$LOG_DIR/${label}.log' 2>&1")
     done
 done

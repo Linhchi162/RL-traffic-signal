@@ -26,6 +26,7 @@ EXP_DIR="./exp_cologne3_real"
 LOG_DIR="./logs_cologne3_real_ppo"
 STEPS=500000
 SIM_DUR=3600
+SUMO_BEGIN=25200
 SEEDS=(42 123 777 999 314 2025 2718 9999)
 REWARDS=("queue" "pressure" "wait-clip")
 
@@ -67,6 +68,7 @@ for seed in "${SEEDS[@]}"; do
             --seed        "$seed" \
             --total_steps $STEPS \
             --sim_duration $SIM_DUR \
+            --sumo_begin  $SUMO_BEGIN \
             --save_dir    "$sd" \
             > "$LOG_DIR/${label}.log" 2>&1 &
         pid=$!

@@ -26,7 +26,8 @@ ROUTE="./nets/cologne3/cologne3.rou.xml"      # route THAT tu RESCO
 EXP_DIR="./exp_cologne3_real"
 LOG_DIR="./logs_cologne3_real"
 STEPS=500000
-SIM_DUR=3600                                   # 1 gio thuc te (khop voi route that)
+SIM_DUR=3600                                   # do dai episode (s)
+SUMO_BEGIN=25200                               # 7:00 AM tuyet doi trong route that
 SEEDS=(42 123 777 999 314 2025 2718 9999)
 REWARDS=("queue" "pressure" "wait-clip")
 
@@ -70,6 +71,7 @@ for seed in "${SEEDS[@]}"; do
             --seed        "$seed" \
             --total_steps $STEPS \
             --sim_duration $SIM_DUR \
+            --sumo_begin  $SUMO_BEGIN \
             --save_dir    "$sd" \
             > "$LOG_DIR/${label}.log" 2>&1 &
         pid=$!

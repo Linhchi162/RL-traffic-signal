@@ -34,8 +34,8 @@ _HERE  = Path(__file__).parent
 C3_NET   = _HERE / "nets" / "cologne3" / "cologne3.net.xml"
 C3_ROUTE = _HERE / "nets" / "cologne3" / "cologne3.rou.xml"
 
-SUMO_BEGIN = 0      # cologne3.rou.xml bat dau tu 0s
-SUMO_END   = 3600   # 1 gio thuc te
+SUMO_BEGIN = 25200  # 7:00 AM tuyet doi trong cologne3.rou.xml (TAPAS Cologne)
+SUMO_END   = 28800  # 8:00 AM (peak hour, 3600s)
 
 from rl_controller.traffic_env   import TrafficControlEnv
 from rl_controller.state_builder import BaselineObservation
@@ -107,12 +107,13 @@ def _make_env(fixed_signal=False):
     return TrafficControlEnv(
         net_file        = str(_ACTIVE_NET),
         route_file      = str(_ACTIVE_ROUTE),
-        sim_duration    = SUMO_END + 99999,
+        sim_duration    = SUMO_END + 99999,  # lon de done khong tu dong trigger
         reward_fn       = "queue",
         obs_class       = BaselineObservation,
         single_agent    = False,
         fixed_signal    = fixed_signal,
         show_warnings   = False,
+        extra_sumo_args = f"--begin {SUMO_BEGIN}",
     )
 
 
