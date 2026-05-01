@@ -224,6 +224,7 @@ def run_webster_eval() -> dict:
         sumolib.checkBinary("sumo"),
         "-n", str(_ACTIVE_NET),
         "-r", str(_ACTIVE_ROUTE),
+        "--begin", str(SUMO_BEGIN),
         "--time-to-teleport", "-1",
         "--no-warnings",
     ]
@@ -507,6 +508,17 @@ def main():
               f"{r['mean_wait_per_veh']:>7.1f}±{r['std_wait_per_veh']:<5.1f}  "
               f"{r['mean_travel_time']:>8.1f}±{r['std_travel_time']:<5.1f}  "
               f"{r['mean_throughput']:>6.0f}")
+
+    # In per-seed detail de phat hien outlier
+    print(f"\n--- Per-seed detail (Queue | Wait/veh | TravelTime) ---")
+    for (algo, reward), rows in sorted(grouped.items()):
+        if algo in ("random", "fixed", "webster"):
+            continue
+        seeds_str = "  ".join(
+            f"{r['seed']}:{float(r['mean_queue']):.1f}/{float(r['mean_wait_per_veh']):.1f}/{float(r['mean_travel_time']):.1f}"
+            for r in sorted(rows, key=lambda x: x["seed"])
+        )
+        print(f"  {algo:<6} {reward:<12}  {seeds_str}")
 
 
 if __name__ == "__main__":
