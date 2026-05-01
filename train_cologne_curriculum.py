@@ -49,11 +49,13 @@ from rl_controller.grid_env      import MultiAgentVecEnv
 
 # ── Curriculum schedule ───────────────────────────────────────────────────────
 # (demand_fraction, portion_of_total_steps)
+# Increased final-stage share (50%) so agent has enough time to converge
+# at full demand. Total still sums to 1.0: 10+15+25+50.
 CURRICULUM = [
-    (0.25, 0.15),
-    (0.50, 0.20),
+    (0.25, 0.10),
+    (0.50, 0.15),
     (0.75, 0.25),
-    (1.00, 0.40),
+    (1.00, 0.50),
 ]
 
 
@@ -108,15 +110,18 @@ def ensure_scaled_route(route_file: Path, fraction: float,
 # ── DDQN ─────────────────────────────────────────────────────────────────────
 
 class DoubleDQN(DQN):
-    """SB3 DQN voi double Q-learning."""
+    """SB3 DQN voi double Q-learning va Huber loss."""
     def train(self, gradient_steps, batch_size=100):
+        import torch
+        import torch.nn.functional as F
+
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
         losses = []
         for _ in range(gradient_steps):
             replay_data = self.replay_buffer.sample(batch_size,
                                                     env=self._vec_normalize_env)
-            with __import__("torch").no_grad():
+            with torch.no_grad():
                 next_q_online = self.q_net(replay_data.next_observations)
                 next_actions  = next_q_online.argmax(dim=1, keepdim=True)
                 next_q_target = self.q_net_target(replay_data.next_observations)
@@ -126,11 +131,11 @@ class DoubleDQN(DQN):
                             * self.gamma * next_q_values)
             current_q = self.q_net(replay_data.observations)
             current_q = current_q.gather(1, replay_data.actions.long())
-            loss = __import__("torch.nn.functional", fromlist=["mse_loss"]).mse_loss(
-                current_q, target_q)
+            # Huber loss: less sensitive to large TD errors at stage transitions
+            loss = F.smooth_l1_loss(current_q, target_q)
             self.policy.optimizer.zero_grad()
             loss.backward()
-            __import__("torch").nn.utils.clip_grad_norm_(
+            torch.nn.utils.clip_grad_norm_(
                 self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
             losses.append(loss.item())
@@ -192,6 +197,7 @@ def make_env_fn(net_file, route_file, reward_type, seed, sim_duration, sumo_begi
             use_gui         = gui,
             show_warnings   = False,
             extra_sumo_args = extra,
+            teleport_time   = 200,   # break gridlock: remove vehicles stuck >200s
         )
     return _make
 
@@ -227,6 +233,8 @@ def parse_args():
     p.add_argument("--rand",         action="store_true",
                    help="Dung random synthetic routes thay vi scaled real routes. "
                         "Phai chay make_random_routes.py truoc.")
+    p.add_argument("--direct",       action="store_true",
+                   help="Bo qua curriculum, train thang 100%% demand cho toan bo total_steps.")
     p.add_argument("--gui",          action="store_true")
     return p.parse_args()
 
@@ -246,9 +254,11 @@ def main():
     algo       = args.algo
     lr         = args.lr or (1e-4 if algo in ("dqn", "ddqn") else 3e-4)
 
+    schedule = [(1.00, 1.00)] if args.direct else CURRICULUM
+
     # ── Compute per-stage step counts ─────────────────────────────────────────
     stage_steps = [(frac, max(1, round(args.total_steps * portion)))
-                   for frac, portion in CURRICULUM]
+                   for frac, portion in schedule]
     # Fix rounding drift so sum == total_steps exactly
     diff = args.total_steps - sum(s for _, s in stage_steps)
     if diff:
@@ -313,7 +323,7 @@ def main():
             train_freq             = (4, "step"),
             gradient_steps         = 1,
             target_update_interval = 1_000,
-            exploration_fraction   = 0.25,   # extended for curriculum
+            exploration_fraction   = 0.30 if args.direct else 0.25,
             exploration_final_eps  = 0.05,
             optimize_memory_usage  = False,
             verbose                = 1,
@@ -362,8 +372,9 @@ def main():
                 if args.clear_buffer:
                     model.replay_buffer.reset()
                     print(f"  Replay buffer cleared.", flush=True)
-                # Restore some exploration at each harder stage
-                model.exploration_rate = max(model.exploration_rate, 0.15)
+                # Restore exploration at each harder stage so the agent
+                # can re-explore under the new (higher) demand level.
+                model.exploration_rate = max(model.exploration_rate, 0.25)
                 print(f"  eps -> {model.exploration_rate:.3f}", flush=True)
 
         ckpt_cb = CheckpointCallback(

@@ -461,15 +461,27 @@ class SignalController:
         return float(max(-1.0, min(0.0, -(in_halting - out_halting) / denom)))
 
     def _wait_clip_reward(self) -> float:
-        """RESCO wait-clip: clip(-total_wait/100, -5, 0)."""
+        """Wait-clip reward: clip(-mean_wait_per_vehicle / 60, -1, 0).
+
+        Normalizes by vehicle count so the reward stays informative at any
+        demand level — avoids the hard saturation at -5 that occurs when
+        total_wait/100 is used with many vehicles present simultaneously.
+        A vehicle waiting 0 s -> 0.0; waiting ≥ 60 s on average -> -1.0.
+        """
         lanes = list(dict.fromkeys(
             self.sumo.trafficlight.getControlledLanes(self.node_id)
         ))
         total_wait = 0.0
+        n_vehs = 0
         for lane in lanes:
-            for v in self.sumo.lane.getLastStepVehicleIDs(lane):
+            vids = self.sumo.lane.getLastStepVehicleIDs(lane)
+            n_vehs += len(vids)
+            for v in vids:
                 total_wait += self.sumo.vehicle.getWaitingTime(v)
-        return float(max(-5.0, min(0.0, -total_wait / 100.0)))
+        if n_vehs == 0:
+            return 0.0
+        mean_wait = total_wait / n_vehs
+        return float(max(-1.0, min(0.0, -mean_wait / 60.0)))
 
     # ------------------------------------------------------------------
     # Truy vấn dữ liệu TraCI
