@@ -57,10 +57,14 @@ def parse_log(path: Path):
     return steps, rewards
 
 
-def clip_outliers(arr, sigma=2.5):
+def clip_outliers_mad(arr, sigma=3.0):
+    """Clip outliers using MAD (robust to single extreme values)."""
+    arr = np.asarray(arr, dtype=float)
     if len(arr) < 4:
         return arr
-    m, s = np.median(arr), np.std(arr)
+    m   = np.median(arr)
+    mad = np.median(np.abs(arr - m))
+    s   = max(mad * 1.4826, 1e-9)
     return np.clip(arr, m - sigma * s, m + sigma * s)
 
 
@@ -96,7 +100,10 @@ def load_logs(log_dir: Path):
 def interp_mean_std(runs, n_pts=200):
     max_step = max(s[-1] for s, _ in runs if s)
     x = np.linspace(0, max_step, n_pts)
-    arr = np.array([np.interp(x, s, r) for s, r in runs if len(s) >= 2])
+    arr = np.array([
+        np.interp(x, s, clip_outliers_mad(np.array(r)))
+        for s, r in runs if len(s) >= 2
+    ])
     if arr.ndim == 1 or len(arr) == 0:
         return x, np.array([]), np.array([])
     return x, arr.mean(axis=0), arr.std(axis=0)
@@ -138,7 +145,6 @@ def plot_grid(data_c3: dict, data_c8: dict, out: Path):
                 x, mean, std = interp_mean_std(runs)
                 if len(mean) == 0:
                     continue
-                mean = clip_outliers(mean)
                 sm = smooth(mean, w=5)
                 ss = smooth(std,  w=5)
                 xs = x[:len(sm)]
