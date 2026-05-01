@@ -1,0 +1,1043 @@
+nohup: ignoring input
+=== Cologne8 real-traffic evaluation ===
+Workers : 16 / 192 CPU
+Models  : ./exp_cologne8_real
+Results : ./results_cologne8_real
+
+Using libsumo as traci as requested by environment variable.
+2026-05-21 03:52:16,678 [INFO] === evaluate_cologne8 start ===
+2026-05-21 03:52:16,678 [INFO] Log file: results_cologne8_real/eval.log
+
+Cologne8 zero-shot evaluation
+Net   : cologne8.net.xml  |  Route: cologne8.rou.xml
+Window: 25200s-28800s (60 phut peak hour)
+Models: 90 grid model(s) tu exp_cologne8_real
+
+Chay 93 jobs voi 16 worker(s)...
+
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.Using libsumo as traci as requested by environment variable.
+
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+Using libsumo as traci as requested by environment variable.
+2026-05-21 03:52:20,615 [pid=28225] [INFO] START random
+2026-05-21 03:52:20,651 [pid=28232] [INFO] START fixed
+2026-05-21 03:52:20,750 [pid=28219] [INFO] START webster
+2026-05-21 03:52:20,768 [pid=28230] [INFO] START model ddqn s123
+2026-05-21 03:52:20,768 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:20,768 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s123/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:20,769 [pid=28227] [INFO] START model ddqn s1234
+2026-05-21 03:52:20,769 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:20,769 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s1234/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:20,777 [pid=28221] [INFO] START model ddqn s2025
+2026-05-21 03:52:20,777 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:20,777 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s2025/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:20,864 [pid=28216] [INFO] START model ddqn s2718
+2026-05-21 03:52:20,864 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:20,864 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s2718/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,008 [pid=28229] [INFO] START model ddqn s314
+2026-05-21 03:52:21,009 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,009 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s314/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,112 [pid=28231] [INFO] START model ddqn s42
+2026-05-21 03:52:21,112 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,112 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s42/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,117 [pid=28228] [INFO] START model ddqn s5678
+2026-05-21 03:52:21,117 [pid=28228] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,118 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s5678/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,128 [pid=28222] [INFO] START model ddqn s777
+2026-05-21 03:52:21,129 [pid=28222] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,129 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s777/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,180 [pid=28224] [INFO] START model ddqn s999
+2026-05-21 03:52:21,180 [pid=28224] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,180 [pid=28224] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,192 [pid=28220] [INFO] START model ddqn s9999
+2026-05-21 03:52:21,192 [pid=28220] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,192 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/ddqn_pressure_s9999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,240 [pid=28233] [INFO] START model ddqn s123
+2026-05-21 03:52:21,240 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,240 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s123/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,248 [pid=28226] [INFO] START model ddqn s1234
+2026-05-21 03:52:21,248 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,248 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s1234/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:21,340 [pid=28223] [INFO] START model ddqn s2025
+2026-05-21 03:52:21,340 [pid=28223] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:21,340 [pid=28223] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s2025/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:22,017 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,017 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,058 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,058 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,065 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,065 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:52:22,105 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,106 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:52:22,107 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,149 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,291 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,291 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,344 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,344 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,345 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,345 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:52:22,355 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,355 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,393 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,397 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,398 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:52:22,403 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,404 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:52:22,445 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,446 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,692 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,692 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,745 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,746 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:52:22,790 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:22,912 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,912 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,956 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,956 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:22,972 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:22,973 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:52:22,985 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:52:22,985 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:23,005 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:52:23,005 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:23,009 [pid=28224] [INFO]   step3: model loaded OK
+2026-05-21 03:52:23,009 [pid=28224] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:23,014 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,015 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:52:23,024 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,045 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,045 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:52:23,055 [pid=28220] [INFO]   step3: model loaded OK
+2026-05-21 03:52:23,055 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:23,061 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,061 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:52:23,064 [pid=28224] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,064 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,064 [pid=28224] [INFO]   step6: resetting env
+2026-05-21 03:52:23,086 [pid=28223] [INFO]   step3: model loaded OK
+2026-05-21 03:52:23,086 [pid=28223] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:23,096 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,110 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,110 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,111 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:52:23,113 [pid=28224] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,140 [pid=28223] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:23,140 [pid=28223] [INFO]   step6: resetting env
+2026-05-21 03:52:23,159 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,188 [pid=28223] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:23,355 [pid=28232] [INFO] DONE  fixed -> queue=17.13 wait=299.7
+[1/93] DONE Fixed-time baseline
+  queue=17.13  wait=299.7  speed=6.566  throughput=2001
+2026-05-21 03:52:23,358 [pid=28232] [INFO] START model ddqn s2718
+2026-05-21 03:52:23,358 [pid=28232] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:23,358 [pid=28232] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s2718/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:23,491 [pid=28225] [INFO] DONE  random -> queue=19.71 wait=305.8
+[2/93] DONE Random baseline
+  queue=19.71  wait=305.8  speed=5.922  throughput=1990
+2026-05-21 03:52:23,493 [pid=28225] [INFO] START model ddqn s314
+2026-05-21 03:52:23,493 [pid=28225] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:23,494 [pid=28225] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s314/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:24,259 [pid=28219] [INFO] DONE  webster -> queue=45.85 wait=612.7
+[3/93] DONE Webster baseline
+  queue=45.85  wait=612.7  speed=3.634  throughput=1934
+2026-05-21 03:52:24,262 [pid=28219] [INFO] START model ddqn s42
+2026-05-21 03:52:24,262 [pid=28219] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:24,262 [pid=28219] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s42/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:24,520 [pid=28227] [INFO] DONE  model ddqn s1234 -> queue=1.93 wait=5.5
+[4/93] DONE DDQN reward=pressure seed=s1234
+  queue=1.93  wait=5.5  speed=8.581  throughput=2017
+2026-05-21 03:52:24,522 [pid=28227] [INFO] START model ddqn s5678
+2026-05-21 03:52:24,522 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:24,522 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s5678/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:24,535 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:52:24,536 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:24,583 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:24,583 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:52:24,615 [pid=28221] [INFO] DONE  model ddqn s2025 -> queue=2.15 wait=5.9
+[5/93] DONE DDQN reward=pressure seed=s2025
+  queue=2.15  wait=5.9  speed=8.539  throughput=2016
+2026-05-21 03:52:24,619 [pid=28221] [INFO] START model ddqn s777
+2026-05-21 03:52:24,619 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:24,619 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s777/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:24,630 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:24,639 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:52:24,639 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:24,688 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:24,688 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:52:24,729 [pid=28225] [INFO]   step3: model loaded OK
+2026-05-21 03:52:24,729 [pid=28225] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:24,730 [pid=28232] [INFO]   step3: model loaded OK
+2026-05-21 03:52:24,730 [pid=28232] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:24,738 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:24,777 [pid=28225] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:24,777 [pid=28225] [INFO]   step6: resetting env
+2026-05-21 03:52:24,779 [pid=28232] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:24,779 [pid=28232] [INFO]   step6: resetting env
+2026-05-21 03:52:24,820 [pid=28225] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:24,823 [pid=28232] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:24,944 [pid=28229] [INFO] DONE  model ddqn s314 -> queue=2.11 wait=5.7
+[6/93] DONE DDQN reward=pressure seed=s314
+  queue=2.11  wait=5.7  speed=8.505  throughput=2017
+2026-05-21 03:52:24,946 [pid=28229] [INFO] START model ddqn s999
+2026-05-21 03:52:24,946 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:24,947 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:24,962 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:52:24,962 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:24,989 [pid=28230] [INFO] DONE  model ddqn s123 -> queue=2.42 wait=7.9
+[7/93] DONE DDQN reward=pressure seed=s123
+  queue=2.42  wait=7.9  speed=8.456  throughput=2015
+2026-05-21 03:52:24,992 [pid=28230] [INFO] START model ddqn s9999
+2026-05-21 03:52:24,992 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:24,992 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/ddqn_queue_s9999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,007 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,007 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,011 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,011 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:52:25,058 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,058 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:52:25,059 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,090 [pid=28216] [INFO] DONE  model ddqn s2718 -> queue=2.19 wait=6.9
+[8/93] DONE DDQN reward=pressure seed=s2718
+  queue=2.19  wait=6.9  speed=8.449  throughput=2016
+2026-05-21 03:52:25,092 [pid=28216] [INFO] START model ddqn s123
+2026-05-21 03:52:25,092 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,092 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s123/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,107 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,108 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,108 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,158 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,158 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:52:25,208 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,296 [pid=28226] [INFO] DONE  model ddqn s1234 -> queue=3.25 wait=12.5
+[9/93] DONE DDQN reward=queue seed=s1234
+  queue=3.25  wait=12.5  speed=8.189  throughput=2014
+2026-05-21 03:52:25,299 [pid=28226] [INFO] START model ddqn s1234
+2026-05-21 03:52:25,299 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,299 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s1234/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,313 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,313 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,360 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,360 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:52:25,405 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,560 [pid=28219] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,560 [pid=28219] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,613 [pid=28219] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,614 [pid=28219] [INFO]   step6: resetting env
+2026-05-21 03:52:25,661 [pid=28219] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,682 [pid=28228] [INFO] DONE  model ddqn s5678 -> queue=1.94 wait=5.5
+2026-05-21 03:52:25,683 [pid=28228] [INFO] START model ddqn s2025
+2026-05-21 03:52:25,683 [pid=28228] [INFO]   step1: importing stable_baselines3
+[10/93] DONE DDQN reward=pressure seed=s5678
+2026-05-21 03:52:25,683 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s2025/cologne8_ddqn_final_model.zip
+  queue=1.94  wait=5.5  speed=8.460  throughput=2017
+2026-05-21 03:52:25,696 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,696 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,715 [pid=28233] [INFO] DONE  model ddqn s123 -> queue=2.00 wait=6.4
+[11/93] DONE DDQN reward=queue seed=s1232026-05-21 03:52:25,716 [pid=28233] [INFO] START model ddqn s2718
+2026-05-21 03:52:25,716 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,716 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s2718/cologne8_ddqn_final_model.zip
+
+  queue=2.00  wait=6.4  speed=8.481  throughput=2017
+2026-05-21 03:52:25,718 [pid=28222] [INFO] DONE  model ddqn s777 -> queue=1.94 wait=5.5
+[12/93] DONE DDQN reward=pressure seed=s777
+2026-05-21 03:52:25,718 [pid=28222] [INFO] START model ddqn s314
+2026-05-21 03:52:25,718 [pid=28222] [INFO]   step1: importing stable_baselines3
+  queue=1.94  wait=5.5  speed=8.460  throughput=2017
+2026-05-21 03:52:25,718 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s314/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,724 [pid=28231] [INFO] DONE  model ddqn s42 -> queue=2.33 wait=8.3
+[13/93] DONE DDQN reward=pressure seed=s42
+  queue=2.33  wait=8.3  speed=8.447  throughput=2015
+2026-05-21 03:52:25,727 [pid=28231] [INFO] START model ddqn s42
+2026-05-21 03:52:25,727 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,727 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s42/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,729 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,729 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,731 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,731 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,743 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,743 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,751 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,751 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:52:25,773 [pid=28220] [INFO] DONE  model ddqn s9999 -> queue=2.58 wait=8.5
+[14/93] DONE DDQN reward=pressure seed=s9999
+  queue=2.58  wait=8.5  speed=8.342  throughput=2016
+2026-05-21 03:52:25,775 [pid=28220] [INFO] START model ddqn s5678
+2026-05-21 03:52:25,776 [pid=28220] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,776 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s5678/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,780 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,780 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:52:25,780 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,780 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:52:25,791 [pid=28220] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,791 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,797 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,797 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:52:25,812 [pid=28224] [INFO] DONE  model ddqn s999 -> queue=2.25 wait=7.6
+2026-05-21 03:52:25,813 [pid=28224] [INFO] START model ddqn s777
+[15/93] DONE DDQN reward=pressure seed=s9992026-05-21 03:52:25,813 [pid=28224] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,813 [pid=28224] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s777/cologne8_ddqn_final_model.zip
+
+  queue=2.25  wait=7.6  speed=8.384  throughput=2014
+2026-05-21 03:52:25,820 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,824 [pid=28224] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,824 [pid=28224] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,830 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,831 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,842 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,843 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:52:25,849 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,852 [pid=28223] [INFO] DONE  model ddqn s2025 -> queue=2.15 wait=7.0
+[16/93] DONE DDQN reward=queue seed=s2025
+  queue=2.15  wait=7.0  speed=8.458  throughput=2017
+2026-05-21 03:52:25,856 [pid=28223] [INFO] START model ddqn s999
+2026-05-21 03:52:25,856 [pid=28223] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:25,856 [pid=28223] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:25,870 [pid=28224] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,870 [pid=28224] [INFO]   step6: resetting env
+2026-05-21 03:52:25,874 [pid=28223] [INFO]   step3: model loaded OK
+2026-05-21 03:52:25,874 [pid=28223] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:25,893 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,915 [pid=28224] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:25,926 [pid=28223] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:25,926 [pid=28223] [INFO]   step6: resetting env
+2026-05-21 03:52:25,978 [pid=28223] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,082 [pid=28227] [INFO] DONE  model ddqn s5678 -> queue=1.91 wait=5.9
+[17/93] DONE DDQN reward=queue seed=s5678
+  queue=1.91  wait=5.9  speed=8.505  throughput=2014
+2026-05-21 03:52:27,083 [pid=28227] [INFO] START model ddqn s9999
+2026-05-21 03:52:27,083 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,083 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/ddqn_wait-clip_s9999/cologne8_ddqn_final_model.zip
+2026-05-21 03:52:27,111 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,111 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,159 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,159 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:52:27,203 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,221 [pid=28225] [INFO] DONE  model ddqn s314 -> queue=2.08 wait=6.1
+[18/93] DONE DDQN reward=queue seed=s314
+  queue=2.08  wait=6.1  speed=8.539  throughput=2013
+2026-05-21 03:52:27,223 [pid=28225] [INFO] START model dqn s123
+2026-05-21 03:52:27,223 [pid=28225] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,223 [pid=28225] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s123/cologne8_dqn_final_model.zip
+2026-05-21 03:52:27,235 [pid=28232] [INFO] DONE  model ddqn s2718 -> queue=3.00 wait=30.9
+2026-05-21 03:52:27,236 [pid=28232] [INFO] START model dqn s1234
+[19/93] DONE DDQN reward=queue seed=s2718
+2026-05-21 03:52:27,236 [pid=28232] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,236 [pid=28232] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s1234/cologne8_dqn_final_model.zip
+  queue=3.00  wait=30.9  speed=8.351  throughput=2013
+2026-05-21 03:52:27,237 [pid=28225] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,237 [pid=28225] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,249 [pid=28232] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,249 [pid=28232] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,286 [pid=28225] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,286 [pid=28225] [INFO]   step6: resetting env
+2026-05-21 03:52:27,287 [pid=28221] [INFO] DONE  model ddqn s777 -> queue=2.72 wait=8.1
+2026-05-21 03:52:27,288 [pid=28221] [INFO] START model dqn s2025
+2026-05-21 03:52:27,288 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,288 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s2025/cologne8_dqn_final_model.zip
+[20/93] DONE DDQN reward=queue seed=s777
+  queue=2.72  wait=8.1  speed=8.463  throughput=2013
+2026-05-21 03:52:27,298 [pid=28232] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,298 [pid=28232] [INFO]   step6: resetting env
+2026-05-21 03:52:27,314 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,314 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,332 [pid=28225] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,343 [pid=28232] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,363 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,363 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:52:27,407 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,538 [pid=28229] [INFO] DONE  model ddqn s999 -> queue=2.38 wait=7.6
+[21/93] DONE DDQN reward=queue seed=s999
+  queue=2.38  wait=7.6  speed=8.428  throughput=2016
+2026-05-21 03:52:27,539 [pid=28229] [INFO] START model dqn s2718
+2026-05-21 03:52:27,539 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,540 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s2718/cologne8_dqn_final_model.zip
+2026-05-21 03:52:27,568 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,568 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,617 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,617 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:52:27,666 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,715 [pid=28230] [INFO] DONE  model ddqn s9999 -> queue=2.08 wait=7.8
+[22/93] DONE DDQN reward=queue seed=s9999
+  queue=2.08  wait=7.8  speed=8.483  throughput=2014
+2026-05-21 03:52:27,716 [pid=28230] [INFO] START model dqn s314
+2026-05-21 03:52:27,717 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,717 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s314/cologne8_dqn_final_model.zip
+2026-05-21 03:52:27,747 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,747 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,801 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,801 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:52:27,848 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:27,918 [pid=28226] [INFO] DONE  model ddqn s1234 -> queue=2.08 wait=5.4
+[23/93] DONE DDQN reward=wait-clip seed=s1234
+  queue=2.08  wait=5.4  speed=8.464  throughput=2014
+2026-05-21 03:52:27,920 [pid=28226] [INFO] START model dqn s42
+2026-05-21 03:52:27,920 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:27,920 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s42/cologne8_dqn_final_model.zip
+2026-05-21 03:52:27,949 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:52:27,949 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:27,999 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:27,999 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:52:28,031 [pid=28216] [INFO] DONE  model ddqn s123 -> queue=11.78 wait=15397.8
+[24/93] DONE DDQN reward=wait-clip seed=s123
+  queue=11.78  wait=15397.8  speed=6.937  throughput=1999
+2026-05-21 03:52:28,033 [pid=28216] [INFO] START model dqn s5678
+2026-05-21 03:52:28,033 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,033 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s5678/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,044 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,063 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,063 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,113 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,114 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:52:28,159 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,467 [pid=28228] [INFO] DONE  model ddqn s2025 -> queue=2.06 wait=5.9
+[25/93] DONE DDQN reward=wait-clip seed=s2025
+  queue=2.06  wait=5.9  speed=8.478  throughput=2013
+2026-05-21 03:52:28,469 [pid=28228] [INFO] START model dqn s777
+2026-05-21 03:52:28,469 [pid=28228] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,469 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s777/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,474 [pid=28222] [INFO] DONE  model ddqn s314 -> queue=2.16 wait=6.2
+[26/93] DONE DDQN reward=wait-clip seed=s314
+  queue=2.16  wait=6.2  speed=8.418  throughput=2015
+2026-05-21 03:52:28,476 [pid=28222] [INFO] START model dqn s999
+2026-05-21 03:52:28,476 [pid=28222] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,476 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s999/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,485 [pid=28220] [INFO] DONE  model ddqn s5678 -> queue=2.16 wait=6.2
+[27/93] DONE DDQN reward=wait-clip seed=s5678
+  queue=2.16  wait=6.2  speed=8.418  throughput=2015
+2026-05-21 03:52:28,487 [pid=28220] [INFO] START model dqn s9999
+2026-05-21 03:52:28,487 [pid=28220] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,487 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/dqn_pressure_s9999/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,501 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,501 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,508 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,508 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,515 [pid=28220] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,515 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,532 [pid=28231] [INFO] DONE  model ddqn s42 -> queue=2.06 wait=5.9
+[28/93] DONE DDQN reward=wait-clip seed=s42
+  queue=2.06  wait=5.9  speed=8.478  throughput=2013
+2026-05-21 03:52:28,534 [pid=28231] [INFO] START model dqn s123
+2026-05-21 03:52:28,534 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,534 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s123/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,554 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,554 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:52:28,560 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,560 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:52:28,564 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,564 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,569 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,569 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:52:28,579 [pid=28233] [INFO] DONE  model ddqn s2718 -> queue=11.80 wait=15401.0
+[29/93] DONE DDQN reward=wait-clip seed=s2718
+  queue=11.80  wait=15401.0  speed=6.935  throughput=1997
+2026-05-21 03:52:28,580 [pid=28233] [INFO] START model dqn s1234
+2026-05-21 03:52:28,580 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,580 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s1234/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,592 [pid=28224] [INFO] DONE  model ddqn s777 -> queue=2.08 wait=5.4
+[30/93] DONE DDQN reward=wait-clip seed=s777
+  queue=2.08  wait=5.4  speed=8.464  throughput=2014
+2026-05-21 03:52:28,594 [pid=28224] [INFO] START model dqn s2025
+2026-05-21 03:52:28,594 [pid=28224] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,594 [pid=28224] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s2025/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,603 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,609 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,610 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,610 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,617 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,618 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,618 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:52:28,627 [pid=28224] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,627 [pid=28224] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,662 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,662 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:52:28,667 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,684 [pid=28224] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,684 [pid=28224] [INFO]   step6: resetting env
+2026-05-21 03:52:28,710 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,735 [pid=28224] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:28,800 [pid=28223] [INFO] DONE  model ddqn s999 -> queue=2.58 wait=23.9
+[31/93] DONE DDQN reward=wait-clip seed=s999
+  queue=2.58  wait=23.9  speed=8.331  throughput=2014
+2026-05-21 03:52:28,806 [pid=28223] [INFO] START model dqn s2718
+2026-05-21 03:52:28,806 [pid=28223] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:28,807 [pid=28223] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s2718/cologne8_dqn_final_model.zip
+2026-05-21 03:52:28,868 [pid=28223] [INFO]   step3: model loaded OK
+2026-05-21 03:52:28,868 [pid=28223] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:28,979 [pid=28223] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:28,979 [pid=28223] [INFO]   step6: resetting env
+2026-05-21 03:52:29,037 [pid=28219] [INFO] DONE  model ddqn s42 -> queue=4.08 wait=29.6
+[32/93] DONE DDQN reward=queue seed=s42
+  queue=4.08  wait=29.6  speed=7.899  throughput=2011
+2026-05-21 03:52:29,039 [pid=28219] [INFO] START model dqn s314
+2026-05-21 03:52:29,039 [pid=28219] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:29,039 [pid=28219] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s314/cologne8_dqn_final_model.zip
+2026-05-21 03:52:29,056 [pid=28219] [INFO]   step3: model loaded OK
+2026-05-21 03:52:29,056 [pid=28219] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:29,083 [pid=28223] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:29,108 [pid=28219] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:29,108 [pid=28219] [INFO]   step6: resetting env
+2026-05-21 03:52:29,156 [pid=28219] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:29,644 [pid=28227] [INFO] DONE  model ddqn s9999 -> queue=2.01 wait=6.1
+[33/93] DONE DDQN reward=wait-clip seed=s99992026-05-21 03:52:29,645 [pid=28227] [INFO] START model dqn s42
+2026-05-21 03:52:29,645 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:29,645 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s42/cologne8_dqn_final_model.zip
+
+  queue=2.01  wait=6.1  speed=8.484  throughput=2015
+2026-05-21 03:52:29,668 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:52:29,668 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:29,716 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:29,716 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:52:29,762 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:29,813 [pid=28225] [INFO] DONE  model dqn s123 -> queue=2.10 wait=5.6
+2026-05-21 03:52:29,814 [pid=28225] [INFO] START model dqn s5678
+2026-05-21 03:52:29,814 [pid=28225] [INFO]   step1: importing stable_baselines3
+[34/93] DONE DQN reward=pressure seed=s1232026-05-21 03:52:29,814 [pid=28225] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s5678/cologne8_dqn_final_model.zip
+2026-05-21 03:52:29,814 [pid=28232] [INFO] DONE  model dqn s1234 -> queue=2.14 wait=7.4
+
+  queue=2.10  wait=5.6  speed=8.501  throughput=2015
+[35/93] DONE DQN reward=pressure seed=s1234
+  queue=2.14  wait=7.4  speed=8.772  throughput=2014
+2026-05-21 03:52:29,815 [pid=28232] [INFO] START model dqn s777
+2026-05-21 03:52:29,815 [pid=28232] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:29,815 [pid=28232] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s777/cologne8_dqn_final_model.zip
+2026-05-21 03:52:29,842 [pid=28225] [INFO]   step3: model loaded OK
+2026-05-21 03:52:29,842 [pid=28225] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:29,845 [pid=28232] [INFO]   step3: model loaded OK
+2026-05-21 03:52:29,845 [pid=28232] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:29,893 [pid=28225] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:29,893 [pid=28225] [INFO]   step6: resetting env
+2026-05-21 03:52:29,897 [pid=28232] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:29,897 [pid=28232] [INFO]   step6: resetting env
+2026-05-21 03:52:29,898 [pid=28221] [INFO] DONE  model dqn s2025 -> queue=1.97 wait=5.6
+[36/93] DONE DQN reward=pressure seed=s2025
+  queue=1.97  wait=5.6  speed=8.503  throughput=2016
+2026-05-21 03:52:29,900 [pid=28221] [INFO] START model dqn s999
+2026-05-21 03:52:29,900 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:29,900 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s999/cologne8_dqn_final_model.zip
+2026-05-21 03:52:29,924 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:52:29,925 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:29,940 [pid=28225] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:29,944 [pid=28232] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:29,974 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:29,974 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:52:30,021 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:30,137 [pid=28229] [INFO] DONE  model dqn s2718 -> queue=2.54 wait=8.4
+2026-05-21 03:52:30,138 [pid=28229] [INFO] START model dqn s9999
+[37/93] DONE DQN reward=pressure seed=s27182026-05-21 03:52:30,138 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:30,138 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/dqn_queue_s9999/cologne8_dqn_final_model.zip
+
+  queue=2.54  wait=8.4  speed=8.364  throughput=2014
+2026-05-21 03:52:30,161 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:52:30,161 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:30,210 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:30,210 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:52:30,256 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:30,339 [pid=28230] [INFO] DONE  model dqn s314 -> queue=2.05 wait=5.4
+2026-05-21 03:52:30,340 [pid=28230] [INFO] START model dqn s123
+[38/93] DONE DQN reward=pressure seed=s3142026-05-21 03:52:30,340 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:30,340 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s123/cologne8_dqn_final_model.zip
+
+  queue=2.05  wait=5.4  speed=8.475  throughput=2014
+2026-05-21 03:52:30,364 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:52:30,364 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:30,415 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:30,415 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:52:30,461 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:30,580 [pid=28226] [INFO] DONE  model dqn s42 -> queue=2.24 wait=6.5
+2026-05-21 03:52:30,581 [pid=28226] [INFO] START model dqn s1234
+2026-05-21 03:52:30,581 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:30,581 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s1234/cologne8_dqn_final_model.zip
+[39/93] DONE DQN reward=pressure seed=s42
+  queue=2.24  wait=6.5  speed=8.426  throughput=2015
+2026-05-21 03:52:30,599 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:52:30,599 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:30,649 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:30,649 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:52:30,657 [pid=28216] [INFO] DONE  model dqn s5678 -> queue=2.52 wait=7.8
+2026-05-21 03:52:30,657 [pid=28216] [INFO] START model dqn s2025
+2026-05-21 03:52:30,657 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:30,657 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s2025/cologne8_dqn_final_model.zip
+[40/93] DONE DQN reward=pressure seed=s5678
+  queue=2.52  wait=7.8  speed=8.439  throughput=2015
+2026-05-21 03:52:30,674 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:52:30,674 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:30,694 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:30,724 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:30,724 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:52:30,770 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,179 [pid=28220] [INFO] DONE  model dqn s9999 -> queue=2.52 wait=7.8
+2026-05-21 03:52:31,180 [pid=28220] [INFO] START model dqn s2718
+2026-05-21 03:52:31,180 [pid=28220] [INFO]   step1: importing stable_baselines3
+[41/93] DONE DQN reward=pressure seed=s99992026-05-21 03:52:31,180 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s2718/cologne8_dqn_final_model.zip
+
+  queue=2.52  wait=7.8  speed=8.439  throughput=2015
+2026-05-21 03:52:31,202 [pid=28233] [INFO] DONE  model dqn s1234 -> queue=2.19 wait=7.9
+2026-05-21 03:52:31,203 [pid=28233] [INFO] START model dqn s314
+2026-05-21 03:52:31,203 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,203 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s314/cologne8_dqn_final_model.zip
+[42/93] DONE DQN reward=queue seed=s1234
+2026-05-21 03:52:31,203 [pid=28220] [INFO]   step3: model loaded OK
+  queue=2.19  wait=7.9  speed=8.538  throughput=2016
+2026-05-21 03:52:31,203 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,209 [pid=28228] [INFO] DONE  model dqn s777 -> queue=1.86 wait=4.7
+2026-05-21 03:52:31,209 [pid=28228] [INFO] START model dqn s42
+2026-05-21 03:52:31,209 [pid=28228] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,209 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s42/cologne8_dqn_final_model.zip
+[43/93] DONE DQN reward=pressure seed=s777
+  queue=1.86  wait=4.7  speed=8.573  throughput=2016
+2026-05-21 03:52:31,210 [pid=28222] [INFO] DONE  model dqn s999 -> queue=2.11 wait=6.4
+2026-05-21 03:52:31,210 [pid=28222] [INFO] START model dqn s5678
+[44/93] DONE DQN reward=pressure seed=s999
+2026-05-21 03:52:31,211 [pid=28222] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,211 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s5678/cologne8_dqn_final_model.zip
+  queue=2.11  wait=6.4  speed=8.519  throughput=2018
+2026-05-21 03:52:31,220 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,220 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,228 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,228 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,229 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,229 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,254 [pid=28231] [INFO] DONE  model dqn s123 -> queue=2.74 wait=8.4
+2026-05-21 03:52:31,254 [pid=28231] [INFO] START model dqn s777
+2026-05-21 03:52:31,254 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,254 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s777/cologne8_dqn_final_model.zip
+[45/93] DONE DQN reward=queue seed=s123
+  queue=2.74  wait=8.4  speed=8.334  throughput=2014
+2026-05-21 03:52:31,255 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,256 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:52:31,272 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,272 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,273 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,273 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:52:31,282 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,282 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:52:31,282 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,282 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:52:31,305 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,321 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,324 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,324 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:52:31,330 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,335 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,374 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,481 [pid=28224] [INFO] DONE  model dqn s2025 -> queue=2.11 wait=6.4
+[46/93] DONE DQN reward=queue seed=s2025
+  queue=2.11  wait=6.4  speed=8.519  throughput=2018
+2026-05-21 03:52:31,486 [pid=28224] [INFO] START model dqn s999
+2026-05-21 03:52:31,486 [pid=28224] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,486 [pid=28224] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s999/cologne8_dqn_final_model.zip
+2026-05-21 03:52:31,519 [pid=28224] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,519 [pid=28224] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,587 [pid=28224] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,587 [pid=28224] [INFO]   step6: resetting env
+2026-05-21 03:52:31,708 [pid=28224] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:31,908 [pid=28219] [INFO] DONE  model dqn s314 -> queue=1.94 wait=5.5
+[47/93] DONE DQN reward=queue seed=s314
+  queue=1.94  wait=5.5  speed=8.548  throughput=2015
+2026-05-21 03:52:31,909 [pid=28219] [INFO] START model dqn s9999
+2026-05-21 03:52:31,909 [pid=28219] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:31,909 [pid=28219] [INFO]   step2: loading model exp_cologne8_real/dqn_wait-clip_s9999/cologne8_dqn_final_model.zip
+2026-05-21 03:52:31,939 [pid=28219] [INFO]   step3: model loaded OK
+2026-05-21 03:52:31,939 [pid=28219] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:31,993 [pid=28219] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:31,993 [pid=28219] [INFO]   step6: resetting env
+2026-05-21 03:52:32,044 [pid=28219] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:32,177 [pid=28227] [INFO] DONE  model dqn s42 -> queue=2.11 wait=6.9
+2026-05-21 03:52:32,178 [pid=28227] [INFO] START model ppo s123
+2026-05-21 03:52:32,178 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:32,178 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s123/cologne8_ppo_final_model.zip
+[48/93] DONE DQN reward=queue seed=s42
+  queue=2.11  wait=6.9  speed=8.557  throughput=2014
+2026-05-21 03:52:32,339 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:52:32,339 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:32,416 [pid=28225] [INFO] DONE  model dqn s5678 -> queue=3.08 wait=11.3
+[49/93] DONE DQN reward=queue seed=s56782026-05-21 03:52:32,417 [pid=28225] [INFO] START model ppo s1234
+
+2026-05-21 03:52:32,417 [pid=28225] [INFO]   step1: importing stable_baselines3
+  queue=3.08  wait=11.3  speed=8.510  throughput=2011
+2026-05-21 03:52:32,417 [pid=28225] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s1234/cologne8_ppo_final_model.zip
+2026-05-21 03:52:32,446 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:32,447 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:52:32,455 [pid=28232] [INFO] DONE  model dqn s777 -> queue=2.16 wait=6.2
+2026-05-21 03:52:32,456 [pid=28232] [INFO] START model ppo s2025
+2026-05-21 03:52:32,456 [pid=28232] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:32,456 [pid=28232] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s2025/cologne8_ppo_final_model.zip
+[50/93] DONE DQN reward=queue seed=s777
+  queue=2.16  wait=6.2  speed=8.444  throughput=2014
+2026-05-21 03:52:32,520 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:32,520 [pid=28221] [INFO] DONE  model dqn s999 -> queue=1.99 wait=5.9
+2026-05-21 03:52:32,521 [pid=28221] [INFO] START model ppo s2718
+2026-05-21 03:52:32,521 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:32,521 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s2718/cologne8_ppo_final_model.zip
+[51/93] DONE DQN reward=queue seed=s999
+  queue=1.99  wait=5.9  speed=8.564  throughput=2012
+2026-05-21 03:52:32,566 [pid=28225] [INFO]   step3: model loaded OK
+2026-05-21 03:52:32,566 [pid=28225] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:32,638 [pid=28225] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:32,638 [pid=28225] [INFO]   step6: resetting env
+2026-05-21 03:52:32,665 [pid=28232] [INFO]   step3: model loaded OK
+2026-05-21 03:52:32,665 [pid=28232] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:32,702 [pid=28225] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:32,724 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:52:32,724 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:32,755 [pid=28232] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:32,755 [pid=28232] [INFO]   step6: resetting env
+2026-05-21 03:52:32,818 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:32,818 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:52:32,846 [pid=28229] [INFO] DONE  model dqn s9999 -> queue=2.01 wait=6.2
+[52/93] DONE DQN reward=queue seed=s9999
+  queue=2.01  wait=6.2  speed=8.528  throughput=2015
+2026-05-21 03:52:32,848 [pid=28229] [INFO] START model ppo s314
+2026-05-21 03:52:32,848 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:32,848 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s314/cologne8_ppo_final_model.zip
+2026-05-21 03:52:32,852 [pid=28232] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:32,889 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:33,138 [pid=28230] [INFO] DONE  model dqn s123 -> queue=2.04 wait=5.5
+[53/93] DONE DQN reward=wait-clip seed=s123
+  queue=2.04  wait=5.5  speed=8.521  throughput=2015
+2026-05-21 03:52:33,140 [pid=28230] [INFO] START model ppo s42
+2026-05-21 03:52:33,140 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:33,140 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s42/cologne8_ppo_final_model.zip
+2026-05-21 03:52:33,206 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:52:33,206 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:33,299 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:33,300 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:52:33,394 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:33,480 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:52:33,480 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:33,593 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:33,593 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:52:33,631 [pid=28226] [INFO] DONE  model dqn s1234 -> queue=2.04 wait=5.5
+2026-05-21 03:52:33,631 [pid=28216] [INFO] DONE  model dqn s2025 -> queue=2.00 wait=5.7
+[54/93] DONE DQN reward=wait-clip seed=s1234
+  queue=2.04  wait=5.5  speed=8.521  throughput=2015
+[55/93] DONE DQN reward=wait-clip seed=s2025
+  queue=2.00  wait=5.7  speed=8.494  throughput=2014
+2026-05-21 03:52:33,633 [pid=28216] [INFO] START model ppo s777
+2026-05-21 03:52:33,633 [pid=28226] [INFO] START model ppo s5678
+2026-05-21 03:52:33,633 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:33,633 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:33,633 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s5678/cologne8_ppo_final_model.zip
+2026-05-21 03:52:33,633 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s777/cologne8_ppo_final_model.zip
+2026-05-21 03:52:33,712 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:33,956 [pid=28223] [INFO] DONE  model dqn s2718 -> queue=5.46 wait=76.2
+[56/93] DONE DQN reward=queue seed=s2718
+  queue=5.46  wait=76.2  speed=7.980  throughput=2009
+2026-05-21 03:52:33,962 [pid=28223] [INFO] START model ppo s999
+2026-05-21 03:52:33,962 [pid=28223] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:33,962 [pid=28223] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s999/cologne8_ppo_final_model.zip
+2026-05-21 03:52:34,181 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:52:34,181 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:34,191 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:52:34,191 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:34,279 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:34,279 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:52:34,336 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:34,336 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:52:34,365 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:34,415 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:34,444 [pid=28223] [INFO]   step3: model loaded OK
+2026-05-21 03:52:34,444 [pid=28223] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:34,528 [pid=28223] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:34,528 [pid=28223] [INFO]   step6: resetting env
+2026-05-21 03:52:34,636 [pid=28223] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:34,787 [pid=28228] [INFO] DONE  model dqn s42 -> queue=2.20 wait=5.9
+[57/93] DONE DQN reward=wait-clip seed=s42
+  queue=2.20  wait=5.9  speed=8.410  throughput=2016
+2026-05-21 03:52:34,789 [pid=28228] [INFO] START model ppo s9999
+2026-05-21 03:52:34,789 [pid=28228] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:34,789 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/ppo_pressure_s9999/cologne8_ppo_final_model.zip
+2026-05-21 03:52:34,840 [pid=28222] [INFO] DONE  model dqn s5678 -> queue=11.86 wait=15369.5
+[58/93] DONE DQN reward=wait-clip seed=s5678
+  queue=11.86  wait=15369.5  speed=6.880  throughput=1997
+2026-05-21 03:52:34,844 [pid=28222] [INFO] START model ppo s123
+2026-05-21 03:52:34,844 [pid=28222] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:34,844 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s123/cologne8_ppo_final_model.zip
+2026-05-21 03:52:34,977 [pid=28220] [INFO] DONE  model dqn s2718 -> queue=2.09 wait=5.9
+[59/93] DONE DQN reward=wait-clip seed=s2718
+  queue=2.09  wait=5.9  speed=8.432  throughput=2015
+2026-05-21 03:52:34,981 [pid=28220] [INFO] START model ppo s1234
+2026-05-21 03:52:34,981 [pid=28220] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:34,982 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s1234/cologne8_ppo_final_model.zip
+2026-05-21 03:52:35,160 [pid=28233] [INFO] DONE  model dqn s314 -> queue=2.03 wait=5.3
+[60/93] DONE DQN reward=wait-clip seed=s314
+  queue=2.03  wait=5.3  speed=8.441  throughput=2017
+2026-05-21 03:52:35,165 [pid=28233] [INFO] START model ppo s2025
+2026-05-21 03:52:35,165 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:35,165 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s2025/cologne8_ppo_final_model.zip
+2026-05-21 03:52:35,515 [pid=28231] [INFO] DONE  model dqn s777 -> queue=2.03 wait=5.3
+[61/93] DONE DQN reward=wait-clip seed=s777
+  queue=2.03  wait=5.3  speed=8.441  throughput=2017
+2026-05-21 03:52:35,517 [pid=28231] [INFO] START model ppo s2718
+2026-05-21 03:52:35,517 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:35,517 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s2718/cologne8_ppo_final_model.zip
+2026-05-21 03:52:35,554 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:52:35,557 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:35,635 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:52:35,636 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:35,694 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:35,694 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:52:35,769 [pid=28220] [INFO]   step3: model loaded OK
+2026-05-21 03:52:35,770 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:35,805 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:35,805 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:52:35,859 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:35,859 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:52:35,890 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:52:35,890 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:35,912 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:35,935 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:36,028 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:36,028 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:52:36,057 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:36,186 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:36,365 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:52:36,365 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:36,627 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:36,628 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:52:36,744 [pid=28219] [INFO] DONE  model dqn s9999 -> queue=2.09 wait=5.9
+[62/93] DONE DQN reward=wait-clip seed=s9999
+  queue=2.09  wait=5.9  speed=8.432  throughput=2015
+2026-05-21 03:52:36,751 [pid=28219] [INFO] START model ppo s314
+2026-05-21 03:52:36,752 [pid=28219] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:36,752 [pid=28219] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s314/cologne8_ppo_final_model.zip
+2026-05-21 03:52:36,978 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:37,760 [pid=28219] [INFO]   step3: model loaded OK
+2026-05-21 03:52:37,764 [pid=28219] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:38,128 [pid=28219] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:38,128 [pid=28219] [INFO]   step6: resetting env
+2026-05-21 03:52:38,312 [pid=28219] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:52:38,685 [pid=28224] [INFO] DONE  model dqn s999 -> queue=2.09 wait=5.9
+[63/93] DONE DQN reward=wait-clip seed=s999
+  queue=2.09  wait=5.9  speed=8.432  throughput=2015
+2026-05-21 03:52:38,710 [pid=28224] [INFO] START model ppo s42
+2026-05-21 03:52:38,714 [pid=28224] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:52:38,714 [pid=28224] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s42/cologne8_ppo_final_model.zip
+2026-05-21 03:52:40,189 [pid=28224] [INFO]   step3: model loaded OK
+2026-05-21 03:52:40,190 [pid=28224] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:52:40,451 [pid=28224] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:52:40,452 [pid=28224] [INFO]   step6: resetting env
+2026-05-21 03:52:40,771 [pid=28224] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:05,943 [pid=28227] [INFO] DONE  model ppo s123 -> queue=2.00 wait=5.4
+[64/93] DONE PPO reward=pressure seed=s123
+  queue=2.00  wait=5.4  speed=8.517  throughput=2012
+2026-05-21 03:53:05,948 [pid=28227] [INFO] START model ppo s5678
+2026-05-21 03:53:05,948 [pid=28227] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:05,948 [pid=28227] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s5678/cologne8_ppo_final_model.zip
+2026-05-21 03:53:06,712 [pid=28227] [INFO]   step3: model loaded OK
+2026-05-21 03:53:06,712 [pid=28227] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:06,848 [pid=28227] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:06,848 [pid=28227] [INFO]   step6: resetting env
+2026-05-21 03:53:06,935 [pid=28227] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:08,473 [pid=28221] [INFO] DONE  model ppo s2718 -> queue=2.00 wait=5.4
+[65/93] DONE PPO reward=pressure seed=s2718
+  queue=2.00  wait=5.4  speed=8.517  throughput=2012
+2026-05-21 03:53:08,477 [pid=28221] [INFO] START model ppo s777
+2026-05-21 03:53:08,477 [pid=28221] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:08,477 [pid=28221] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s777/cologne8_ppo_final_model.zip
+2026-05-21 03:53:09,446 [pid=28225] [INFO] DONE  model ppo s1234 -> queue=2.00 wait=5.4
+[66/93] DONE PPO reward=pressure seed=s1234
+  queue=2.00  wait=5.4  speed=8.517  throughput=2012
+2026-05-21 03:53:09,469 [pid=28225] [INFO] START model ppo s999
+2026-05-21 03:53:09,469 [pid=28225] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:09,469 [pid=28225] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s999/cologne8_ppo_final_model.zip
+2026-05-21 03:53:09,564 [pid=28221] [INFO]   step3: model loaded OK
+2026-05-21 03:53:09,564 [pid=28221] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:09,711 [pid=28221] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:09,711 [pid=28221] [INFO]   step6: resetting env
+2026-05-21 03:53:09,895 [pid=28221] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:10,511 [pid=28225] [INFO]   step3: model loaded OK
+2026-05-21 03:53:10,511 [pid=28225] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:10,537 [pid=28229] [INFO] DONE  model ppo s314 -> queue=1.91 wait=6.0
+[67/93] DONE PPO reward=pressure seed=s314
+  queue=1.91  wait=6.0  speed=8.478  throughput=2012
+2026-05-21 03:53:10,545 [pid=28229] [INFO] START model ppo s9999
+2026-05-21 03:53:10,546 [pid=28229] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:10,546 [pid=28229] [INFO]   step2: loading model exp_cologne8_real/ppo_queue_s9999/cologne8_ppo_final_model.zip
+2026-05-21 03:53:10,764 [pid=28225] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:10,764 [pid=28225] [INFO]   step6: resetting env
+2026-05-21 03:53:10,989 [pid=28232] [INFO] DONE  model ppo s2025 -> queue=2.00 wait=5.4
+[68/93] DONE PPO reward=pressure seed=s2025
+  queue=2.00  wait=5.4  speed=8.517  throughput=2012
+2026-05-21 03:53:10,992 [pid=28232] [INFO] START model ppo s123
+2026-05-21 03:53:10,992 [pid=28232] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:10,992 [pid=28232] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s123/cologne8_ppo_final_model.zip
+2026-05-21 03:53:11,029 [pid=28230] [INFO] DONE  model ppo s42 -> queue=1.91 wait=6.0
+[69/93] DONE PPO reward=pressure seed=s42
+  queue=1.91  wait=6.0  speed=8.478  throughput=2012
+2026-05-21 03:53:11,032 [pid=28230] [INFO] START model ppo s1234
+2026-05-21 03:53:11,032 [pid=28230] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:11,032 [pid=28230] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s1234/cologne8_ppo_final_model.zip
+2026-05-21 03:53:11,043 [pid=28225] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:11,448 [pid=28229] [INFO]   step3: model loaded OK
+2026-05-21 03:53:11,453 [pid=28229] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:11,669 [pid=28229] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:11,669 [pid=28229] [INFO]   step6: resetting env
+2026-05-21 03:53:11,849 [pid=28229] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:11,970 [pid=28230] [INFO]   step3: model loaded OK
+2026-05-21 03:53:11,972 [pid=28230] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:12,106 [pid=28230] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:12,106 [pid=28230] [INFO]   step6: resetting env
+2026-05-21 03:53:12,173 [pid=28232] [INFO]   step3: model loaded OK
+2026-05-21 03:53:12,173 [pid=28232] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:12,262 [pid=28230] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:12,386 [pid=28232] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:12,387 [pid=28232] [INFO]   step6: resetting env
+2026-05-21 03:53:12,602 [pid=28232] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:12,757 [pid=28216] [INFO] DONE  model ppo s777 -> queue=1.98 wait=5.3
+[70/93] DONE PPO reward=pressure seed=s777
+  queue=1.98  wait=5.3  speed=8.498  throughput=2016
+2026-05-21 03:53:12,762 [pid=28216] [INFO] START model ppo s2025
+2026-05-21 03:53:12,762 [pid=28216] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:12,762 [pid=28216] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s2025/cologne8_ppo_final_model.zip
+2026-05-21 03:53:13,251 [pid=28226] [INFO] DONE  model ppo s5678 -> queue=1.98 wait=5.3
+[71/93] DONE PPO reward=pressure seed=s5678
+  queue=1.98  wait=5.3  speed=8.498  throughput=2016
+2026-05-21 03:53:13,254 [pid=28226] [INFO] START model ppo s2718
+2026-05-21 03:53:13,254 [pid=28226] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:13,254 [pid=28226] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s2718/cologne8_ppo_final_model.zip
+2026-05-21 03:53:13,730 [pid=28216] [INFO]   step3: model loaded OK
+2026-05-21 03:53:13,730 [pid=28216] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:13,921 [pid=28216] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:13,921 [pid=28216] [INFO]   step6: resetting env
+2026-05-21 03:53:14,133 [pid=28216] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:14,279 [pid=28226] [INFO]   step3: model loaded OK
+2026-05-21 03:53:14,279 [pid=28226] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:14,506 [pid=28226] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:14,507 [pid=28226] [INFO]   step6: resetting env
+2026-05-21 03:53:14,706 [pid=28226] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:14,919 [pid=28233] [INFO] DONE  model ppo s2025 -> queue=2.07 wait=6.4
+[72/93] DONE PPO reward=queue seed=s2025
+  queue=2.07  wait=6.4  speed=8.421  throughput=2017
+2026-05-21 03:53:14,921 [pid=28233] [INFO] START model ppo s314
+2026-05-21 03:53:14,921 [pid=28233] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:14,921 [pid=28233] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s314/cologne8_ppo_final_model.zip
+2026-05-21 03:53:15,917 [pid=28233] [INFO]   step3: model loaded OK
+2026-05-21 03:53:15,917 [pid=28233] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:16,062 [pid=28233] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:16,062 [pid=28233] [INFO]   step6: resetting env
+2026-05-21 03:53:16,192 [pid=28220] [INFO] DONE  model ppo s1234 -> queue=1.92 wait=4.8
+[73/93] DONE PPO reward=queue seed=s1234
+  queue=1.92  wait=4.8  speed=8.478  throughput=2013
+2026-05-21 03:53:16,200 [pid=28233] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:16,200 [pid=28220] [INFO] START model ppo s42
+2026-05-21 03:53:16,201 [pid=28220] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:16,201 [pid=28220] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s42/cologne8_ppo_final_model.zip
+2026-05-21 03:53:16,677 [pid=28231] [INFO] DONE  model ppo s2718 -> queue=2.07 wait=6.4
+[74/93] DONE PPO reward=queue seed=s2718
+  queue=2.07  wait=6.4  speed=8.421  throughput=2017
+2026-05-21 03:53:16,684 [pid=28231] [INFO] START model ppo s5678
+2026-05-21 03:53:16,684 [pid=28231] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:16,684 [pid=28231] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s5678/cologne8_ppo_final_model.zip
+2026-05-21 03:53:17,339 [pid=28220] [INFO]   step3: model loaded OK
+2026-05-21 03:53:17,339 [pid=28220] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:17,555 [pid=28220] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:17,555 [pid=28220] [INFO]   step6: resetting env
+2026-05-21 03:53:17,719 [pid=28220] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:17,783 [pid=28231] [INFO]   step3: model loaded OK
+2026-05-21 03:53:17,783 [pid=28231] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:17,988 [pid=28231] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:17,988 [pid=28231] [INFO]   step6: resetting env
+2026-05-21 03:53:18,184 [pid=28231] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:26,868 [pid=28223] [INFO] DONE  model ppo s999 -> queue=1.98 wait=5.3
+[75/93] DONE PPO reward=pressure seed=s999
+  queue=1.98  wait=5.3  speed=8.498  throughput=2016
+2026-05-21 03:53:26,880 [pid=28223] [INFO] START model ppo s777
+2026-05-21 03:53:26,880 [pid=28223] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:26,880 [pid=28223] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s777/cologne8_ppo_final_model.zip
+2026-05-21 03:53:28,512 [pid=28223] [INFO]   step3: model loaded OK
+2026-05-21 03:53:28,513 [pid=28223] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:28,810 [pid=28223] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:28,810 [pid=28223] [INFO]   step6: resetting env
+2026-05-21 03:53:29,096 [pid=28223] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:32,006 [pid=28228] [INFO] DONE  model ppo s9999 -> queue=1.92 wait=4.8
+[76/93] DONE PPO reward=pressure seed=s9999
+  queue=1.92  wait=4.8  speed=8.478  throughput=2013
+2026-05-21 03:53:32,009 [pid=28228] [INFO] START model ppo s999
+2026-05-21 03:53:32,009 [pid=28228] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:32,009 [pid=28228] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s999/cologne8_ppo_final_model.zip
+2026-05-21 03:53:32,092 [pid=28222] [INFO] DONE  model ppo s123 -> queue=1.92 wait=4.8
+[77/93] DONE PPO reward=queue seed=s123
+  queue=1.92  wait=4.8  speed=8.478  throughput=2013
+2026-05-21 03:53:32,104 [pid=28222] [INFO] START model ppo s9999
+2026-05-21 03:53:32,104 [pid=28222] [INFO]   step1: importing stable_baselines3
+2026-05-21 03:53:32,104 [pid=28222] [INFO]   step2: loading model exp_cologne8_real/ppo_wait-clip_s9999/cologne8_ppo_final_model.zip
+2026-05-21 03:53:33,770 [pid=28228] [INFO]   step3: model loaded OK
+2026-05-21 03:53:33,775 [pid=28228] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:33,775 [pid=28222] [INFO]   step3: model loaded OK
+2026-05-21 03:53:33,775 [pid=28222] [INFO]   step4: creating MultiAgentVecEnv (calls TrafficControlEnv.__init__)
+2026-05-21 03:53:34,051 [pid=28228] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:34,051 [pid=28228] [INFO]   step6: resetting env
+2026-05-21 03:53:34,083 [pid=28222] [INFO]   step5: VecEnv OK, n_agents=8
+2026-05-21 03:53:34,084 [pid=28222] [INFO]   step6: resetting env
+2026-05-21 03:53:34,234 [pid=28228] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:34,458 [pid=28222] [INFO]   step7: reset OK, obs.shape=(8, 7)
+2026-05-21 03:53:35,316 [pid=28219] [INFO] DONE  model ppo s314 -> queue=1.92 wait=4.8
+[78/93] DONE PPO reward=queue seed=s314
+  queue=1.92  wait=4.8  speed=8.546  throughput=2015
+2026-05-21 03:53:39,457 [pid=28224] [INFO] DONE  model ppo s42 -> queue=2.00 wait=5.7
+[79/93] DONE PPO reward=queue seed=s42
+  queue=2.00  wait=5.7  speed=8.484  throughput=2015
+2026-05-21 03:53:45,144 [pid=28227] [INFO] DONE  model ppo s5678 -> queue=1.94 wait=5.2
+[80/93] DONE PPO reward=queue seed=s5678
+  queue=1.94  wait=5.2  speed=8.527  throughput=2014
+2026-05-21 03:53:46,840 [pid=28221] [INFO] DONE  model ppo s777 -> queue=2.05 wait=5.4
+[81/93] DONE PPO reward=queue seed=s777
+  queue=2.05  wait=5.4  speed=8.352  throughput=2014
+2026-05-21 03:53:49,183 [pid=28230] [INFO] DONE  model ppo s1234 -> queue=2.05 wait=7.0
+[82/93] DONE PPO reward=wait-clip seed=s1234
+  queue=2.05  wait=7.0  speed=8.500  throughput=2013
+2026-05-21 03:53:50,398 [pid=28216] [INFO] DONE  model ppo s2025 -> queue=1.95 wait=5.1
+[83/93] DONE PPO reward=wait-clip seed=s2025
+  queue=1.95  wait=5.1  speed=8.512  throughput=2013
+2026-05-21 03:53:51,416 [pid=28225] [INFO] DONE  model ppo s999 -> queue=1.99 wait=6.2
+[84/93] DONE PPO reward=queue seed=s999
+  queue=1.99  wait=6.2  speed=8.472  throughput=2012
+2026-05-21 03:53:51,764 [pid=28232] [INFO] DONE  model ppo s123 -> queue=2.05 wait=7.0
+[85/93] DONE PPO reward=wait-clip seed=s123
+  queue=2.05  wait=7.0  speed=8.500  throughput=2013
+2026-05-21 03:53:51,844 [pid=28233] [INFO] DONE  model ppo s314 -> queue=1.96 wait=6.1
+[86/93] DONE PPO reward=wait-clip seed=s314
+  queue=1.96  wait=6.1  speed=8.484  throughput=2015
+2026-05-21 03:53:53,260 [pid=28226] [INFO] DONE  model ppo s2718 -> queue=1.98 wait=6.0
+[87/93] DONE PPO reward=wait-clip seed=s2718
+  queue=1.98  wait=6.0  speed=8.499  throughput=2016
+2026-05-21 03:53:53,837 [pid=28231] [INFO] DONE  model ppo s5678 -> queue=1.95 wait=5.6
+[88/93] DONE PPO reward=wait-clip seed=s5678
+  queue=1.95  wait=5.6  speed=8.555  throughput=2015
+2026-05-21 03:53:54,443 [pid=28229] [INFO] DONE  model ppo s9999 -> queue=2.10 wait=6.2
+[89/93] DONE PPO reward=queue seed=s9999
+  queue=2.10  wait=6.2  speed=8.438  throughput=2015
+2026-05-21 03:53:54,532 [pid=28220] [INFO] DONE  model ppo s42 -> queue=1.96 wait=5.4
+[90/93] DONE PPO reward=wait-clip seed=s42
+  queue=1.96  wait=5.4  speed=8.502  throughput=2016
+2026-05-21 03:54:06,168 [pid=28223] [INFO] DONE  model ppo s777 -> queue=2.10 wait=6.2
+[91/93] DONE PPO reward=wait-clip seed=s777
+  queue=2.10  wait=6.2  speed=8.381  throughput=2015
+2026-05-21 03:54:07,875 [pid=28222] [INFO] DONE  model ppo s9999 -> queue=1.99 wait=5.7
+[92/93] DONE PPO reward=wait-clip seed=s9999
+  queue=1.99  wait=5.7  speed=8.486  throughput=2014
+2026-05-21 03:54:08,061 [pid=28228] [INFO] DONE  model ppo s999 -> queue=1.99 wait=5.7
+[93/93] DONE PPO reward=wait-clip seed=s999
+  queue=1.99  wait=5.7  speed=8.486  throughput=2014
+
+=======================================================
+  HOAN TAT (1.9 phut)
+  Chi tiet : results_cologne8_real/all_results.csv
+  Tom tat  : results_cologne8_real/summary.csv
+=======================================================
+
+Ket qua: ./results_cologne8_real/summary.csv

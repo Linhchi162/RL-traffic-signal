@@ -1,0 +1,48 @@
+nohup: ignoring input
+>>> Cologne8 real — 2 extra seeds: 1234 5678
+>>> 18 jobs (DQN+DDQN+PPO x 2 seeds x 3 rewards)
+
+  dqn_queue_s1234                                    PID 27638
+  dqn_pressure_s1234                                 PID 27644
+  dqn_wait-clip_s1234                                PID 27650
+  dqn_queue_s5678                                    PID 27656
+  dqn_pressure_s5678                                 PID 27662
+  dqn_wait-clip_s5678                                PID 27667
+  ddqn_queue_s1234                                   PID 27673
+  ddqn_pressure_s1234                                PID 27679
+  ddqn_wait-clip_s1234                               PID 27685
+  ddqn_queue_s5678                                   PID 27691
+  ddqn_pressure_s5678                                PID 27697
+  ddqn_wait-clip_s5678                               PID 27703
+  ppo_queue_s1234                                    PID 27709
+  ppo_pressure_s1234                                 PID 27715
+  ppo_wait-clip_s1234                                PID 27721
+  ppo_queue_s5678                                    PID 27727
+  ppo_pressure_s5678                                 PID 27733
+  ppo_wait-clip_s5678                                PID 27739
+
+  18 jobs dang chay. Logs: ./logs_cologne8_real_all/
+
+  [03:33:20] 0/18 (0%)     [03:33:35] 0/18 (0%)     [03:33:50] 0/18 (0%)     [03:34:05] 0/18 (0%)     [03:34:20] 0/18 (0%)     [03:34:35] 0/18 (0%)     [03:34:50] 0/18 (0%)     [03:35:05] 0/18 (0%)     [03:35:20] 0/18 (0%)     [03:35:35] 0/18 (0%)     [03:35:50] 0/18 (0%)     [03:36:05] 0/18 (0%)     [03:36:20] 0/18 (0%)     [03:36:35] 0/18 (0%)     [03:36:50] 0/18 (0%)     [03:37:05] 0/18 (0%)     [03:37:20] 0/18 (0%)     OK  ddqn_queue_s5678
+  [03:37:35] 1/18 (5%)     OK  dqn_queue_s1234
+  OK  dqn_pressure_s5678
+  OK  dqn_wait-clip_s5678
+  OK  ddqn_queue_s1234
+  OK  ddqn_pressure_s5678
+  [03:37:50] 6/18 (33%)     OK  dqn_queue_s5678
+  OK  ddqn_pressure_s1234
+  OK  ddqn_wait-clip_s1234
+  [03:38:05] 9/18 (50%)     OK  dqn_pressure_s1234
+  OK  ddqn_wait-clip_s5678
+  [03:38:20] 11/18 (61%)     OK  dqn_wait-clip_s1234
+  [03:38:35] 12/18 (66%)     [03:38:50] 12/18 (66%)     [03:39:05] 12/18 (66%)     [03:39:20] 12/18 (66%)     [03:39:35] 12/18 (66%)     OK  ppo_pressure_s5678
+  [03:39:50] 13/18 (72%)     OK  ppo_pressure_s1234
+  OK  ppo_queue_s5678
+  [03:40:05] 15/18 (83%)     OK  ppo_queue_s1234
+  OK  ppo_wait-clip_s5678
+  [03:40:20] 17/18 (94%)     [03:40:35] 17/18 (94%)     [03:40:50] 17/18 (94%)     OK  ppo_wait-clip_s1234
+  [03:41:05] 18/18 (100%)   
+==========================================
+  Done: 18/18 OK
+  Models: ./exp_cologne8_real/
+==========================================
