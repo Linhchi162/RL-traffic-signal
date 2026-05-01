@@ -1,0 +1,37 @@
+\begin{table}[htbp]
+\centering
+\caption{Performance comparison on Cologne3 and Cologne8 (mean $\pm$ std over 10 seeds).
+         Queue = mean halting vehicles per junction step;
+         Wait/veh = mean waiting time per vehicle (s);
+         Throughput = total vehicles departed.
+         Bold = best RL result per metric.}
+\label{tab:results_main}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccc}
+\toprule
+\multirow{2}{*}{\textbf{Algorithm}} & \multirow{2}{*}{\textbf{Reward}}
+  & \multicolumn{2}{c}{\textbf{Queue} $\downarrow$}
+  & \multicolumn{2}{c}{\textbf{Wait/veh (s)} $\downarrow$}
+  & \multicolumn{2}{c}{\textbf{Throughput} $\uparrow$} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+ & & \textbf{C3} & \textbf{C8} & \textbf{C3} & \textbf{C8} & \textbf{C3} & \textbf{C8} \\
+\midrule
+Fixed-time & — & 14.25 & 17.13 & 6.4 & 4.4 & 2797 & 2001 \\
+Webster & — & 33.38 & 45.85 & 6.2 & 4.3 & 2743 & 1934 \\
+\midrule
+DQN & Queue & 5.24 $\pm$ 5.59 & 2.58 $\pm$ 1.08 & 37.1 $\pm$ 76.1 & 0.3 $\pm$ 0.5 & 2766 $\pm$ 113 & 2014 $\pm$ 3 \\
+DQN & Pressure & 5.31 $\pm$ 5.32 & 2.21 $\pm$ 0.24 & 35.9 $\pm$ 74.2 & 0.1 $\pm$ 0.0 & 2769 $\pm$ 108 & 2015 $\pm$ 1 \\
+DQN & Wait-clip & 20.06 $\pm$ 18.75 & 3.05 $\pm$ 3.10 & 183.7 $\pm$ 161.1 & 26.6 $\pm$ 83.8 & 2425 $\pm$ 462 & 2014 $\pm$ 6 \\
+\addlinespace[3pt]
+DDQN & Queue & 5.24 $\pm$ 5.38 & 2.57 $\pm$ 0.70 & 36.4 $\pm$ 73.3 & 0.2 $\pm$ 0.2 & 2759 $\pm$ 107 & 2014 $\pm$ 2 \\
+DDQN & Pressure & 20.08 $\pm$ 15.05 & 2.18 $\pm$ 0.22 & 201.1 $\pm$ 164.5 & 0.1 $\pm$ 0.0 & 2464 $\pm$ 407 & \textbf{2016 $\pm$ 1} \\
+DDQN & Wait-clip & \textbf{3.20 $\pm$ 3.58} & 4.08 $\pm$ 4.07 & \textbf{18.1 $\pm$ 54.8} & 53.7 $\pm$ 112.8 & \textbf{2795 $\pm$ 78} & 2011 $\pm$ 7 \\
+\addlinespace[3pt]
+PPO & Queue & 4.09 $\pm$ 6.58 & 2.00 $\pm$ 0.07 & 26.7 $\pm$ 82.1 & 0.1 $\pm$ 0.0 & 2787 $\pm$ 107 & 2014 $\pm$ 2 \\
+PPO & Pressure & 34.43 $\pm$ 26.57 & \textbf{1.97 $\pm$ 0.04} & 307.6 $\pm$ 237.3 & \textbf{0.1 $\pm$ 0.0} & 2033 $\pm$ 702 & 2013 $\pm$ 2 \\
+PPO & Wait-clip & 6.89 $\pm$ 8.28 & 2.00 $\pm$ 0.05 & 64.7 $\pm$ 104.5 & 0.1 $\pm$ 0.0 & 2727 $\pm$ 157 & 2014 $\pm$ 1 \\
+\bottomrule
+\end{tabular}}
+\end{table}
