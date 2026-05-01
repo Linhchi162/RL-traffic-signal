@@ -1,0 +1,49 @@
+controller,junction,mean_queue
+Webster,247379907,10.674
+Webster,252017285,4.381
+Webster,256201389,0.026
+Webster,26110729,17.869
+Webster,280120513,0.926
+Webster,32319828,0.111
+Webster,62426694,1.953
+Webster,cluster_1098574052_1098574061_247379905,9.909
+Fixed-time,247379907,3.596
+Fixed-time,252017285,1.408
+Fixed-time,256201389,0.072
+Fixed-time,26110729,6.554
+Fixed-time,280120513,1.322
+Fixed-time,32319828,0.065
+Fixed-time,62426694,1.172
+Fixed-time,cluster_1098574052_1098574061_247379905,2.881
+"PPO (s42, pressure)",247379907,0.425
+"PPO (s42, pressure)",252017285,0.261
+"PPO (s42, pressure)",256201389,0.006
+"PPO (s42, pressure)",26110729,0.738
+"PPO (s42, pressure)",280120513,0.067
+"PPO (s42, pressure)",32319828,0.024
+"PPO (s42, pressure)",62426694,0.118
+"PPO (s42, pressure)",cluster_1098574052_1098574061_247379905,0.438
+"DQN (s42, pressure)",247379907,0.404
+"DQN (s42, pressure)",252017285,0.246
+"DQN (s42, pressure)",256201389,0.01
+"DQN (s42, pressure)",26110729,0.728
+"DQN (s42, pressure)",280120513,0.229
+"DQN (s42, pressure)",32319828,0.026
+"DQN (s42, pressure)",62426694,0.235
+"DQN (s42, pressure)",cluster_1098574052_1098574061_247379905,0.368
+"DDQN (s42, pressure)",247379907,0.415
+"DDQN (s42, pressure)",252017285,0.26
+"DDQN (s42, pressure)",256201389,0.011
+"DDQN (s42, pressure)",26110729,0.767
+"DDQN (s42, pressure)",280120513,0.222
+"DDQN (s42, pressure)",32319828,0.026
+"DDQN (s42, pressure)",62426694,0.217
+"DDQN (s42, pressure)",cluster_1098574052_1098574061_247379905,0.329
+Random,247379907,4.888
+Random,252017285,0.762
+Random,256201389,0.015
+Random,26110729,8.358
+Random,280120513,0.419
+Random,32319828,0.136
+Random,62426694,1.804
+Random,cluster_1098574052_1098574061_247379905,4.067
