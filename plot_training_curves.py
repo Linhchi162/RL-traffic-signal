@@ -95,51 +95,58 @@ def interp_mean_std(runs, n_pts=200):
     return x, arr.mean(axis=0), arr.std(axis=0)
 
 
-def plot_scenario(data: dict, scenario: str, out: Path):
+def plot_grid(data_c3: dict, data_c8: dict, out: Path):
     """
-    1 figure, 3 subplots (queue | pressure | wait-clip).
-    Moi subplot: 3 lines (DQN, DDQN, PPO) voi mean ± std shading.
-    Tach subplot de tranh scale mismatch giua reward types.
+    Luoi 2×3:
+      Hang: Cologne3 (tren) | Cologne8 (duoi)
+      Cot : Queue | Pressure | Wait-clip
+    Moi o: 3 lines DQN / DDQN / PPO, mean ± std shading.
     """
-    rewards_present = [rw for rw in ("queue", "pressure", "wait-clip")
-                       if any(data[a].get(rw) for a in data)]
-    if not rewards_present:
-        print(f"  [Skip] Khong co du lieu cho {scenario}")
-        return
+    SCENARIOS = [("Cologne3", data_c3), ("Cologne8", data_c8)]
+    REWARD_ORDER = ["queue", "pressure", "wait-clip"]
 
-    n = len(rewards_present)
-    fig, axes = plt.subplots(1, n, figsize=(8 * n, 5.5), sharey=False)
-    if n == 1:
-        axes = [axes]
-    fig.suptitle(f"Training Reward Curves — {scenario}", fontsize=13,
-                 fontweight="bold")
+    fig, axes = plt.subplots(2, 3, figsize=(18, 9), sharey=False)
+    fig.suptitle("Training Reward Curves", fontsize=14, fontweight="bold", y=1.01)
 
-    for ax, reward in zip(axes, rewards_present):
-        ax.set_title(REWARD_LABELS[reward], fontsize=11)
-        ax.set_xlabel("Timesteps")
-        if ax is axes[0]:
-            ax.set_ylabel("Mean Step Reward (smoothed)")
+    for row_i, (scenario, data) in enumerate(SCENARIOS):
+        for col_i, reward in enumerate(REWARD_ORDER):
+            ax = axes[row_i][col_i]
 
-        plotted = 0
-        for algo in ("dqn", "ddqn", "ppo"):
-            runs = data[algo].get(reward, [])
-            if not runs:
-                continue
-            x, mean, std = interp_mean_std(runs)
-            if len(mean) == 0:
-                continue
-            sm = smooth(mean, w=12)
-            ss = smooth(std,  w=12)
-            xs = x[:len(sm)]
-            c  = ALGO_COLORS[algo]
-            ax.plot(xs, sm, color=c, linewidth=2,
-                    label=f"{ALGO_LABELS[algo]}  (n={len(runs)})")
-            ax.fill_between(xs, sm - ss, sm + ss, color=c, alpha=0.15)
-            plotted += 1
+            # Column header (chi hang dau)
+            if row_i == 0:
+                ax.set_title(REWARD_LABELS[reward], fontsize=12, fontweight="bold")
 
-        if plotted > 0:
-            ax.legend(fontsize=8, loc="lower right")
+            # Row label (chi cot dau)
+            if col_i == 0:
+                ax.set_ylabel(f"{scenario}\nMean Reward (smoothed)", fontsize=9)
+
+            if col_i == 1:
+                ax.set_xlabel("Timesteps", fontsize=9)
+
+            plotted = 0
+            for algo in ("dqn", "ddqn", "ppo"):
+                runs = data[algo].get(reward, [])
+                if not runs:
+                    continue
+                x, mean, std = interp_mean_std(runs)
+                if len(mean) == 0:
+                    continue
+                sm = smooth(mean, w=12)
+                ss = smooth(std,  w=12)
+                xs = x[:len(sm)]
+                c  = ALGO_COLORS[algo]
+                ax.plot(xs, sm, color=c, linewidth=2,
+                        label=f"{ALGO_LABELS[algo]}  (n={len(runs)})")
+                ax.fill_between(xs, sm - ss, sm + ss, color=c, alpha=0.15)
+                plotted += 1
+
             ax.set_xlim(left=0)
+            ax.grid(True, alpha=0.3, linestyle="--")
+            if plotted > 0:
+                ax.legend(fontsize=7.5, loc="lower right", framealpha=0.8)
+            else:
+                ax.text(0.5, 0.5, "No data", transform=ax.transAxes,
+                        ha="center", va="center", color="gray", fontsize=9)
 
     fig.tight_layout()
     fig.savefig(out, bbox_inches="tight")
@@ -167,12 +174,13 @@ def main():
     print(f"  Output  : {args.out}/")
     print("=" * 55)
 
-    for scenario, log_dir in [("Cologne3", Path(args.c3_logs)),
-                               ("Cologne8", Path(args.c8_logs))]:
-        print(f"\n--- {scenario} ---")
-        data = load_logs(log_dir)
-        out  = out_dir / f"fig_training_{scenario.lower()}.png"
-        plot_scenario(data, scenario, out)
+    print("\n--- Cologne3 ---")
+    data_c3 = load_logs(Path(args.c3_logs))
+    print("\n--- Cologne8 ---")
+    data_c8 = load_logs(Path(args.c8_logs))
+
+    out = out_dir / "fig_training_grid.png"
+    plot_grid(data_c3, data_c8, out)
 
     print(f"\nHoan tat.")
 
