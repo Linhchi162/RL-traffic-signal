@@ -34,8 +34,9 @@ if "SUMO_HOME" not in os.environ:
     sys.exit("[evaluate_cologne8] SUMO_HOME chua duoc khai bao")
 
 _HERE    = Path(__file__).parent
-C8_NET   = _HERE / "nets" / "cologne8" / "cologne8.net.xml"
-C8_ROUTE = _HERE / "nets" / "cologne8" / "cologne8.rou.xml"
+C8_NET          = _HERE / "nets" / "cologne8" / "cologne8.net.xml"
+C8_ROUTE_REAL   = _HERE / "nets" / "cologne8" / "cologne8.rou.xml"
+C8_ROUTE_SYN    = _HERE / "nets" / "cologne8" / "cologne8_synthetic.rou.xml"
 
 # Cologne8 vehicles depart during this window (real Cologne peak hour)
 SUMO_BEGIN = 25200   # 7:00 AM
@@ -47,7 +48,8 @@ from rl_controller.state_builder import BaselineObservation
 from rl_controller.grid_env      import MultiAgentVecEnv
 from rl_controller.webster       import DynamicWebsterController
 
-USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
+USE_LIBSUMO   = "LIBSUMO_AS_TRACI" in os.environ
+_ACTIVE_ROUTE = C8_ROUTE_REAL   # overridden in main() nếu --route_file được chỉ định
 
 
 # ---------------------------------------------------------------------------
@@ -112,11 +114,13 @@ def _empty_result():
             "total_reward": 0}
 
 
-def _make_env(fixed_signal=False):
+def _make_env(fixed_signal=False, route_file=None):
     """Factory tra ve TrafficControlEnv voi Cologne8 net/route."""
+    if route_file is None:
+        route_file = str(_ACTIVE_ROUTE)
     return TrafficControlEnv(
         net_file        = str(C8_NET),
-        route_file      = str(C8_ROUTE),
+        route_file      = route_file,
         sim_duration    = SUMO_END + 99999, # lon hon SUMO_END de done khong bao gio trigger
                                             # → tranh auto-reset lam libsumo hang
         reward_fn       = "queue",
@@ -267,7 +271,7 @@ def run_webster_eval() -> dict:
     cmd = [
         sumolib.checkBinary("sumo"),
         "-n", str(C8_NET),
-        "-r", str(C8_ROUTE),
+        "-r", str(_ACTIVE_ROUTE),
         "--begin", str(SUMO_BEGIN),
         "--time-to-teleport", "-1",
         "--no-warnings",
@@ -390,6 +394,9 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--models_dir",    default="./exp_grid")
     p.add_argument("--save_dir",      default="./results_cologne8")
+    p.add_argument("--route_file",    default=None,
+                   help="Route file tuy chinh (mac dinh: cologne8.rou.xml that). "
+                        "Dung voi cologne8_synthetic.rou.xml de danh gia tren demand tuong tu train.")
     p.add_argument("--skip_fixed",    action="store_true")
     p.add_argument("--skip_random",   action="store_true")
     p.add_argument("--skip_webster",  action="store_true")
@@ -400,10 +407,15 @@ def parse_args():
 
 
 def main():
+    global _ACTIVE_ROUTE
     args       = parse_args()
     models_dir = Path(args.models_dir)
     save_dir   = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.route_file:
+        _ACTIVE_ROUTE = Path(args.route_file)
+    C8_ROUTE = _ACTIVE_ROUTE
 
     # Ghi log ra file de debug tren Vast
     log_path = save_dir / "eval.log"
@@ -423,7 +435,10 @@ def main():
         sys.exit(f"[ERR] Thieu file mang: {C8_NET}\n"
                  f"      Chay: bash setup_vast.sh  (se tu download)")
     if not C8_ROUTE.exists():
-        sys.exit(f"[ERR] Thieu file route: {C8_ROUTE}")
+        sys.exit(f"[ERR] Thieu file route: {C8_ROUTE}\n"
+                 + ("      Chay: python generate_cologne8_flows.py"
+                    if "synthetic" in str(C8_ROUTE) else
+                    "      Chay: bash setup_vast.sh  (se tu download)"))
 
     models = discover_grid_models(models_dir)
     print(f"\nCologne8 zero-shot evaluation")
