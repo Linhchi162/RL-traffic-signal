@@ -17,7 +17,7 @@ export LIBSUMO_AS_TRACI=1
 # Moi job = 1 SUMO process, cap o 16 de tranh memory/fd exhaustion
 # (255 SUMO processes dong thoi se nghẽn du co nhieu CPU)
 NCPU=$(nproc)
-WORKERS=$(( NCPU < 24 ? NCPU : 24 ))
+WORKERS=$(( NCPU < 16 ? NCPU : 16 ))
 echo "=== Cologne8 zero-shot evaluation ==="
 echo "Net    : nets/cologne8/cologne8.net.xml"
 echo "Time   : 25200s-28800s (7am-8am, 3600s peak hour)"
