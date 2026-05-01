@@ -55,7 +55,7 @@ class IntersectionStateExtractor:
     def __init__(
         self,
         controller,
-        max_queue_ref: float = 150.0,
+        max_queue_ref: float = 50.0,
         max_green_ref: float = 120.0,
     ):
         """
@@ -217,7 +217,7 @@ class BaselineObservation:
 
     NUM_PHASES = 4
     MAX_G = 120.0
-    MAX_Q = 150.0
+    MAX_Q = 50.0
 
     def __init__(self, controller):
         self.ctrl = controller

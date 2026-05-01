@@ -90,7 +90,7 @@ class SignalController:
         self.last_reward = None
 
         # Tham số cho hàm phần thưởng hàng chờ
-        self.queue_norm_cap = 62              # số xe tối đa giả định mỗi hướng
+        self.queue_norm_cap = 15              # số xe tối đa giả định mỗi hướng (Cologne)
         self.weight_reduction = 0.6          # α1 — thưởng khi hàng chờ giảm (paper: 0.6)
         self.weight_absolute = 0.4           # α2 — phạt theo hàng chờ tuyệt đối (paper: 0.4)
         self.prev_max_queues: dict = {}      # lưu hàng chờ bước trước
