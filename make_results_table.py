@@ -130,7 +130,8 @@ def best_rl(rows: list[dict]):
 
 LATEX_HEADER = r"""\begin{table}[htbp]
 \centering
-\caption{Performance comparison on Cologne3 and Cologne8 (mean $\pm$ std over 10 seeds).
+\caption{Performance comparison on Cologne3 (real route, no curriculum) and Cologne8 (random route)
+         (mean $\pm$ std over 10 seeds).
          Queue = mean halting vehicles per junction step;
          Wait/veh = mean waiting time per vehicle (s);
          Throughput = total vehicles departed.
@@ -283,8 +284,10 @@ def save_csv(rows: list[dict], path: Path):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--c3",  default="./results_cologne3_real")
-    p.add_argument("--c8",  default="./results_cologne8_real")
+    p.add_argument("--c3",  default="./results_cologne3_real",
+                   help="C3 result dir (real route, no curriculum)")
+    p.add_argument("--c8",  default="./results_cologne8_rand_curr",
+                   help="C8 result dir (random route)")
     p.add_argument("--out", default="./figures")
     return p.parse_args()
 
