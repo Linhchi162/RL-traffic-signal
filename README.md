@@ -141,7 +141,7 @@ All three are implemented with **parameter sharing**: every agent at every inter
 
 ## Scenarios
 
-Both scenarios are derived from the [TAPAS Cologne dataset](https://sumo.dlr.de/docs/Data/Scenarios/TAPASCologne.html) and run at 30 % of full demand.
+Both scenarios are derived from the [TAPAS Cologne dataset](https://sumo.dlr.de/docs/Data/Scenarios/TAPASCologne.html) 
 
 | Scenario | Intersections | Nodes | Edges | Vehicles |
 |---|---|---|---|---|
