@@ -1,0 +1,114 @@
+% ============================================================
+%  Conclusion
+% ============================================================
+\renewcommand{\tablename}{Table}
+\renewcommand{\figurename}{Figure}
+
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
+
+This study proposes and evaluates an Independent Multi-Agent Reinforcement
+Learning (Independent MARL) system for traffic signal control, in which each
+signalised intersection is managed by a separate agent using a shared policy.
+Three algorithms --- PPO, DQN, and DDQN --- are combined with three reward
+functions --- queue, pressure, and wait-clip --- and evaluated on two scenarios
+extracted from the real-world TAPAS Cologne traffic dataset: Cologne-3
+(3 signalised intersections) and Cologne-8 (8 signalised intersections).
+
+On Cologne-8, all RL configurations outperform both the Fixed-time and Webster
+baselines on mean queue length and throughput. The best configuration,
+PPO-pressure, reduces mean queue by 88\,\% relative to Fixed-time and 96\,\%
+relative to Webster. These results demonstrate that Independent MARL can
+effectively react to local congestion at each intersection, overcoming
+Webster's limitation of optimising each node independently without accounting
+for inter-intersection flow interactions.
+
+Regarding reward functions, pressure is the best choice when combined with PPO
+or DQN, while queue is the safest and most consistent choice across all three
+algorithms. Wait-clip performs well with PPO but causes severe instability with
+DDQN due to its sparse and delayed reward signal. In terms of practical
+deployability, queue is the most feasible reward function, as the number of
+stopped vehicles at an intersection can be estimated directly from cameras or
+inductive loop sensors --- infrastructure already widely available at signalised
+junctions. Pressure requires sensors on both incoming and outgoing lanes,
+which is feasible but demands more complete sensing infrastructure. Wait-clip
+requires tracking the cumulative waiting time of individual vehicles,
+which is considerably more complex and difficult to deploy under current
+traffic infrastructure conditions.
+
+On Cologne-3, the RL configurations do not demonstrate consistent advantage.
+The training curves show no clear convergence over the full 500{,}000 steps,
+and evaluation results exhibit high standard deviations across most
+configurations. One possible contributing factor is that fewer intersections
+means fewer samples are accumulated per rollout for the shared policy within
+the same timestep budget, making convergence more difficult. This suggests that
+Independent MARL achieves its clearest advantage when the number of signalised
+intersections is large enough for the shared policy to accumulate sufficient
+and diverse training signal.
+
+Several limitations of the present study should be acknowledged. All training
+and evaluation are conducted within the SUMO simulation environment and have
+not been deployed on real traffic signal hardware; the simulation does not
+capture sensor noise, device latency, or real-world driver behaviour. The
+experiments are also limited to two small networks with at most 8 intersections,
+and the scalability of the approach to larger networks with hundreds of nodes
+has not been verified. Finally, the unstable results on Cologne-3 indicate
+that the current approach is not well suited to small networks with few
+intersections, where the learning signal is sparser within the same timestep
+budget.
+
+Several directions for future work follow from these limitations. Testing
+scalability on larger networks is necessary to assess the practical viability
+of the method; extending the comparison to other RL algorithms such as
+Soft Actor-Critic (SAC)~\cite{haarnoja2018sac} and Twin Delayed Deep
+Deterministic Policy Gradient (TD3)~\cite{fujimoto2018td3} may provide further
+insight into which algorithm families are best suited to large-scale traffic
+signal control. For Cologne-3, a direct improvement would be to increase the
+training timestep budget to accumulate sufficient learning signal, or to adopt
+MARL architectures with more explicit coordination such as
+MAPPO~\cite{yu2022mappo} or QMIX~\cite{rashid2018qmix}, in which agents can
+share information during training rather than acting in full independence.
+
+% ------------------------------------------------------------
+%  BibTeX entries to add to your .bib file
+% ------------------------------------------------------------
+%
+% @inproceedings{haarnoja2018sac,
+%   author    = {Tuomas Haarnoja and Aurick Zhou and Pieter Abbeel
+%                and Sergey Levine},
+%   title     = {Soft Actor-Critic: Off-Policy Maximum Entropy Deep
+%                Reinforcement Learning with a Stochastic Actor},
+%   booktitle = {Proceedings of the 35th International Conference on
+%                Machine Learning (ICML)},
+%   year      = {2018}
+% }
+%
+% @inproceedings{fujimoto2018td3,
+%   author    = {Scott Fujimoto and Herke van Hoof and David Meger},
+%   title     = {Addressing Function Approximation Error in
+%                Actor-Critic Methods},
+%   booktitle = {Proceedings of the 35th International Conference on
+%                Machine Learning (ICML)},
+%   year      = {2018}
+% }
+%
+% @inproceedings{yu2022mappo,
+%   author    = {Chao Yu and Akash Velu and Eugene Vinitsky and
+%                Jiaxuan Gao and Yu Wang and Alexandre Bayen and Yi Wu},
+%   title     = {The Surprising Effectiveness of {PPO} in Cooperative
+%                Multi-Agent Games},
+%   booktitle = {Advances in Neural Information Processing Systems
+%                (NeurIPS)},
+%   year      = {2022}
+% }
+%
+% @inproceedings{rashid2018qmix,
+%   author    = {Tabish Rashid and Mikayel Samvelyan and
+%                Christian Schroeder de Witt and Gregory Farquhar and
+%                Jakob Foerster and Shimon Whiteson},
+%   title     = {{QMIX}: Monotonic Value Function Factorisation for
+%                Deep Multi-Agent Reinforcement Learning},
+%   booktitle = {Proceedings of the 35th International Conference on
+%                Machine Learning (ICML)},
+%   year      = {2018}
+% }

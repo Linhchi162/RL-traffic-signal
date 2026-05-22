@@ -1,0 +1,244 @@
+% ============================================================
+%  Chapter 4 - Experiments and Evaluation
+% ============================================================
+\renewcommand{\tablename}{Table}
+\renewcommand{\figurename}{Figure}
+
+\chapter{Experiments and Evaluation}
+\label{chap:experiment}
+
+\section{Research Questions}
+
+This chapter presents the experimental procedure and result analysis of the
+reinforcement-learning-based traffic signal control system designed in
+Chapter~3. The experiments are structured to answer three research questions.
+First, whether the RL algorithms (PPO, DQN, DDQN) outperform classical
+controllers (Fixed-time, Webster) on real traffic data, and by what margin.
+Second, which of the three reward functions under investigation (queue,
+pressure, wait-clip) yields the most effective and stable learning signal across
+algorithms and scenarios. Third, how the advantage of RL over the baselines
+changes as the network scale increases from Cologne-3 (3 signalised
+intersections) to Cologne-8 (8 signalised intersections).
+
+\section{Experimental Setup}
+
+\subsection{Evaluation Data}
+
+All models are evaluated on the real traffic demand from the TAPAS Cologne
+dataset, corresponding to the morning peak period 7:00--8:00 (3{,}600
+simulated seconds)~\cite{tapascologne}. This evaluation dataset is entirely
+separate from the synthetic training traffic: the origin--destination matrix
+is kept unchanged from the original dataset, ensuring the authenticity of the
+reported results. Each configuration is evaluated with 5 independent random
+seeds; results are reported as mean $\pm$ standard deviation across seeds.
+
+\subsection{Compared Methods}
+
+A total of 11 configurations are compared: two classical baselines (Fixed-time
+and Webster) and nine RL configurations formed by the full combination of three
+algorithms (PPO, DQN, DDQN) with three reward functions (queue, pressure,
+wait-clip).
+
+\subsection{Evaluation Metrics}
+
+Performance is measured by two complementary metrics. \textbf{Mean Queue} is
+the total number of stopped vehicles across the entire network, averaged over
+all decision steps within an episode; a lower value reflects less congestion.
+\textbf{Throughput} is the total number of vehicles that complete their
+journeys within the episode. An effective controller must simultaneously
+maintain low queues and high throughput: a controller that reduces queues by
+slowing vehicles before they enter an intersection would be penalised by a
+lower throughput.
+
+\section{Training Dynamics}
+\label{sec:training}
+
+Figure~\ref{fig:train_c8} presents the median reward curves during training on
+Cologne-8, with shaded bands representing the interquartile range across
+5 seeds. Across all three reward functions, the three algorithms converge
+clearly after approximately 100{,}000 steps. PPO reaches a plateau earliest
+and maintains the narrowest IQR across all reward functions. DQN converges
+stably but more slowly. DDQN converges but continues to oscillate slightly
+after 200{,}000 steps under the queue and pressure rewards. The most notable
+case is DDQN with wait-clip on Cologne-8, where the median drops sharply
+within the first 50{,}000 steps, recovers gradually, but continues to be
+periodically pulled downward with a very wide IQR persisting until 400{,}000
+steps, indicating that this configuration produces less stable results across
+seeds, consistent with the high standard deviation recorded in the evaluation
+results.
+
+Figure~\ref{fig:train_c3} presents the corresponding curves on Cologne-3.
+Unlike Cologne-8, none of the algorithms exhibit a clear convergence trend
+over the full 500{,}000 steps. The median reward oscillates within a narrow
+band close to zero without any sustained improvement. One possible contributing
+factor is that fewer intersections means fewer samples are accumulated per
+rollout for the shared policy within the same timestep budget, making
+convergence more difficult.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{fig_training_c8.png}
+    \caption{Training reward curves on Cologne-8. Solid lines show the median
+    reward smoothed over a sliding window; shaded bands represent the
+    25th--75th percentile across 5 seeds.}
+    \label{fig:train_c8}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{fig_training_c3.png}
+    \caption{Training reward curves on Cologne-3. Solid lines show the median
+    reward smoothed over a sliding window; shaded bands represent the
+    25th--75th percentile across 5 seeds.}
+    \label{fig:train_c3}
+\end{figure}
+
+\section{Evaluation Results}
+
+Tables~\ref{tab:results_c8} and~\ref{tab:results_c3} present the full
+evaluation results on Cologne-8 and Cologne-3 respectively.
+
+\begin{table}[htbp]
+    \caption{Evaluation results on Cologne-8 (mean $\pm$ std, 5 seeds).
+             Lower mean queue and higher throughput are better.}
+    \label{tab:results_c8}
+    \centering
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Method}
+            & \textbf{Mean Queue (veh)}
+            & \textbf{Throughput (veh)} \\
+        \midrule
+        Fixed-time       & 16.42             & 2{,}001 \\
+        Webster          & 45.85             & 1{,}934 \\
+        \midrule
+        PPO-queue        & $2.03 \pm 0.05$   & $2{,}014 \pm 1.4$ \\
+        PPO-pressure     & $1.93 \pm 0.03$   & $2{,}017 \pm 0.4$ \\
+        PPO-wait-clip    & $2.01 \pm 0.04$   & $2{,}014 \pm 1.9$ \\
+        \midrule
+        DQN-queue        & $2.30 \pm 0.49$   & $2{,}014 \pm 1.1$ \\
+        DQN-pressure     & $2.33 \pm 0.46$   & $2{,}015 \pm 1.1$ \\
+        DQN-wait-clip    & $2.49 \pm 0.61$   & $2{,}013 \pm 2.5$ \\
+        \midrule
+        DDQN-queue       & $2.56 \pm 0.67$   & $2{,}013 \pm 2.3$ \\
+        DDQN-pressure    & $2.53 \pm 0.39$   & $2{,}015 \pm 1.1$ \\
+        DDQN-wait-clip   & $12.51 \pm 23.55$ & $1{,}987 \pm 61$  \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \caption{Evaluation results on Cologne-3 (mean $\pm$ std, 5 seeds).
+             Lower mean queue and higher throughput are better.}
+    \label{tab:results_c3}
+    \centering
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Method}
+            & \textbf{Mean Queue (veh)}
+            & \textbf{Throughput (veh)} \\
+        \midrule
+        Fixed-time       & 14.25             & 2{,}797 \\
+        Webster          & 33.38             & 2{,}743 \\
+        \midrule
+        PPO-queue        & $6.10 \pm 9.35$   & $2{,}754 \pm 152$ \\
+        PPO-pressure     & $40.20 \pm 26.41$ & $1{,}882 \pm 717$ \\
+        PPO-wait-clip    & $4.66 \pm 6.14$   & $2{,}768 \pm 121$ \\
+        \midrule
+        DQN-queue        & $7.91 \pm 7.22$   & $2{,}713 \pm 147$ \\
+        DQN-pressure     & $2.82 \pm 0.32$   & $2{,}819 \pm 0.8$ \\
+        DQN-wait-clip    & $33.47 \pm 17.44$ & $2{,}127 \pm 489$ \\
+        \midrule
+        DDQN-queue       & $4.91 \pm 5.22$   & $2{,}754 \pm 107$ \\
+        DDQN-pressure    & $14.27 \pm 11.18$ & $2{,}611 \pm 198$ \\
+        DDQN-wait-clip   & $4.25 \pm 5.11$   & $2{,}771 \pm 111$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Results on Cologne-8}
+
+As shown in Table~\ref{tab:results_c8}, all nine RL configurations outperform
+both baselines on both metrics. The best configuration is PPO-pressure, which
+achieves the lowest mean queue and the highest throughput among all methods.
+Notably, Webster produces the worst results of all evaluated methods, worse
+than Fixed-time on both metrics, despite being an adaptive controller.
+
+Among the RL configurations, PPO achieves the highest stability, with a
+coefficient of variation below 5\,\% across all configurations. DDQN-wait-clip
+is the only configuration that fails severely, with a coefficient of variation
+exceeding 100\,\%, consistent with the oscillatory behaviour observed in the
+training curves.
+
+\subsection{Results on Cologne-3}
+
+As shown in Table~\ref{tab:results_c3}, the best configuration is DQN-pressure,
+which outperforms Fixed-time on both metrics and is the most stable
+configuration in the RL group. However, the majority of RL configurations
+exhibit large standard deviations, many with a coefficient of variation
+exceeding 100\,\%, reducing the reliability of the mean values. PPO-pressure
+is the worst configuration in the entire experiment and the only one with a
+throughput lower than both Fixed-time and Webster.
+
+\section{Analysis and Discussion}
+
+\subsection{Performance of RL Against Classical Baselines}
+
+On Cologne-8, all RL configurations outperform both Fixed-time and Webster by
+a large margin. The improvement over Webster is particularly striking, as
+Webster performs worst among all evaluated methods despite being an adaptive
+controller. This is because Webster optimises each intersection independently
+using a 15-minute moving average and cannot account for inter-intersection flow
+dependencies: a long cycle assigned to one node may cause vehicles to accumulate
+at adjacent nodes in ways that Webster cannot anticipate. Independent MARL
+addresses this by reacting directly to local queue states at every decision step.
+
+On Cologne-3, some RL configurations improve clearly over Fixed-time while
+others produce substantially worse results, most notably PPO-pressure. Among
+all configurations evaluated on this scenario, DQN-pressure achieves the best
+and most stable result, with the lowest standard deviation in the RL group.
+
+\subsection{Effect of Reward Function}
+
+Since the training curves on Cologne-3 do not show clear convergence as
+discussed in Section~\ref{sec:training}, the reward function analysis focuses
+on Cologne-8, where the models learn stable policies and evaluation results
+can be interpreted reliably.
+
+On Cologne-8, the pressure reward yields the lowest mean queue across all three
+algorithms, suggesting that the incoming-to-outgoing vehicle imbalance signal
+effectively captures congestion dynamics in this multi-intersection urban
+network. The queue reward is consistently second-best and produces no failure
+cases across any algorithm, making it the most stable reward function across
+all three algorithms. Wait-clip performs well with PPO but fails severely with
+DDQN, indicating that its effectiveness depends substantially on the algorithm
+it is paired with. The wait-clip reward accumulates only after vehicles have
+been stationary for several consecutive steps, producing a sparse and delayed
+signal, and DDQN-wait-clip records a coefficient of variation exceeding 100\,\%
+in evaluation, consistent with the periodic oscillations observed in the
+training curves. Overall, pressure is the best choice when combined with PPO
+or DQN, while queue is the safest choice when there is no preference for a
+specific algorithm.
+
+Regarding the pressure reward on Cologne-3, it exhibits highly divergent
+results across algorithms: DQN-pressure achieves the best result on this
+scenario while PPO-pressure produces the worst. However, since no algorithm
+converges clearly on Cologne-3 as shown in the training curves, these
+evaluation results may reflect seed-to-seed variability rather than genuine
+policy differences.
+
+\subsection{Effect of Network Scale}
+
+The results show that Independent MARL performs most effectively on Cologne-8
+and does not demonstrate consistent advantage on Cologne-3. Cologne-8, with
+8 signalised intersections, presents a more complex environment with richer
+interactions among nodes, conditions that Independent MARL can exploit through
+each agent reacting directly to its local queue state at every decision step,
+while the shared policy accumulates experience from all 8 agents in parallel.
+On Cologne-3 with only 3 intersections, as discussed in
+Section~\ref{sec:training}, fewer agents means sparser learning signal per
+rollout, which prevents the shared policy from converging to a stable policy
+within the available timestep budget. The results suggest that Independent MARL
+achieves its clearest advantage when the number of signalised intersections is
+large enough for the shared policy to accumulate sufficient and diverse training
+signal.

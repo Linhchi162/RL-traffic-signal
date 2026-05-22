@@ -1,0 +1,8 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Overall architecture of the reinforcement-learning-based traffic signal control system.}}{11}{figure.caption.2}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Road networks used in the experiments, visualised in SUMO-GUI. Signalised intersections are highlighted with traffic-light indicators.}}{12}{figure.caption.4}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Training reward curves on Cologne-8. Solid lines show the median reward smoothed over a sliding window; shaded bands represent the 25th--75th percentile across 5 seeds.}}{23}{figure.caption.10}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Training reward curves on Cologne-3. Solid lines show the median reward smoothed over a sliding window; shaded bands represent the 25th--75th percentile across 5 seeds.}}{23}{figure.caption.11}%

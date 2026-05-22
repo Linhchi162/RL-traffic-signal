@@ -1,0 +1,14 @@
+\begin{center}
+\textbf{\large{Abstract}	}
+\end{center}
+
+\addcontentsline{toc}{chapter}{Abstract}
+Adaptive traffic signal control is a key challenge in modern urban transportation, where traditional fixed-time methods often fail to respond effectively to dynamic traffic demand. In this thesis, Reinforcement Learning (RL) is applied to train intelligent traffic signal controllers using the SUMO traffic simulator, with the problem formulated as a Markov Decision Process (MDP).
+    Three RL algorithms are investigated and compared: Proximal Policy Optimization (PPO), Deep Q-Network (DQN), and Double DQN (DDQN). Each algorithm is trained under three different reward functions — queue-based, pressure-based, and wait-clip — to examine how the choice of reward signal influences the learned control policy.
+    Experiments are first conducted on a single four-phase intersection, where each algorithm is evaluated against traditional control baselines. The study is then extended to a 2×2 grid network, where four agents operate independently at each intersection while sharing a single neural network, allowing the scalability of all three algorithms to be assessed in a more complex multi-agent environment.
+    Through this comparison, it is found that algorithm performance depends strongly on both the reward function design and the network topology. In particular, reward functions that work well at a single intersection do not necessarily generalize to the multi-agent setting, and the relative performance of PPO versus DQN/DDQN reverses between the two scenarios. This thesis thereby identifies the most effective control configuration for each network type, providing empirical guidance for algorithm and reward selection in practical traffic signal control applications.
+
+
+\vspace*{1cm}
+\textbf{Keywords}: Reinforcement Learning, Traffic Signal Control, Proximal Policy Optimization, Deep Q-Network, SUMO, Multi-Agent Systems, Adaptive Signal Control.
+\end{small}

@@ -1,0 +1,33 @@
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+
+\begin{longtable}{|m{2.5cm}|m{5.5cm}|m{6.5cm}|}
+    \hline
+    \thead{Abbreviation} & \thead{Full Form} & \thead{Description} \\
+    \hline
+\endfirsthead
+    \hline
+    \thead{Abbreviation} & \thead{Full Form} & \thead{Description} \\
+    \hline
+\endhead
+    \hline
+\endfoot
+
+Dec-POMDP & Decentralised Partially Observable Markov Decision Process & Extension of MDP in which each agent receives only a local observation of the global state \\ \hline
+DDQN  & Double Deep Q-Network & DQN variant that decouples action selection and value evaluation to reduce Q-value overestimation bias \\ \hline
+DQN   & Deep Q-Network & Q-learning algorithm that uses a deep neural network to approximate the action-value function \\ \hline
+DRL   & Deep Reinforcement Learning & Reinforcement learning using deep neural networks as function approximators \\ \hline
+GAE   & Generalised Advantage Estimation & Advantage estimator used in PPO that interpolates between Monte Carlo returns and TD estimates \\ \hline
+IDDQN & Independent Double Deep Q-Network & DDQN under an independent multi-agent architecture with parameter sharing across agents \\ \hline
+IDQN  & Independent Deep Q-Network & DQN under an independent multi-agent architecture with parameter sharing across agents \\ \hline
+IPPO  & Independent Proximal Policy Optimization & PPO under an independent multi-agent architecture with parameter sharing across agents \\ \hline
+IQR   & Interquartile Range & Range between the 25th and 75th percentiles, used to measure statistical spread \\ \hline
+MARL  & Multi-Agent Reinforcement Learning & RL framework in which multiple agents simultaneously interact within a shared environment \\ \hline
+MDP   & Markov Decision Process & Formal framework for modelling sequential decision-making under uncertainty \\ \hline
+MLP   & Multi-Layer Perceptron & Feedforward neural network with one or more fully connected hidden layers \\ \hline
+OD    & Origin-Destination & Matrix describing vehicle trip demand between each pair of origin and destination zones \\ \hline
+PPO   & Proximal Policy Optimization & Policy-gradient algorithm that clips the policy update ratio to ensure stable, monotonic improvement \\ \hline
+RL    & Reinforcement Learning & Machine learning paradigm in which an agent learns by interacting with an environment and receiving reward signals \\ \hline
+SUMO  & Simulation of Urban MObility & Open-source microscopic, multi-modal traffic simulator developed by the German Aerospace Center \\ \hline
+TraCI & Traffic Control Interface & SUMO programming interface for real-time external control of traffic signals and individual vehicles \\ \hline
+\end{longtable}

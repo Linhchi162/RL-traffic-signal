@@ -1,0 +1,133 @@
+\chapter{Problem Statement}
+
+
+\begin{itemize}
+    
+\end{itemize}
+
+% ----------------------------------------------------------------
+\section{Background and Motivation}
+% ----------------------------------------------------------------
+
+Traffic congestion in major urban areas has become one of the most pressing
+challenges in modern urban infrastructure management. In Vietnam, Ho Chi Minh City
+suffers estimated losses of approximately \$6 billion USD annually~\cite{hcmc_congestion_2022},
+while Hanoi loses around \$1.2 billion USD per year due to traffic
+jams---equivalent to nearly 17\% of the city's logistics GDP~\cite{hanoi_congestion_worldbank}.
+These losses reflect an accumulation of indirect costs: wasted labor productivity,
+excess fuel consumption by idling vehicles, and healthcare costs associated with
+vehicle emissions.
+
+A root cause of this problem lies in the inefficiency of traditional traffic signal
+control systems. Fixed-time signal control operates on pre-programmed cycles with
+no ability to adapt to real-time fluctuations in traffic
+demand~\cite{adaptive_signal_survey_2024}. As a result, during peak hours, vehicle
+queues at intersections routinely exceed the capacity of the current green phase,
+while other phases waste green time on near-empty lanes---squandering the
+throughput capacity of the entire network.
+
+To address this limitation, machine learning approaches---particularly
+\textit{Reinforcement Learning}---have emerged as a promising solution for
+adaptive traffic signal control~\cite{rl_tsc_survey_springer2026,
+marl_tsc_sustainability2023}. Unlike classical optimization methods, RL does not
+require an explicit mathematical model of the environment: an agent learns improved
+decision-making through repeated interaction with a simulated environment, receiving
+rewards based on achieved traffic performance. When the problem scales to
+multi-intersection networks, \textit{Multi-Agent Reinforcement Learning}
+becomes a natural approach, where each intersection is controlled by an independent
+agent while sharing knowledge through a parameter-sharing
+mechanism~\cite{drl_tsc_survey_sciencedirect2024}.
+
+The motivation for this research stems from the practical urgency of congestion in
+Vietnamese cities: intelligent traffic signal control offers a deployable solution
+that does not require large-scale physical infrastructure investment. The use of
+real traffic demand data from Cologne, Germany, via the TAPAS Cologne
+dataset~\cite{tapas_cologne_sumo}---recognized as one of the largest freely
+available traffic simulation datasets---enables evaluation of RL algorithms under
+complex, realistic urban traffic conditions that go well beyond synthetic benchmarks.
+
+% ----------------------------------------------------------------
+\section{Problem Description}
+% ----------------------------------------------------------------
+
+The problem addressed in this thesis is \textbf{optimizing traffic signal control
+over a real-world urban road network using multi-agent reinforcement learning}.
+Specifically:
+
+\begin{itemize}
+    \item \textbf{Input:} Local traffic state at each intersection at every time
+    step, including vehicle counts, queue lengths, and current signal phase,
+    collected via the TraCI interface of the SUMO traffic simulator.
+
+    \item \textbf{Output:} Signal phase control actions (selection of the next
+    phase) produced by each agent at its assigned intersection, updated
+    continuously in the simulation environment.
+
+    \item \textbf{Scope:} Two real-world traffic scenarios from Cologne,
+    Germany---Cologne-3 and Cologne-8 ---built on the TAPAS Cologne dataset. Three RL
+    algorithms are trained and evaluated: PPO, DQN, and DDQN, all under an
+    Independent architecture with parameter sharing (IPPO, IDQN, IDDQN). Three
+    reward functions---\texttt{queue}, \texttt{pressure}, and
+    \texttt{wait-clip}---are investigated to analyze the effect of reward design
+    on learned control policies.
+
+    \item \textbf{Assumptions:} Each agent observes only local information at its
+    own intersection; no explicit communication occurs between agents during
+    decision-making. The SUMO simulation environment is assumed to be a
+    sufficiently representative proxy for real-world urban traffic conditions
+    within the scope of this study.
+\end{itemize}
+
+% ----------------------------------------------------------------
+\section{Research Objectives and Scope}
+% ----------------------------------------------------------------
+
+The overall objective of this thesis is to \textit{implement, train, and
+comprehensively evaluate three MARL algorithms (PPO, DQN, DDQN) for traffic signal
+control on real-world urban road networks, benchmarked against conventional
+fixed-time control}. To achieve this, the following specific tasks are addressed:
+
+\begin{enumerate}
+    \item Construct a traffic simulation environment in SUMO and formulate the
+    problem as a Markov Decision Process, defining the state space, action
+    space, and reward function.
+
+    \item Implement three RL algorithms (IPPO, IDQN, IDDQN) under an Independent
+    architecture with parameter sharing across the Cologne-3 and Cologne-8
+    scenarios.
+
+    \item Investigate the effect of three reward functions (\texttt{queue},
+    \texttt{pressure}, \texttt{wait-clip}) on learned control policies and
+    multi-agent coordination behavior.
+
+    \item Conduct a comprehensive performance comparison among the MARL algorithms
+    and against fixed-time control, using standard traffic metrics ( queue length, and throughput).
+\end{enumerate}
+
+The main contributions of this thesis are: (i) successful training and deployment
+of three RL algorithms under the Independent architecture; (ii) quantitative
+analysis of the effect of reward function design on multi-agent coordination;
+and (iii) identification of the most
+effective control configuration for the multi-intersection environment.
+
+% ----------------------------------------------------------------
+\section{Thesis Structure}
+% ----------------------------------------------------------------
+
+The remainder of this thesis is organized as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter 2} presents the theoretical background on reinforcement
+    learning, including MDP concepts, Q-learning, and detailed descriptions of the
+    PPO, DQN, and DDQN algorithms.
+
+    \item \textbf{Chapter 3} describes the system design, covering the SUMO
+    simulation environment, state and action representations, reward functions and
+    model configurations
+
+    \item \textbf{Chapter 4} presents experimental results, including per-scenario
+    specialist performance and reward function analysis.
+
+    \item \textbf{Chapter 5} provides concluding remarks and directions for future
+    research.
+\end{itemize}
