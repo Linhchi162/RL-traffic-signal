@@ -150,12 +150,3 @@ Both scenarios are derived from the [TAPAS Cologne dataset](https://sumo.dlr.de/
 
 ---
 
-## Citation
-
-If you use this code, please cite the thesis:
-
-```
-Tran Linh Chi. Reinforcement Learning-based Traffic Signal Control Optimization in SUMO.
-Bachelor's Thesis, University of Engineering and Technology,
-Vietnam National University, Hanoi, 2026.
-```
