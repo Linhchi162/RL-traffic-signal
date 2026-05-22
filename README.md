@@ -1,103 +1,161 @@
-# RL Traffic Signal Control (SUMO) - Kickoff
+# Reinforcement Learning-based Traffic Signal Control Optimization in SUMO
 
-This is a starter workspace for a graduation project on reinforcement learning for traffic signal control using SUMO.
+Bachelor's thesis — University of Engineering and Technology, Vietnam National University, Hanoi.
 
-## Step 1 goal
+This repository implements an **Independent Multi-Agent Reinforcement Learning** system for traffic signal control, where each signalised intersection is managed by an independent agent using a shared policy. Three algorithms (PPO, DQN, DDQN) are combined with three reward functions (queue, pressure, wait-clip) and evaluated on two sub-scenarios extracted from the real-world **TAPAS Cologne** dataset.
 
-Set up a reproducible local environment and verify SUMO + TraCI integration works.
+---
 
-## Prerequisites
+## Results summary
 
-- Python 3.10+ recommended
-- SUMO installed
-- `SUMO_HOME` environment variable configured
+| Scenario | Best config | Mean queue vs Fixed-time | Throughput vs Fixed-time |
+|---|---|---|---|
+| Cologne-8 (8 intersections) | PPO-pressure | −88 % | +0.8 % |
+| Cologne-3 (3 intersections) | DQN-pressure | −80 % | +0.8 % |
 
-## Quick start
+All RL configurations outperform both Fixed-time and Webster baselines on Cologne-8. Results on Cologne-3 are less consistent due to sparser learning signal.
 
-1) Create and activate a virtual environment:
+---
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
+## Repository structure
+
+```
+.
+├── rl_controller/
+│   ├── traffic_env.py      # Single-intersection Gymnasium environment (TraCI/libsumo)
+│   ├── grid_env.py         # MultiAgentVecEnv wrapper (parameter sharing)
+│   ├── state_builder.py    # 7-dimensional observation builder
+│   ├── intersection.py     # Intersection abstraction (phases, queues, rewards)
+│   └── webster.py          # Webster adaptive baseline controller
+├── nets/
+│   ├── cologne3/           # Cologne-3 network + route files (real + synthetic)
+│   └── cologne8/           # Cologne-8 network + route files (real + synthetic)
+├── train_cologne_ppo.py    # Train PPO / IPPO
+├── train_cologne_dqn.py    # Train DQN / DDQN
+├── evaluate_all.py         # Batch evaluation across all configs and seeds
+├── evaluate_cologne3_real.py
+├── evaluate_cologne8.py
+├── plot_learning_curves.py # Plot training reward curves
+├── plot_results.py         # Plot evaluation bar charts
+└── requirements.txt
 ```
 
-2) Install dependencies:
+---
 
-```powershell
+## Setup
+
+**Requirements:** Python 3.10+, SUMO installed, `SUMO_HOME` environment variable set.
+
+```bash
+python -m venv .venv
+# Windows
+.\.venv\Scripts\activate
+# Linux / macOS
+source .venv/bin/activate
+
 pip install -r requirements.txt
 ```
 
-3) Verify SUMO integration:
+---
 
-```powershell
-python scripts/check_sumo.py
+## Training
+
+### PPO
+
+```bash
+python train_cologne_ppo.py \
+    --net_file   nets/cologne8/cologne8.net.xml \
+    --route_file nets/cologne8/cologne8_rand_100pct.rou.xml \
+    --reward_type pressure \
+    --seed 42 \
+    --total_steps 500000 \
+    --save_dir ./exp_cologne8/ppo_pressure_s42
 ```
 
-If setup is correct, you should see SUMO binary path and TraCI import success.
+### DQN / DDQN
 
-## Step 2 goal
-
-Run the bundled RiLSA synthetic intersection scenario (Example 4) and verify you can step the simulation and (optionally) control the traffic light via TraCI.
-
-### Scenario files
-
-- `scenarios/RiLSA_example4/rilsa4.net.xml` (network)
-- `scenarios/RiLSA_example4/genroutes.rou.xml` (traffic demand)
-- `scenarios/RiLSA_example4/vtypes.add.xml` (vehicle types)
-- `scenarios/RiLSA_example4/rilsa4_tls.add.xml` (traffic light program)
-- `scenarios/RiLSA_example4/run.sumo.cfg` (SUMO config tying everything together)
-
-### Run directly with SUMO (GUI)
-
-```powershell
-sumo-gui -c scenarios\RiLSA_example4\run.sumo.cfg
+```bash
+python train_cologne_dqn.py \
+    --net_file   nets/cologne8/cologne8.net.xml \
+    --route_file nets/cologne8/cologne8_rand_100pct.rou.xml \
+    --algo ddqn \
+    --reward_type queue \
+    --seed 42 \
+    --total_steps 500000 \
+    --save_dir ./exp_cologne8/ddqn_queue_s42
 ```
 
-### Run via Python + TraCI (CLI)
+**Key arguments**
 
-```powershell
-python scripts/run_rilsa_example4.py --steps 1200
+| Argument | Default | Description |
+|---|---|---|
+| `--net_file` | required | Path to `.net.xml` |
+| `--route_file` | required | Path to `.rou.xml` (use `*_rand_*` files for training) |
+| `--reward_type` | `wait-clip` | `queue` / `pressure` / `wait-clip` |
+| `--algo` | `ddqn` | `dqn` / `ddqn` (DQN script only) |
+| `--seed` | `42` | Random seed |
+| `--total_steps` | `500000` | Training timesteps |
+| `--save_dir` | — | Output directory for model checkpoints |
+| `--gui` | off | Launch SUMO-GUI for visualisation |
+
+---
+
+## Evaluation
+
+```bash
+python evaluate_all.py
 ```
 
-### Run via Python + TraCI (GUI)
+Or evaluate a specific scenario:
 
-```powershell
-python scripts/run_rilsa_example4.py --gui --steps 1200
+```bash
+python evaluate_cologne8.py
+python evaluate_cologne3_real.py
 ```
 
-### Run with a simple controller baseline
+Evaluation is performed on the real TAPAS Cologne morning-peak traffic (07:00–08:00). Results are reported as mean ± std across 5 independent seeds.
 
-This baseline just switches to the next phase periodically (not RL yet).
+---
 
-```powershell
-python scripts/run_rilsa_example4.py --control --switch-every 20 --steps 1200
+## Algorithms
+
+| Algorithm | Type | Key mechanism |
+|---|---|---|
+| **PPO** | On-policy actor-critic | Clipped surrogate objective, GAE |
+| **DQN** | Off-policy value-based | Experience replay, target network |
+| **DDQN** | Off-policy value-based | Decoupled action selection & evaluation |
+
+All three are implemented with **parameter sharing**: every agent at every intersection shares a single neural network (MLP, 2 × 64, Tanh), while acting independently from local observations only.
+
+---
+
+## Reward functions
+
+| Reward | Formula | Sensor requirement |
+|---|---|---|
+| **Queue** | Reduction in stopped vehicles + absolute queue penalty | Incoming lanes only |
+| **Pressure** | Incoming − outgoing vehicle imbalance (clipped) | Incoming + outgoing lanes |
+| **Wait-clip** | Cumulative waiting time of all vehicles (clipped) | Per-vehicle tracking |
+
+---
+
+## Scenarios
+
+Both scenarios are derived from the [TAPAS Cologne dataset](https://sumo.dlr.de/docs/Data/Scenarios/TAPASCologne.html) and run at 30 % of full demand.
+
+| Scenario | Intersections | Nodes | Edges | Vehicles |
+|---|---|---|---|---|
+| **Cologne-3** | 3 | 29 | 48 | 2,856 |
+| **Cologne-8** | 8 | 78 | 149 | 2,046 |
+
+---
+
+## Citation
+
+If you use this code, please cite the thesis:
+
 ```
-
-## Generate multi-intersection scenarios (grid)
-
-If you need many intersections, generate a grid network (NxM junctions) with SUMO's `netgenerate` and create random traffic demand with `randomTrips.py`.
-
-### Generate a 5x5 grid and run it
-
-```powershell
-python scripts/generate_grid_scenario.py --x 5 --y 5 --end 1200 --period 2
-sumo-gui -c scenarios\grid_5x5\run.sumo.cfg
-```
-
-Notes:
-- `--x` and `--y` control how many signalized junctions you get.
-- `--period` controls traffic intensity (smaller => more vehicles).
-- If you don't have `SUMO_HOME` set, the generator will try to infer it from your PATH, or you can pass `--sumo-home <SUMO_INSTALL_DIR>`.
-
-### Variable (time-varying) demand profile
-
-You can generate a scenario with time-varying demand using `--density-schedule` (vehicles/hour/km):
-
-```powershell
-python scripts/generate_grid_scenario.py --x 3 --y 3 --lanes 3 --attach-length 300 --vehicle-class passenger --fringe-factor max --end 3600 \
-	--density-schedule "0:900:4,900:1800:12,1800:2700:25,2700:3600:8" \
-	--random-depart --random-departpos --random-arrivalpos \
-	--out grid_3x3_lanes3_dynamic
-
-sumo-gui -c scenarios\grid_3x3_lanes3_dynamic\run.sumo.cfg
+Tran Linh Chi. Reinforcement Learning-based Traffic Signal Control Optimization in SUMO.
+Bachelor's Thesis, University of Engineering and Technology,
+Vietnam National University, Hanoi, 2026.
 ```
