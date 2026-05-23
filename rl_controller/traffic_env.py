@@ -29,7 +29,7 @@ import sumolib
 import traci
 
 from .intersection import SignalController
-from .state_builder import IntersectionStateExtractor
+from .state_builder import BaselineObservation
 
 # Dùng libsumo nếu biến môi trường được đặt (nhanh hơn ~8x nhưng không có GUI)
 USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
@@ -86,7 +86,7 @@ class TrafficControlEnv(gym.Env):
         single_agent: bool = False,
         reward_fn: Union[str, Callable, dict, List] = "queue",
         reward_weights: Optional[List[float]] = None,
-        obs_class=IntersectionStateExtractor,
+        obs_class=BaselineObservation,
         sumo_seed: Union[str, int] = "random",
         fixed_signal: bool = False,
         show_warnings: bool = True,

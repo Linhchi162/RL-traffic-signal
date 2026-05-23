@@ -7,11 +7,10 @@ traffic signal optimization using PPO.
 
 from .traffic_env import TrafficControlEnv
 from .intersection import SignalController
-from .state_builder import IntersectionStateExtractor, BaselineObservation
+from .state_builder import BaselineObservation
 
 __all__ = [
     "TrafficControlEnv",
     "SignalController",
-    "IntersectionStateExtractor",
     "BaselineObservation",
 ]

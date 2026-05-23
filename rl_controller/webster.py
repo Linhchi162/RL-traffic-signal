@@ -84,7 +84,7 @@ def split_green_times(cycle: float, y_values: List[float], n_phases: int) -> Lis
     Returns:
         Danh sach thoi gian xanh (giay) cho tung pha.
     """
-    effective_time = cycle - n_phases * AMBER_DURATION
+    effective_time = cycle - n_phases * LOST_TIME_PER_PHASE
     sum_y = sum(y_values) or 1.0
 
     green_times = []
@@ -198,66 +198,60 @@ class DynamicWebsterController:
                 continue
             state = phases[ph_idx].state
             lanes = []
-            for link in all_links:
-                if not (isinstance(link, (list, tuple)) and len(link) >= 2):
+            # link_idx là vị trí trong state string, không phải link[1]
+            for link_idx, link in enumerate(all_links):
+                if not (isinstance(link, (list, tuple)) and len(link) >= 1):
                     continue
                 inner = link[0]
                 if not (isinstance(inner, (list, tuple)) and len(inner) >= 1):
                     continue
                 in_lane = inner[0]
-                link_pos = link[1]
-                if link_pos < len(state) and state[link_pos].upper() == "G":
+                if link_idx < len(state) and state[link_idx].upper() == "G":
                     lanes.append(in_lane)
             result[ph_idx] = sorted(set(lanes))
 
         return result
 
     def _record_flows(self, sim_time: float):
-        """Ghi nhan so xe dang qua moi nhom lane trong buoc nay."""
+        """Ghi nhan occupancy cao nhat trong nhom lane cua moi pha.
+
+        Occupancy (0-1) la ty le dien tich lang duoc xe chiem dung —
+        tuong duong he so Y_i trong cong thuc Webster (demand/capacity).
+        Khong dung getLastStepVehicleNumber vi xe dung cho bi dem nhieu lan,
+        gay phong dai flow ~30x va bao hoa Y_i.
+        """
         for ph_idx in self.green_phase_idx:
             lanes = self.phase_to_lanes.get(ph_idx, [])
-            count = 0
+            max_occ = 0.0
             for lane in lanes:
                 try:
-                    count += self.sumo.lane.getLastStepVehicleNumber(lane)
+                    occ = self.sumo.lane.getLastStepOccupancy(lane)
+                    if occ > max_occ:
+                        max_occ = occ
                 except Exception:
                     pass
             hist = self._flow_history[ph_idx]
-            hist.append((sim_time, count))
-            # Xoa cac ban ghi qua cu (qua FLOW_WINDOW_SEC)
+            hist.append((sim_time, max_occ))
             cutoff = sim_time - FLOW_WINDOW_SEC
             while hist and hist[0][0] < cutoff:
                 hist.popleft()
 
-    def _get_avg_flow(self, ph_idx: int) -> float:
-        """
-        Tra ve luu luong trung binh (xe/s) trong cua so 15 phut.
-
-        Args:
-            ph_idx: Chi so pha xanh.
-
-        Returns:
-            Luu luong trung binh (xe/s).
-        """
+    def _get_avg_occupancy(self, ph_idx: int) -> float:
+        """Tra ve occupancy trung binh (0-1) trong cua so 15 phut."""
         hist = self._flow_history[ph_idx]
         if not hist:
             return 0.0
-        total_vehicles = sum(cnt for _, cnt in hist)
-        window_sec = min(FLOW_WINDOW_SEC, max(1.0, len(hist)))
-        return total_vehicles / window_sec
+        return sum(occ for _, occ in hist) / len(hist)
 
     def _recompute_timings(self, sim_time: float):
         """
         Tinh lai chu ky va phan bo thoi gian xanh theo cong thuc Webster.
+        Y_i lay truc tiep tu occupancy trung binh (proxy demand/capacity).
         """
         y_values = []
         for ph_idx in self.green_phase_idx:
-            q = self._get_avg_flow(ph_idx)      # xe/s
-            lanes = self.phase_to_lanes.get(ph_idx, [])
-            n_lanes = max(1, len(lanes))
-            # Yi = luu luong trung binh moi lane / luu luong bao hoa
-            yi = (q / n_lanes) / SATURATION_FLOW_PER_LANE
-            y_values.append(min(yi, 0.9))       # cap tai 90% de tranh qua bao hoa
+            yi = self._get_avg_occupancy(ph_idx)   # 0.0 – 1.0
+            y_values.append(min(yi, 0.95))
 
         cycle = compute_cycle_length(y_values, self.n_phases)
         self.green_times = split_green_times(cycle, y_values, self.n_phases)

@@ -52,7 +52,7 @@ SINGLE_ROUTE = (
 EVAL_DURATION = int(os.environ.get("EVAL_DURATION_OVERRIDE", 7_200))  # giay (~2h sim)
 
 from rl_controller.traffic_env import TrafficControlEnv
-from rl_controller.state_builder import IntersectionStateExtractor
+from rl_controller.state_builder import BaselineObservation
 from rl_controller.webster import DynamicWebsterController
 
 USE_LIBSUMO = "LIBSUMO_AS_TRACI" in os.environ
@@ -157,10 +157,9 @@ def _empty_result():
 def run_ppo_eval(model_path: str, obs_mode: str = "raw",
                  _step_out: list = None) -> dict:
     from stable_baselines3 import PPO
-    from rl_controller.state_builder import IntersectionStateExtractor, BaselineObservation
+    from rl_controller.state_builder import BaselineObservation
 
     obs_cls_map = {
-        "raw":      IntersectionStateExtractor,
         "baseline": BaselineObservation,
     }
     if obs_mode.startswith("compressed"):
@@ -185,8 +184,7 @@ def run_ppo_eval(model_path: str, obs_mode: str = "raw",
     # Auto-detect obs class from saved model's observation space dimension.
     # Filename inference (_infer_obs_mode) can be wrong; the saved dim is ground truth.
     saved_dim = agent.observation_space.shape[0]
-    dim_to_cls = {7: BaselineObservation, 19: IntersectionStateExtractor}
-    obs_cls = dim_to_cls.get(saved_dim) or obs_cls_map.get(obs_mode, IntersectionStateExtractor)
+    obs_cls = obs_cls_map.get(obs_mode, BaselineObservation)
 
     tracker = _TravelTracker()
 
@@ -407,7 +405,7 @@ def run_random_eval(n_actions: int = 4, seed: int = 0, _step_out: list = None) -
         sim_duration=EVAL_DURATION + 500,
         single_agent=True,
         reward_fn="queue",
-        obs_class=IntersectionStateExtractor,
+        obs_class=BaselineObservation,
         show_warnings=False,
     )
 
@@ -464,7 +462,7 @@ def run_fixed_eval(_step_out: list = None) -> dict:
         sim_duration=EVAL_DURATION + 500,
         single_agent=True,
         reward_fn="queue",
-        obs_class=IntersectionStateExtractor,
+        obs_class=BaselineObservation,
         fixed_signal=True,
         show_warnings=False,
     )
