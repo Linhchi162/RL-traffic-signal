@@ -1,6 +1,7 @@
 # Reinforcement Learning-based Traffic Signal Control Optimization in SUMO
 
 Bachelor's thesis — University of Engineering and Technology, Vietnam National University, Hanoi.
+📄 **[View the full thesis report](https://drive.google.com/file/d/1f8QOMjwDC1ok8fHuhpQK1u5Tr66QgvbD/view?usp=sharing)**
 
 This repository implements an **Independent Multi-Agent Reinforcement Learning** system for traffic signal control, where each signalised intersection is managed by an independent agent using a shared policy. Three algorithms (PPO, DQN, DDQN) are combined with three reward functions (queue, pressure, wait-clip) and evaluated on two sub-scenarios extracted from the real-world **TAPAS Cologne** dataset.
 
